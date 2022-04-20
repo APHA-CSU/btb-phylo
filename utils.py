@@ -1,9 +1,4 @@
 import subprocess
-from io import StringIO
-import os
-import glob
-
-import pandas as pd
 
 def run(cmd, *args, **kwargs):
     """ Run a command and assert that the process exits with a non-zero exit code.

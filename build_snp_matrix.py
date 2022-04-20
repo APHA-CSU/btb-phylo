@@ -16,7 +16,8 @@ def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
 def append_multi_fasta(multi_fasta_path, s3_uris):
     """
     1. dowloads consensus files from s3-csu-003 to a tmp directory
-    2. writes (appends) to multi fasta file - assuming open() doesn't load the whole file into memory - this will be around 50Gb
+    2. writes (appends) to multi fasta file - assuming open() doesn't load the whole file into memory - this will be around ~50Gb 
+        for the entire dataset
     3. deletes tmp directory
     """
     pass
@@ -34,10 +35,11 @@ def snps(output_path, multi_fasta_path):
 
 def main():
     # parse plates.csv
+    # parse outcomes.csv -> for determining if samples should be included: output from btb-seq (cam)
     # build multi-fasta
     # run snp-sites
     # run snp-dist
     pass
 
 if __name__ == "__main__":
-    pass
+    main()
