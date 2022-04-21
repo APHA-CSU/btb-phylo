@@ -10,12 +10,14 @@ BIOTOOLS_PATH=~/biotools/
 
 apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git \
+    gcc \
     make \
-    check \
-    libtool \
-    autoconf \
     python3 \
     python3-pip
+# for snp-sites source install
+    #check \
+    #libtool \
+    #autoconf \
 
 pip3 install pandas
 ln -s /usr/bin/python3 /usr/bin/python
