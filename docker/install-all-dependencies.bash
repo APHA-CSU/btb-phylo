@@ -19,6 +19,7 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     #libtool \
     #autoconf \
 
+echo $PWD
 pip3 install -r btb-phylo/requirements.txt
 ln -s /usr/bin/python3 /usr/bin/python
 
