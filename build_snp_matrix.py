@@ -1,4 +1,4 @@
-import utils.utils
+import utils
 
 def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
     """
