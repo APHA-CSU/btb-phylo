@@ -19,7 +19,7 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     #libtool \
     #autoconf \
 
-pip3 install -r requirements.txt
+pip3 install -r btb-phylo/requirements.txt
 ln -s /usr/bin/python3 /usr/bin/python
 
 ################## BIOTOOLS ######################
