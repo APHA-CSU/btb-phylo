@@ -31,7 +31,7 @@ jobs:
     executor: phylo-pipeline
     steps:
       - run: |
-          cd /BovTB-nf/
+          cd /btb-phylo/
           python unit_tests.py
 
 executors:

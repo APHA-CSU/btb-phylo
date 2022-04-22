@@ -10,7 +10,7 @@ LABEL about.tags="Phylogenomics"
 
 ################## ARGS #############################
 
-ARG BOVTB_PATH="/BovTB-phylo/"
+ARG BOVTB_PATH="/btb-phylo/"
 
 ################## DEPENDENCIES ######################
 
