@@ -35,7 +35,7 @@ jobs:
           python unit_tests.py
 
 executors:
-  pyhlo-pipeline:
+  phylo-pipeline:
     docker:
       - image: "aphacsubot/btb-phylo:$CIRCLE_BRANCH"
 
