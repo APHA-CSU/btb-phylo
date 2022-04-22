@@ -22,7 +22,7 @@ COPY ./ ./
 RUN apt-get -y update
 
 # Biotools
-RUN && bash .docker/install-all-dependencies.bash
+RUN && bash ./docker/install-all-dependencies.bash
 
 ################## ENTRY ######################
 
