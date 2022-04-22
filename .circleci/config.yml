@@ -27,8 +27,24 @@ jobs:
       - build-and-push:
           tag: $CIRCLE_BRANCH
 
+  unittests:
+    executor: phylo-pipeline
+    steps:
+      - run: |
+          cd /BovTB-nf/
+          python unit_tests.py
+
+executors:
+  pyhlo-pipeline:
+    docker:
+      - image: "aphacsubot/btb-phylo:$CIRCLE_BRANCH"
+
 # Orchestrates the validation tests 
 workflows:
   validation:
     jobs:
       - build
+
+      - unittests:
+          requires:
+            - build
