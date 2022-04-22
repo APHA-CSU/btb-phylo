@@ -19,15 +19,14 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     #libtool \
     #autoconf \
 
-echo $PWD
-pip3 install -r btb-phylo/requirements.txt
+pip3 install -r requirements.txt
 ln -s /usr/bin/python3 /usr/bin/python
 
 ################## BIOTOOLS ######################
 
 
 mkdir -p $BIOTOOLS_PATH
-cp ./install*.*sh $BIOTOOLS_PATH
+cp ./docker/install*.*sh $BIOTOOLS_PATH
 cd $BIOTOOLS_PATH
 
 bash -e install-snp-sites.sh
