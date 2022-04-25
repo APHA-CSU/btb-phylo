@@ -61,7 +61,7 @@ workflows:
       - deploy:
           requires:
             - build
-            - unittest
+            - unittests
           filters:
             branches:
-              only: master
+              only: main
