@@ -14,6 +14,7 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     make \
     python3 \
     python3-pip
+    awscli
 # for snp-sites source install
     #check \
     #libtool \
