@@ -13,7 +13,7 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     gcc \
     make \
     python3 \
-    python3-pip
+    python3-pip \
     awscli
 # for snp-sites source install
     #check \
