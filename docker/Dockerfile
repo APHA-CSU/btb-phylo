@@ -26,4 +26,4 @@ RUN bash ./docker/install-all-dependencies.bash
 
 ################## ENTRY ######################
 
-#CMD python build_snp_matrix.py
+CMD python build_snp_matrix.py
