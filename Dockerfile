@@ -8,21 +8,17 @@ LABEL about.summary="Bioinformatics Pipeline for post-processing of sequenced Bo
 LABEL about.documentation="https://github.com/APHA-CSU/btb-phylo"
 LABEL about.tags="Phylogenomics"
 
-################## ARGS #############################
-
-ARG BOVTB_PATH="/btb-phylo/"
-
 ################## DEPENDENCIES ######################
 
 # Copy repository
-WORKDIR $BOVTB_PATH
+WORKDIR "/btb-phylo/"
 COPY ./ ./
 
 # Sudo
 RUN apt-get -y update
 
 # Biotools
-RUN bash ./docker/install-all-dependencies.bash
+RUN bash ./install/install.bash
 
 ################## ENTRY ######################
 
