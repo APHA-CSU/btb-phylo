@@ -4,6 +4,8 @@ def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
     """
     # keys is a list of s3_uris - for bespoke requests
     # if None download on plate-by-plate basis
+    # TODO: ensure there are no duplicates - need policy for choosing the correct sample, probably
+    # based on highes pc-mapped.
     if keys == None:
         for plate_id in plate_ids:
             s3_uris = [uri for uri in plates_csv]
