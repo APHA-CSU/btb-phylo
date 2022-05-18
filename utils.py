@@ -72,7 +72,6 @@ def s3_download_folder(bucket, key, dest):
         dest = os.path.join(dest, "")
         run(["aws", "s3", "cp", "--recursive", "s3://" + bucket + key, dest])
     else:
-        print("here")
         raise Exception("Path '{0}' does not exist in bucket '{1}'".format(key, bucket))
 
 def s3_download_file(bucket, key, dest):
@@ -81,8 +80,7 @@ def s3_download_file(bucket, key, dest):
         path (string)
     """
     if s3_object_exists(bucket, key):
-        bucket = os.path.join(bucket, "")
-        run(["aws", "s3", "cp", "s3://" + bucket + key, dest])
+        s3 = boto3.client('s3')
+        s3.download_file(bucket, key, dest)
     else:
-        print("here")
         raise Exception("Path '{0}' does not exist in bucket '{1}'".format(key, bucket))
