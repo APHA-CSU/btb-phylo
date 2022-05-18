@@ -1,3 +1,6 @@
+import tempfile
+import os
+
 import utils
 
 def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
@@ -5,6 +8,7 @@ def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
     # keys is a list of s3_uris - for bespoke requests
     # if None download on plate-by-plate basis
     # TODO: ensure there are no duplicates - need policy for choosing the correct sample, probably
+    # TODO: make filenames consistent - many have "consensus.fas" at the end
     # based on highes pc-mapped.
     if keys == None:
         for plate_id in plate_ids:
@@ -15,14 +19,21 @@ def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
     """
     pass
 
-def append_multi_fasta(multi_fasta_path, s3_uris):
-    """
-    1. dowloads consensus files from s3-csu-003 to a tmp directory
-    2. writes (appends) to multi fasta file - assuming open() doesn't load the whole file into memory - this will be around ~50Gb 
-        for the entire dataset
-    3. deletes tmp directory
-    """
-    pass
+def append_multi_fasta(s3_uris, multi_fasta_path):
+    '''
+    Builds a file appended with consensus sequences of samples for phylogeny
+    
+    Parameters:
+        s3_uris (list of tuples): list of s3 bucket and key pairs in tuple
+        multi_fasta_path (string): local filepath for output file
+    '''
+    with open(multi_fasta_path, 'wb') as out_file:
+        for s3_uri in s3_uris:
+            with tempfile.TemporaryDirectory() as consensus_dirname:
+                consensus_filepath = os.path.join(consensus_dirname, "temp.fas") 
+                utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
+                with open(consensus_filepath, 'rb') as consensus_file:
+                    out_file.write(consensus_file.read())
 
 def snps(output_path, multi_fasta_path):
     """run snp-sites on consensus files, then runs snp-dists on the results"""
@@ -41,7 +52,7 @@ def main():
     # build multi-fasta
     # run snp-sites
     # run snp-dist
-    pass
+    append_multi_fasta("/home/nickpestell/tmp/multi_fasta_path.fas", [("s3-staging-area", "nickpestell/AF-21-05371-19_consensus.fas"), ("s3-staging-area", "nickpestell/#")])
 
 if __name__ == "__main__":
     main()

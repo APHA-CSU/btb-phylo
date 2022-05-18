@@ -18,6 +18,24 @@ def s3_folder_exists(bucket, path):
         exists = True
     return exists
 
+def s3_object_exists(bucket, key):
+    """
+        Returns true if the S3 key is in the S3 bucket. False otherwise
+        Thanks: https://stackoverflow.com/questions/33842944/check-if-a-key-exists-in-a-bucket-in-s3-using-boto3
+    """
+    key_exists = True
+    s3 = boto3.resource('s3')
+    try:
+        s3.Object(bucket, key).load()
+    except botocore.exceptions.ClientError as e:
+        if e.response['Error']['Code'] == "404":
+            # The object does not exist.
+            key_exists = False
+        else:
+            # Something else has gone wrong.
+            raise e
+    return  key_exists
+
 def run(cmd, *args, **kwargs):
     """ Run a command and assert that the process exits with a non-zero exit code.
         See python's subprocess.run command for args/kwargs
@@ -53,6 +71,18 @@ def s3_download_folder(bucket, key, dest):
         bucket = os.path.join(bucket, "")
         dest = os.path.join(dest, "")
         run(["aws", "s3", "cp", "--recursive", "s3://" + bucket + key, dest])
+    else:
+        print("here")
+        raise Exception("Path '{0}' does not exist in bucket '{1}'".format(key, bucket))
+
+def s3_download_file(bucket, key, dest):
+    """
+        Downloads s3 folder at the key-bucket pair (strings) to dest 
+        path (string)
+    """
+    if s3_object_exists(bucket, key):
+        bucket = os.path.join(bucket, "")
+        run(["aws", "s3", "cp", "s3://" + bucket + key, dest])
     else:
         print("here")
         raise Exception("Path '{0}' does not exist in bucket '{1}'".format(key, bucket))
