@@ -17,7 +17,8 @@ def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
     else:
         append_multi_fasta(multi_fasta_path, keys)
     """
-    pass
+    with tempfile.TemporaryDirectory() as consensus_dirname:
+        append_multi_fasta(s3_uris, consensus_dirname)
 
 def append_multi_fasta(s3_uris, multi_fasta_path):
     '''
@@ -29,8 +30,8 @@ def append_multi_fasta(s3_uris, multi_fasta_path):
     '''
     with open(multi_fasta_path, 'wb') as out_file:
         for s3_uri in s3_uris:
-            with tempfile.TemporaryDirectory() as consensus_dirname:
-                consensus_filepath = os.path.join(consensus_dirname, "temp.fas") 
+            with tempfile.TemporaryDirectory() as temp_dirname:
+                consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
                 utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
                 with open(consensus_filepath, 'rb') as consensus_file:
                     out_file.write(consensus_file.read())
@@ -52,7 +53,9 @@ def main():
     # build multi-fasta
     # run snp-sites
     # run snp-dist
-    append_multi_fasta("/home/nickpestell/tmp/multi_fasta_path.fas", [("s3-staging-area", "nickpestell/AF-21-05371-19_consensus.fas"), ("s3-staging-area", "nickpestell/#")])
+    s3_uris = [("s3-staging-area", "nickpestell/#"), ("s3-staging-area", "nickpestell/AF-21-05371-19_consensus.fas")]
+    with tempfile.TemporaryDirectory() as temp_dirname:
+        append_multi_fasta(s3_uris, os.path.join(temp_dirname, "multi-fasta.fas"))
 
 if __name__ == "__main__":
     main()
