@@ -7,7 +7,7 @@ def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
     """
     # keys is a list of s3_uris - for bespoke requests
     # if None download on plate-by-plate basis
-    # TODO: ensure there are no duplicates - need policy for choosing the correct sample, probably
+    # TODO: ensure there are no duplicates - need policy for choosing the correct sample, probably based on pc-mapped
     # TODO: make filenames consistent - many have "consensus.fas" at the end
     # based on highes pc-mapped.
     if keys == None:
@@ -48,8 +48,8 @@ def snps(output_path, multi_fasta_path):
     utils.run(cmd, shell=True)
 
 def main():
-    # parse plates.csv
-    # parse outcomes.csv -> for determining if samples should be included: output from btb-seq (cam)
+    # parse batches.csv - maybe not, becasue this data is for raw reads - it maybe implicit in s3-csu-003.
+    # parse outcomes.csv ->  this is called something like 20079_FinalOut_18Oct21.csv, for determining if samples should be included: output from btb-seq (cam)
     # build multi-fasta
     # run snp-sites
     # run snp-dist
