@@ -3,22 +3,26 @@ import os
 
 import utils
 
-def build_multi_fasta(plates_csv, bucket="s3-csu-003", keys=None):
+PROJECT_CODES = ["SB4030"]
+
+def build_multi_fasta(multi_fasta_path, bucket="s3-csu-003", keys=None):
     """
     # keys is a list of s3_uris - for bespoke requests
     # if None download on plate-by-plate basis
     # TODO: ensure there are no duplicates - need policy for choosing the correct sample, probably based on pc-mapped
     # TODO: make filenames consistent - many have "consensus.fas" at the end
     # based on highes pc-mapped.
-    if keys == None:
-        for plate_id in plate_ids:
-            s3_uris = [uri for uri in plates_csv]
-            append_multi_fasta(multi_fasta_path, s3_uris)
-    else:
-        append_multi_fasta(multi_fasta_path, keys)
     """
-    with tempfile.TemporaryDirectory() as consensus_dirname:
-        append_multi_fasta(s3_uris, consensus_dirname)
+    if keys == None:
+        batches = []
+        for project_code in PROJECT_CODES:
+            batches.extend(utils.list_s3_objects(bucket, os.path.join("nickpestell/v3", project_code, "")))
+        for batch_prefix in batches:
+            s3_uris = [(bucket, key) for key in utils.list_s3_objects(bucket, os.path.join(batch_prefix, ""))]
+            append_multi_fasta(s3_uris, multi_fasta_path)
+    else:
+        s3_uris = [(bucket, key) for key in keys]
+        append_multi_fasta(s3_uris, multi_fasta_path)
 
 def append_multi_fasta(s3_uris, multi_fasta_path):
     '''
@@ -54,8 +58,11 @@ def main():
     # run snp-sites
     # run snp-dist
     s3_uris = [("s3-staging-area", "nickpestell/#"), ("s3-staging-area", "nickpestell/AF-21-05371-19_consensus.fas")]
+    keys = ["nickpestell/#", "nickpestell/AF-21-05371-19_consensus.fas"]
     with tempfile.TemporaryDirectory() as temp_dirname:
-        append_multi_fasta(s3_uris, os.path.join(temp_dirname, "multi-fasta.fas"))
+        multi_fasta_path = os.path.join(temp_dirname, "multi-fasta.fas")
+        build_multi_fasta(multi_fasta_path, "s3-staging-area")#, keys)
+        snps("/home/nickpestell/tmp/", multi_fasta_path)
 
 if __name__ == "__main__":
     main()

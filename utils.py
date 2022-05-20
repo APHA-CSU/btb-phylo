@@ -84,3 +84,11 @@ def s3_download_file(bucket, key, dest):
         s3.download_file(bucket, key, dest)
     else:
         raise Exception("Path '{0}' does not exist in bucket '{1}'".format(key, bucket))
+
+def list_s3_objects(bucket, prefix):
+    """
+        Return a list of s3 objects with the common prefix (argument)
+    """
+    s3_client = boto3.client('s3')
+    response = s3_client.list_objects_v2(Bucket=bucket, Delimiter = '/', Prefix=prefix)
+    return [i['Prefix'] for i in response['CommonPrefixes']]
