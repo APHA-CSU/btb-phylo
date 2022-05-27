@@ -1,11 +1,15 @@
 import tempfile
 import os
+import pandas as pd
 
 import utils
 
-PROJECT_CODES = ["SB4030"]
+DEFAULT_RESULTS_BUCKET = "s3-csu-003"
+DEFAULT_SUMMARY_KEY = "v3/summary/test.csv"
 
-def build_multi_fasta(multi_fasta_path, bucket="s3-csu-003", keys=None):
+def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
+                      summary_key=DEFAULT_SUMMARY_KEY, keys=None, 
+                      pcmap_threshold=(0,100), **kwargs):
     """
     # keys is a list of s3_uris - for bespoke requests
     # if None download on plate-by-plate basis
@@ -13,16 +17,62 @@ def build_multi_fasta(multi_fasta_path, bucket="s3-csu-003", keys=None):
     # TODO: make filenames consistent - many have "consensus.fas" at the end
     # based on highes pc-mapped.
     """
-    if keys == None:
-        batches = []
-        for project_code in PROJECT_CODES:
-            batches.extend(utils.list_s3_objects(bucket, os.path.join("nickpestell/v3", project_code, "")))
-        for batch_prefix in batches:
-            s3_uris = [(bucket, key) for key in utils.list_s3_objects(bucket, os.path.join(batch_prefix, ""))]
-            append_multi_fasta(s3_uris, multi_fasta_path)
-    else:
-        s3_uris = [(bucket, key) for key in keys]
-        append_multi_fasta(s3_uris, multi_fasta_path)
+      #  if keys == None:
+            # Download btb_wgs_samples.csv
+    with tempfile.TemporaryDirectory() as temp_dirname:
+        summary_filepath = os.path.join(temp_dirname, "samples.csv")
+        utils.s3_download_file(bucket, summary_key, summary_filepath)
+        summary_df = pd.read_csv(summary_filepath)
+      #      batches = []
+      #      for project_code in PROJECT_CODES:
+      #          batches.extend(utils.list_s3_objects(bucket, os.path.join("nickpestell/v3", project_code, "")))
+      #      for batch_prefix in batches:
+      #          s3_uris = [(bucket, key) for key in utils.list_s3_objects(bucket, os.path.join(batch_prefix, ""))]
+      #          append_multi_fasta(s3_uris, multi_fasta_path)
+      #  else:
+      #      s3_uris = [(bucket, key) for key in keys]
+      #      append_multi_fasta(s3_uris, multi_fasta_path)
+
+def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
+    """ Filters the sample summary dataframe which is based off 
+        btb_wgs_samples.csv according to a set of criteria. 
+
+        Parameters:
+            summary_df (pandas dataframe object): a dataframe read from 
+            the btb_wgs_samples.csv.
+
+            pcmap_threshold (tuple): min and max thresholds for pcMapped
+
+            **kwargs (list): 0 or more optional arguments. Names must match
+            a column name in btb_wgs_samples.csv. Vales must be of type 
+            list, specifying a set of values to match against the argument 
+            name's column in btb_wgs_samples.csv. For example, 
+            'sample_name=["AFT-61-03769-21", "20-0620719"]' will include 
+            just these two samples.
+
+        Returns:
+            summary_df (pandas dataframe object): a dataframe of 'Pass'
+            only samples filtered according to criteria set out in 
+            arguments.
+    """
+    if len(pcmap_threshold) != 2:
+        raise ValueError("pcmap_threshold must be of length 2")
+    if not isinstance(pcmap_threshold[0], int, float) and \
+        not isinstance(pcmap_threshold[0], int, float):
+        raise ValueError("pcmap_threshold elements must be numeric") 
+    for column, values in kwargs.items():
+        if column not in summary_df.columns:
+            raise ValueError("Invalid kwarg: must be a column name from"
+                            "btb_wgs_samples.csv")
+        if not isinstance(values, list):
+            raise ValueError("Invalid kwarg value: must be of type list")
+        summary_df = summary_df.loc[summary_df[column].isin(values)]
+    summary_df = summary_df.loc[summary_df["Outcome"]=="Pass"]
+    summary_df = summary_df.loc[(summary_df["pcMapped"] > pcmap_threshold[0])| 
+                                (summary_df["pcMapped"] > pcmap_threshold[1])]
+    if summary_df.empty:
+        raise Exception("0 samples meet specified criteria")
+    return summary_df
 
 def append_multi_fasta(s3_uris, multi_fasta_path):
     '''
