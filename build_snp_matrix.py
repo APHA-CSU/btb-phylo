@@ -1,3 +1,4 @@
+from re import S
 import tempfile
 import os
 import pandas as pd
@@ -14,8 +15,7 @@ class InvalidDtype(Exception):
         if "dtype" in kwargs:
             self.message = f"Invalid series name. Series must be of type {kwargs['dtype']}"
         if "column_name" in kwargs:
-            self.message = f"Invalid series name '{kwargs['column_name']}'. Series \
-                            must be of the correct type"
+            self.message = f"Invalid series name '{kwargs['column_name']}'. Series must be of the correct type"
         if "column_name" in kwargs and "dtype" in kwargs:
             self.message = f"Invalid series name '{kwargs['column_name']}' Series must be of type {kwargs['dtype']}"
         else:
@@ -24,10 +24,8 @@ class InvalidDtype(Exception):
     def __str__(self):
         return self.message
 
-
 def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
-                      summary_key=DEFAULT_SUMMARY_KEY, keys=None, 
-                      pcmap_threshold=(0,100), **kwargs):
+                      summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
     """
     # keys is a list of s3_uris - for bespoke requests
     # if None download on plate-by-plate basis
@@ -35,8 +33,46 @@ def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
     # TODO: make filenames consistent - many have "consensus.fas" at the end
     # based on highes pc-mapped.
     """
-      #  if keys == None:
-            # Download btb_wgs_samples.csv
+    summary_df = summary_csv_to_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY)
+    summary_df = filter_samples(summary_df, pcmap_threshold=(90,100), **kwargs)
+    summary_df = remove_duplicates(summary_df)   # - this potentially needs to be performed on the entire set to avoid duplicate samples across different trees i.e. higher up in the code
+    for idx, sample in summary_df.iterrows():
+        append_multi_fasta(sample["results_bucket"])
+      #      batches = []
+      #      for project_code in PROJECT_CODES:
+      #          batches.extend(utils.list_s3_objects(bucket, os.path.join("nickpestell/v3", project_code, "")))
+      #      for batch_prefix in batches:
+      #          s3_uris = [(bucket, key) for key in utils.list_s3_objects(bucket, os.path.join(batch_prefix, ""))]
+      #          append_multi_fasta(s3_uris, multi_fasta_path)
+      #  else:
+      #      s3_uris = [(bucket, key) for key in keys]
+      #      append_multi_fasta(s3_uris, multi_fasta_path)
+
+#TODO: unit test 
+def remove_duplicates(df, parameter="pcMapped"):
+    """
+        Loops through the entire summary dataframe and removes duplicate submisions 
+        according to the policy in remove_duplicate_samples()
+    """
+    for submission_no in df.submission.unique():
+        remove_duplicate_samples(df, parameter, submission_no)
+
+#TODO: unit test 
+def remove_duplicate_samples(df, parameter, submission_no):
+    """
+        Chooses sample from duplicate submission numbers based on the maximum value
+        of paramater
+    """
+    df_filtered = df.loc[(df[parameter] != submission_no) & \
+                    (df[parameter] != df.loc[df["submission"]==submission_no][parameter].max())]
+    df_filtered.reset_index(drop=True, inplace=True)
+    return df_filtered
+
+
+def summary_csv_to_df(bucket, summary_key):
+    """
+        Downloads btb_wgs_samples.csv and returns the data in a pandas dataframe.
+    """
     with tempfile.TemporaryDirectory() as temp_dirname:
         summary_filepath = os.path.join(temp_dirname, "samples.csv")
         utils.s3_download_file(bucket, summary_key, summary_filepath)
@@ -52,19 +88,11 @@ def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
                                  "group":"category", "CSSTested":float, "matches":float,
                                  "mismatches":float, "noCoverage":float, "anomalous":float}
                                 )
-      #      batches = []
-      #      for project_code in PROJECT_CODES:
-      #          batches.extend(utils.list_s3_objects(bucket, os.path.join("nickpestell/v3", project_code, "")))
-      #      for batch_prefix in batches:
-      #          s3_uris = [(bucket, key) for key in utils.list_s3_objects(bucket, os.path.join(batch_prefix, ""))]
-      #          append_multi_fasta(s3_uris, multi_fasta_path)
-      #  else:
-      #      s3_uris = [(bucket, key) for key in keys]
-      #      append_multi_fasta(s3_uris, multi_fasta_path)
     return summary_df
 
 def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
-    """ Filters the sample summary dataframe which is based off 
+    """ 
+        Filters the sample summary dataframe which is based off 
         btb_wgs_samples.csv according to a set of criteria. 
 
         Parameters:
