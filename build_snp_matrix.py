@@ -7,6 +7,19 @@ import utils
 DEFAULT_RESULTS_BUCKET = "s3-csu-003"
 DEFAULT_SUMMARY_KEY = "v3/summary/test.csv"
 
+class InvalidDtype(Exception):
+    def __init__(self, message="Invalid series name. Series must be of correct type", 
+                 *args, **kwargs):
+        super().__init__(message, args, kwargs)
+        if "dtype" in kwargs:
+            self.message = f"Invalid series name. Series must be of type {kwargs['dtype']}"
+        else:
+            self.message = message
+
+    def __str__(self):
+        return self.message
+
+
 def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
                       summary_key=DEFAULT_SUMMARY_KEY, keys=None, 
                       pcmap_threshold=(0,100), **kwargs):
@@ -22,7 +35,18 @@ def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
     with tempfile.TemporaryDirectory() as temp_dirname:
         summary_filepath = os.path.join(temp_dirname, "samples.csv")
         utils.s3_download_file(bucket, summary_key, summary_filepath)
-        summary_df = pd.read_csv(summary_filepath)
+        summary_df = pd.read_csv(summary_filepath, dtype = {"sample_name":object,
+                                 "submission":object, "project_code":"category",
+                                 "sequencer":"category", "run_id":object,
+                                 "well":"category", "read_1":object, "read_2":object, 
+                                 "lane":"category", "batch_id":"category", 
+                                 "reads_bucket":"category", "results_bucket":"category", 
+                                 "results_prefix":object, "sequenced_datetime":object, 
+                                 "GenomeCov":float, "MeanDepth":float, "NumRawReads":int, 
+                                 "pcMapped":float, "Outcome":"category", "flag":"category",
+                                 "group":"category", "CSSTested":float, "matches":float,
+                                 "mismatches":float, "noCoverage":float, "anomalous":float}
+                                )
       #      batches = []
       #      for project_code in PROJECT_CODES:
       #          batches.extend(utils.list_s3_objects(bucket, os.path.join("nickpestell/v3", project_code, "")))
@@ -32,6 +56,7 @@ def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
       #  else:
       #      s3_uris = [(bucket, key) for key in keys]
       #      append_multi_fasta(s3_uris, multi_fasta_path)
+    return summary_df
 
 def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
     """ Filters the sample summary dataframe which is based off 
@@ -55,24 +80,52 @@ def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
             only samples filtered according to criteria set out in 
             arguments.
     """
-    if len(pcmap_threshold) != 2:
-        raise ValueError("pcmap_threshold must be of length 2")
-    if not isinstance(pcmap_threshold[0], int, float) and \
-        not isinstance(pcmap_threshold[0], int, float):
-        raise ValueError("pcmap_threshold elements must be numeric") 
+    summary_df = filter_df_categorical(summary_df, "Outcome", ["Pass"])
+    summary_df = filter_df_numeric(summary_df, "pcMapped", pcmap_threshold)
     for column, values in kwargs.items():
-        if column not in summary_df.columns:
-            raise ValueError("Invalid kwarg: must be a column name from"
-                            "btb_wgs_samples.csv")
-        if not isinstance(values, list):
-            raise ValueError("Invalid kwarg value: must be of type list")
-        summary_df = summary_df.loc[summary_df[column].isin(values)]
-    summary_df = summary_df.loc[summary_df["Outcome"]=="Pass"]
-    summary_df = summary_df.loc[(summary_df["pcMapped"] > pcmap_threshold[0])| 
-                                (summary_df["pcMapped"] > pcmap_threshold[1])]
+        try:
+            if not (pd.api.types.is_categorical_dtype(summary_df[column]) or\
+                    pd.api.types.is_object_dtype(summary_df[column])):
+                summary_df = filter_df_categorical(summary_df, column, values)
+            elif pd.api.types.is_numeric_dtype(summary_df[column]):
+                summary_df = filter_df_numeric(summary_df, column, values)
+        except KeyError as e:
+            raise ValueError(f"Inavlid kwarg '{column}': must be one of: " 
+                             f"{summary_df.columns.to_list()}")
     if summary_df.empty:
         raise Exception("0 samples meet specified criteria")
     return summary_df
+    
+def filter_df_numeric(df, column_name, values):
+    """ 
+        Filters the summary dataframe according to the values in 
+        'column_name' with min and max values defined by elements in
+        'values'. The data in column name must me of dtype int or float
+        and the argument 'values' must be of type list or tuple and 
+        of length 2. 
+    """ 
+    if not pd.api.types.is_numeric_dtype(df[column_name]):
+        raise InvalidDtype(dtype="float or int")
+    if len(values) != 2:
+        raise ValueError("pcmap_threshold must be of length 2")
+    df_filtered = df.loc[(df[column_name] > values[0]) & (df[column_name] < values[1])]
+    df_filtered.reset_index(inplace=True, drop=True)
+    return df_filtered
+
+def filter_df_categorical(df, column_name, values):
+    """ 
+        Filters the summary dataframe according to the values in 
+        'column_name' retaining all rows which have summary_df[column_name]
+        matching one on the elements in the input list 'values'. 
+    """ 
+    if not (pd.api.types.is_categorical_dtype(df[column_name]) or \
+            pd.api.types.is_object_dtype(df[column_name])):
+        raise InvalidDtype(dtype="category or object")
+    if not isinstance(values, list):
+        raise ValueError("Invalid kwarg value: must be of type list")
+    df_filtered = df.loc[df[column_name].isin(values)]
+    df_filtered.reset_index(inplace=True, drop=True)
+    return df_filtered
 
 def append_multi_fasta(s3_uris, multi_fasta_path):
     '''
@@ -91,7 +144,9 @@ def append_multi_fasta(s3_uris, multi_fasta_path):
                     out_file.write(consensus_file.read())
 
 def snps(output_path, multi_fasta_path):
-    """run snp-sites on consensus files, then runs snp-dists on the results"""
+    """
+        Run snp-sites on consensus files, then runs snp-dists on the results
+    """
 
     # run snp sites 
     cmd = f'snp-sites {multi_fasta_path} -c -o {output_path}snpsites.fas'
