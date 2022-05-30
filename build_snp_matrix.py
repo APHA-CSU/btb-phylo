@@ -13,6 +13,11 @@ class InvalidDtype(Exception):
         super().__init__(message, args, kwargs)
         if "dtype" in kwargs:
             self.message = f"Invalid series name. Series must be of type {kwargs['dtype']}"
+        if "column_name" in kwargs:
+            self.message = f"Invalid series name '{kwargs['column_name']}'. Series \
+                            must be of the correct type"
+        if "column_name" in kwargs and "dtype" in kwargs:
+            self.message = f"Invalid series name '{kwargs['column_name']}' Series must be of type {kwargs['dtype']}"
         else:
             self.message = message
 
@@ -84,8 +89,8 @@ def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
     summary_df = filter_df_numeric(summary_df, "pcMapped", pcmap_threshold)
     for column, values in kwargs.items():
         try:
-            if not (pd.api.types.is_categorical_dtype(summary_df[column]) or\
-                    pd.api.types.is_object_dtype(summary_df[column])):
+            if pd.api.types.is_categorical_dtype(summary_df[column]) or\
+                    pd.api.types.is_object_dtype(summary_df[column]):
                 summary_df = filter_df_categorical(summary_df, column, values)
             elif pd.api.types.is_numeric_dtype(summary_df[column]):
                 summary_df = filter_df_numeric(summary_df, column, values)
@@ -105,7 +110,7 @@ def filter_df_numeric(df, column_name, values):
         of length 2. 
     """ 
     if not pd.api.types.is_numeric_dtype(df[column_name]):
-        raise InvalidDtype(dtype="float or int")
+        raise InvalidDtype(dtype="float or int", column_name=column_name)
     if len(values) != 2:
         raise ValueError("pcmap_threshold must be of length 2")
     df_filtered = df.loc[(df[column_name] > values[0]) & (df[column_name] < values[1])]
@@ -120,7 +125,7 @@ def filter_df_categorical(df, column_name, values):
     """ 
     if not (pd.api.types.is_categorical_dtype(df[column_name]) or \
             pd.api.types.is_object_dtype(df[column_name])):
-        raise InvalidDtype(dtype="category or object")
+        raise InvalidDtype(dtype="category or object", column_name=column_name)
     if not isinstance(values, list):
         raise ValueError("Invalid kwarg value: must be of type list")
     df_filtered = df.loc[df[column_name].isin(values)]
