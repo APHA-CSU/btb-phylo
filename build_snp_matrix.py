@@ -153,19 +153,6 @@ def filter_df_categorical(df, column_name, values):
     df_filtered.reset_index(inplace=True, drop=True)
     return df_filtered
 
-#TODO: unit test - use mocking
-def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
-                      summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
-    summary_df = summary_csv_to_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY)
-    summary_df = filter_samples(summary_df, pcmap_threshold=(80,100), **kwargs)
-    summary_df = remove_duplicates(summary_df)   # - this potentially needs to be performed on the entire set to avoid duplicate samples across different trees i.e. higher up in the code
-    summary_df.to_csv("/home/nickpestell/tmp/summary_test.csv")
-    with open(multi_fasta_path, 'wb') as outfile:
-        for _, sample in summary_df.iterrows():
-            consensus_key = os.path.join(sample["results_prefix"], "consensus", 
-                                         sample["sample_name"])
-            append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
-
 #TODO: unit test
 def append_multi_fasta(s3_uri, outfile):
     """
@@ -182,6 +169,19 @@ def append_multi_fasta(s3_uri, outfile):
         utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
         with open(consensus_filepath, 'rb') as consensus_file:
             outfile.write(consensus_file.read())
+
+#TODO: unit test - use mocking
+def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
+                      summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
+    summary_df = summary_csv_to_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY)
+    summary_df = filter_samples(summary_df, pcmap_threshold=(80,100), **kwargs)
+    summary_df = remove_duplicates(summary_df)   # - this potentially needs to be performed on the entire set to avoid duplicate samples across different trees i.e. higher up in the code
+    summary_df.to_csv("/home/nickpestell/tmp/summary_test.csv")
+    with open(multi_fasta_path, 'wb') as outfile:
+        for _, sample in summary_df.iterrows():
+            consensus_key = os.path.join(sample["results_prefix"], "consensus", 
+                                         sample["sample_name"])
+            append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
 
 #TODO: unit test maybe?
 def snps(output_path, multi_fasta_path):
