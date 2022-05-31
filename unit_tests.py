@@ -9,6 +9,15 @@ class TestBuildSnpMatrix(unittest.TestCase):
     def test_build_multi_fasta(self):
         pass
 
+    def test_remove_duplicate_samples(self):
+        # define dataframe for input
+        test_df = pd.DataFrame({"submission":pd.Series([1, 2, 2, 2, 3], dtype="object"),
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.5], dtype=float)})
+        # test
+        pd.testing.assert_frame_equal(build_snp_matrix.remove_duplicate_samples(test_df, "pcMapped", 2),
+                                      pd.DataFrame({"submission":[1, 2, 3], "pcMapped":[0.1, 0.4, 0.5]}),
+                                      check_dtype=False, check_categorical=False)
+
     def test_filter_samples(self):
         # define dataframe for input
         test_df = pd.DataFrame({"column_A":pd.Series(["a", "b", "c", "d", "e"], dtype="object"),

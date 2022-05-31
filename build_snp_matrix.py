@@ -26,27 +26,31 @@ class InvalidDtype(Exception):
 
 def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
                       summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
-    """
-    # keys is a list of s3_uris - for bespoke requests
-    # if None download on plate-by-plate basis
-    # TODO: ensure there are no duplicates - need policy for choosing the correct sample, probably based on pc-mapped
-    # TODO: make filenames consistent - many have "consensus.fas" at the end
-    # based on highes pc-mapped.
-    """
     summary_df = summary_csv_to_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY)
-    summary_df = filter_samples(summary_df, pcmap_threshold=(90,100), **kwargs)
+    summary_df = filter_samples(summary_df, pcmap_threshold=(80,100), **kwargs)
     summary_df = remove_duplicates(summary_df)   # - this potentially needs to be performed on the entire set to avoid duplicate samples across different trees i.e. higher up in the code
-    for idx, sample in summary_df.iterrows():
-        append_multi_fasta(sample["results_bucket"])
-      #      batches = []
-      #      for project_code in PROJECT_CODES:
-      #          batches.extend(utils.list_s3_objects(bucket, os.path.join("nickpestell/v3", project_code, "")))
-      #      for batch_prefix in batches:
-      #          s3_uris = [(bucket, key) for key in utils.list_s3_objects(bucket, os.path.join(batch_prefix, ""))]
-      #          append_multi_fasta(s3_uris, multi_fasta_path)
-      #  else:
-      #      s3_uris = [(bucket, key) for key in keys]
-      #      append_multi_fasta(s3_uris, multi_fasta_path)
+    summary_df.to_csv("/home/nickpestell/tmp/summary_test.csv")
+    with open(multi_fasta_path, 'wb') as outfile:
+        for _, sample in summary_df.iterrows():
+            consensus_key = os.path.join(sample["results_prefix"], "consensus", 
+                                         sample["sample_name"])
+            append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
+
+def append_multi_fasta(s3_uri, outfile):
+    """
+        Appends a multi fasta file with the consensus sequence stored at s3_uri
+        
+        Parameters:
+            s3_uris (list of tuples): list of s3 bucket and key pairs in tuple
+
+            outfile (file object): file object refering to the multi fasta output
+            file
+    """
+    with tempfile.TemporaryDirectory() as temp_dirname:
+        consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
+        utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
+        with open(consensus_filepath, 'rb') as consensus_file:
+            outfile.write(consensus_file.read())
 
 #TODO: unit test 
 def remove_duplicates(df, parameter="pcMapped"):
@@ -55,7 +59,8 @@ def remove_duplicates(df, parameter="pcMapped"):
         according to the policy in remove_duplicate_samples()
     """
     for submission_no in df.submission.unique():
-        remove_duplicate_samples(df, parameter, submission_no)
+        df = remove_duplicate_samples(df, parameter, submission_no)
+    return df
 
 #TODO: unit test 
 def remove_duplicate_samples(df, parameter, submission_no):
@@ -63,10 +68,10 @@ def remove_duplicate_samples(df, parameter, submission_no):
         Chooses sample from duplicate submission numbers based on the maximum value
         of paramater
     """
-    df_filtered = df.loc[(df[parameter] != submission_no) & \
-                    (df[parameter] != df.loc[df["submission"]==submission_no][parameter].max())]
-    df_filtered.reset_index(drop=True, inplace=True)
-    return df_filtered
+    remove = df.loc[(df["submission"]==submission_no) & \
+        (df[parameter] != df.loc[df["submission"]==submission_no][parameter].max())]
+    df_filtered = df.drop(remove.index)
+    return df_filtered.reset_index(drop=True)
 
 
 def summary_csv_to_df(bucket, summary_key):
@@ -160,22 +165,6 @@ def filter_df_categorical(df, column_name, values):
     df_filtered.reset_index(inplace=True, drop=True)
     return df_filtered
 
-def append_multi_fasta(s3_uris, multi_fasta_path):
-    '''
-    Builds a file appended with consensus sequences of samples for phylogeny
-    
-    Parameters:
-        s3_uris (list of tuples): list of s3 bucket and key pairs in tuple
-        multi_fasta_path (string): local filepath for output file
-    '''
-    with open(multi_fasta_path, 'wb') as out_file:
-        for s3_uri in s3_uris:
-            with tempfile.TemporaryDirectory() as temp_dirname:
-                consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
-                utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
-                with open(consensus_filepath, 'rb') as consensus_file:
-                    out_file.write(consensus_file.read())
-
 def snps(output_path, multi_fasta_path):
     """
         Run snp-sites on consensus files, then runs snp-dists on the results
@@ -190,17 +179,7 @@ def snps(output_path, multi_fasta_path):
     utils.run(cmd, shell=True)
 
 def main():
-    # parse batches.csv - maybe not, becasue this data is for raw reads - it maybe implicit in s3-csu-003.
-    # parse outcomes.csv ->  this is called something like 20079_FinalOut_18Oct21.csv, for determining if samples should be included: output from btb-seq (cam)
-    # build multi-fasta
-    # run snp-sites
-    # run snp-dist
-    s3_uris = [("s3-staging-area", "nickpestell/#"), ("s3-staging-area", "nickpestell/AF-21-05371-19_consensus.fas")]
-    keys = ["nickpestell/#", "nickpestell/AF-21-05371-19_consensus.fas"]
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        multi_fasta_path = os.path.join(temp_dirname, "multi-fasta.fas")
-        build_multi_fasta(multi_fasta_path, "s3-staging-area")#, keys)
-        snps("/home/nickpestell/tmp/", multi_fasta_path)
+    build_multi_fasta("/home/nickpestell/tmp/test_multi_fasta.fas")
 
 if __name__ == "__main__":
     main()
