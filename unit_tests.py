@@ -9,14 +9,26 @@ class TestBuildSnpMatrix(unittest.TestCase):
     def test_build_multi_fasta(self):
         pass
 
+    def test_remove_duplicates(self):
+        # define dataframe for input
+        test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
+        # test expected input
+        pd.testing.assert_frame_equal(build_snp_matrix.remove_duplicates(test_df, "pcMapped"),
+                                      pd.DataFrame({"submission":["2", "3"], "pcMapped":[0.4, 0.6]}),
+                                      check_dtype=False, check_categorical=False)
+
     def test_remove_duplicate_samples(self):
         # define dataframe for input
-        test_df = pd.DataFrame({"submission":pd.Series([1, 2, 2, 2, 3], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.5], dtype=float)})
-        # test
-        pd.testing.assert_frame_equal(build_snp_matrix.remove_duplicate_samples(test_df, "pcMapped", 2),
-                                      pd.DataFrame({"submission":[1, 2, 3], "pcMapped":[0.1, 0.4, 0.5]}),
+        test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1"], dtype="object"),
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1], dtype=float)})
+        # test expected input
+        pd.testing.assert_frame_equal(build_snp_matrix.remove_duplicate_samples(test_df, "pcMapped", "2"),
+                                      pd.DataFrame({"submission":["1", "2", "1"], "pcMapped":[0.1, 0.4, 0.1]}),
                                       check_dtype=False, check_categorical=False)
+        # test duplicated pcMapped
+        with self.assertRaises(build_snp_matrix.DuplicateSubmitionError):
+            build_snp_matrix.remove_duplicate_samples(test_df, "pcMapped", "1")
 
     def test_filter_samples(self):
         # define dataframe for input
@@ -34,6 +46,34 @@ class TestBuildSnpMatrix(unittest.TestCase):
         with self.assertRaises(Exception):
             build_snp_matrix.filter_samples(test_df, pcmap_threshold=(0.15, 0.45), 
                                             column_A=["b", "c"], column_D=(2.5, 3))
+
+    def test_filter_df_numeric(self):
+        # define dataframe for input
+        test_df = pd.DataFrame({"column_A":pd.Series(["a", "b", "c", "d"], dtype="category"),
+                                "column_B":pd.Series(["A", "B", "C", "D"], dtype=object), 
+                                "column_C":pd.Series([0.1, 0.2, 0.3, 0.4], dtype=float),
+                                "column_D":pd.Series([1, 2, 3, 4,], dtype=int)})
+        # test filter on float series
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_df_numeric(test_df, "column_C", (0.1, 0.4)),
+                                      pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
+                                                    "column_C":[0.2, 0.3], "column_D":[2, 3]}),
+                                                    check_dtype=False, check_categorical=False)
+        # test filter on int series
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_df_numeric(test_df, "column_D", (1, 4)),
+                                      pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
+                                                    "column_C":[0.2, 0.3], "column_D":[2, 3]}),
+                                                    check_dtype=False, check_categorical=False)
+        # test empty output
+        self.assertTrue(build_snp_matrix.filter_df_numeric(test_df, "column_D", (2, 3)).empty)
+        # test exceptions
+        with self.assertRaises(build_snp_matrix.InvalidDtype):
+            build_snp_matrix.filter_df_numeric(test_df, "column_A", "foo")
+            build_snp_matrix.filter_df_numeric(test_df, "column_B", "foo")
+        with self.assertRaises(KeyError):
+            build_snp_matrix.filter_df_numeric(test_df, "foo", "foo")
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_df_numeric(test_df, "column_D", (1, ))
+            build_snp_matrix.filter_df_numeric(test_df, "column_D", (1, 2, 3))
 
     def test_filter_df_categorical(self):
         # define dataframe for input
@@ -63,33 +103,8 @@ class TestBuildSnpMatrix(unittest.TestCase):
             build_snp_matrix.filter_df_categorical(test_df, "column_A", 1)
             build_snp_matrix.filter_df_categorical(test_df, "column_B", (1, 2, 3))
 
-    def test_filter_df_numeric(self):
-        # define dataframe for input
-        test_df = pd.DataFrame({"column_A":pd.Series(["a", "b", "c", "d"], dtype="category"),
-                                "column_B":pd.Series(["A", "B", "C", "D"], dtype=object), 
-                                "column_C":pd.Series([0.1, 0.2, 0.3, 0.4], dtype=float),
-                                "column_D":pd.Series([1, 2, 3, 4,], dtype=int)})
-        # test filter on float series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_df_numeric(test_df, "column_C", (0.1, 0.4)),
-                                      pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
-                                                    "column_C":[0.2, 0.3], "column_D":[2, 3]}),
-                                                    check_dtype=False, check_categorical=False)
-        # test filter on int series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_df_numeric(test_df, "column_D", (1, 4)),
-                                      pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
-                                                    "column_C":[0.2, 0.3], "column_D":[2, 3]}),
-                                                    check_dtype=False, check_categorical=False)
-        # test empty output
-        self.assertTrue(build_snp_matrix.filter_df_numeric(test_df, "column_D", (2, 3)).empty)
-        # test exceptions
-        with self.assertRaises(build_snp_matrix.InvalidDtype):
-            build_snp_matrix.filter_df_numeric(test_df, "column_A", "foo")
-            build_snp_matrix.filter_df_numeric(test_df, "column_B", "foo")
-        with self.assertRaises(KeyError):
-            build_snp_matrix.filter_df_numeric(test_df, "foo", "foo")
-        with self.assertRaises(ValueError):
-            build_snp_matrix.filter_df_numeric(test_df, "column_D", (1, ))
-            build_snp_matrix.filter_df_numeric(test_df, "column_D", (1, 2, 3))
+    def test_build_multi_fasta(self):
+        pass
 
     def test_append_multi_fasta(self):
         pass

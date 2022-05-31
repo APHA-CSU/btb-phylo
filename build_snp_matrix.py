@@ -1,4 +1,3 @@
-from re import S
 import tempfile
 import os
 import pandas as pd
@@ -24,55 +23,15 @@ class InvalidDtype(Exception):
     def __str__(self):
         return self.message
 
-def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
-                      summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
-    summary_df = summary_csv_to_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY)
-    summary_df = filter_samples(summary_df, pcmap_threshold=(80,100), **kwargs)
-    summary_df = remove_duplicates(summary_df)   # - this potentially needs to be performed on the entire set to avoid duplicate samples across different trees i.e. higher up in the code
-    summary_df.to_csv("/home/nickpestell/tmp/summary_test.csv")
-    with open(multi_fasta_path, 'wb') as outfile:
-        for _, sample in summary_df.iterrows():
-            consensus_key = os.path.join(sample["results_prefix"], "consensus", 
-                                         sample["sample_name"])
-            append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
+class DuplicateSubmitionError(Exception):
+    def __init__(self, submision_no, parameter):
+        super().__init__()
+        self.submission_no = submision_no
+        self.parameter = parameter
+        self.message = f"Submision {self.submission_no} is duplicated and has the same {self.parameter} value" 
 
-def append_multi_fasta(s3_uri, outfile):
-    """
-        Appends a multi fasta file with the consensus sequence stored at s3_uri
-        
-        Parameters:
-            s3_uris (list of tuples): list of s3 bucket and key pairs in tuple
-
-            outfile (file object): file object refering to the multi fasta output
-            file
-    """
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
-        utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
-        with open(consensus_filepath, 'rb') as consensus_file:
-            outfile.write(consensus_file.read())
-
-#TODO: unit test 
-def remove_duplicates(df, parameter="pcMapped"):
-    """
-        Loops through the entire summary dataframe and removes duplicate submisions 
-        according to the policy in remove_duplicate_samples()
-    """
-    for submission_no in df.submission.unique():
-        df = remove_duplicate_samples(df, parameter, submission_no)
-    return df
-
-#TODO: unit test 
-def remove_duplicate_samples(df, parameter, submission_no):
-    """
-        Chooses sample from duplicate submission numbers based on the maximum value
-        of paramater
-    """
-    remove = df.loc[(df["submission"]==submission_no) & \
-        (df[parameter] != df.loc[df["submission"]==submission_no][parameter].max())]
-    df_filtered = df.drop(remove.index)
-    return df_filtered.reset_index(drop=True)
-
+    def __str__(self):
+        return self.message
 
 def summary_csv_to_df(bucket, summary_key):
     """
@@ -94,6 +53,35 @@ def summary_csv_to_df(bucket, summary_key):
                                  "mismatches":float, "noCoverage":float, "anomalous":float}
                                 )
     return summary_df
+
+
+def remove_duplicates(df, parameter="pcMapped"):
+    """
+        Loops through the entire summary dataframe and removes duplicate submisions 
+        according to the policy in remove_duplicate_samples()
+    """
+    for submission_no in df.submission.unique():
+        try:
+            df = remove_duplicate_samples(df, parameter, submission_no)
+        except DuplicateSubmitionError as e:
+            print(e.message)
+            print(f"Skipping submission {submission_no}")
+            df = df.drop(df.loc[df["submission"]==submission_no].index)
+    return df
+
+def remove_duplicate_samples(df, parameter, submission_no):
+    """
+        Chooses sample from duplicate submission numbers based on the maximum value
+        of paramater
+    """
+    parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
+    if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
+        raise DuplicateSubmitionError(submission_no, parameter)
+    remove = df.loc[(df["submission"]==submission_no) & \
+        (df[parameter] != parameter_max)]
+    df_filtered = df.drop(remove.index)
+    return df_filtered.reset_index(drop=True)
+
 
 def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
     """ 
@@ -165,11 +153,41 @@ def filter_df_categorical(df, column_name, values):
     df_filtered.reset_index(inplace=True, drop=True)
     return df_filtered
 
+#TODO: unit test - use mocking
+def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
+                      summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
+    summary_df = summary_csv_to_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY)
+    summary_df = filter_samples(summary_df, pcmap_threshold=(80,100), **kwargs)
+    summary_df = remove_duplicates(summary_df)   # - this potentially needs to be performed on the entire set to avoid duplicate samples across different trees i.e. higher up in the code
+    summary_df.to_csv("/home/nickpestell/tmp/summary_test.csv")
+    with open(multi_fasta_path, 'wb') as outfile:
+        for _, sample in summary_df.iterrows():
+            consensus_key = os.path.join(sample["results_prefix"], "consensus", 
+                                         sample["sample_name"])
+            append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
+
+#TODO: unit test
+def append_multi_fasta(s3_uri, outfile):
+    """
+        Appends a multi fasta file with the consensus sequence stored at s3_uri
+        
+        Parameters:
+            s3_uris (list of tuples): list of s3 bucket and key pairs in tuple
+
+            outfile (file object): file object refering to the multi fasta output
+            file
+    """
+    with tempfile.TemporaryDirectory() as temp_dirname:
+        consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
+        utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
+        with open(consensus_filepath, 'rb') as consensus_file:
+            outfile.write(consensus_file.read())
+
+#TODO: unit test maybe?
 def snps(output_path, multi_fasta_path):
     """
         Run snp-sites on consensus files, then runs snp-dists on the results
     """
-
     # run snp sites 
     cmd = f'snp-sites {multi_fasta_path} -c -o {output_path}snpsites.fas'
     utils.run(cmd, shell=True)
@@ -179,7 +197,9 @@ def snps(output_path, multi_fasta_path):
     utils.run(cmd, shell=True)
 
 def main():
-    build_multi_fasta("/home/nickpestell/tmp/test_multi_fasta.fas")
+    multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
+    build_multi_fasta(multi_fasta_path)
+    snps("/home/nickpestell/tmp/snps", multi_fasta_path)
 
 if __name__ == "__main__":
     main()
