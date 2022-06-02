@@ -60,25 +60,24 @@ def remove_duplicates(df, parameter="pcMapped"):
         Loops through the entire summary dataframe and removes duplicate submisions 
         according to the policy in remove_duplicate_samples()
     """
+    return df.drop(get_indexes_to_remove(df, parameter)).reset_index(drop=True)
+
+def get_indexes_to_remove(df, parameter):
+    """
+    """
     indexes = pd.Index([])
     for submission_no in df.submission.unique():
         try:
-            indexes = indexes.append(get_indexes_to_remove(df, parameter, submission_no))
+            parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
+            if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
+                raise DuplicateSubmitionError(submission_no, parameter)
+            indexes = indexes.append(df.loc[(df["submission"]==submission_no) & \
+                (df[parameter] != parameter_max)].index)
         except DuplicateSubmitionError as e:
             print(e.message)
             print(f"Skipping submission {submission_no}")
-            df.drop(df.loc[df["submission"]==submission_no].index, inplace=True)
-    return df.drop(indexes).reset_index(drop=True)
-
-def get_indexes_to_remove(df, parameter, submission_no):
-    """
-    """
-    parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
-    if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
-        raise DuplicateSubmitionError(submission_no, parameter)
-    remove = df.loc[(df["submission"]==submission_no) & \
-        (df[parameter] != parameter_max)]
-    return remove.index
+            indexes = indexes.append(df.loc[df["submission"]==submission_no].index)
+    return indexes
 
 def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
     """ 
