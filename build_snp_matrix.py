@@ -23,16 +23,6 @@ class InvalidDtype(Exception):
     def __str__(self):
         return self.message
 
-class DuplicateSubmitionError(Exception):
-    def __init__(self, submision_no, parameter):
-        super().__init__()
-        self.submission_no = submision_no
-        self.parameter = parameter
-        self.message = f"Submision {self.submission_no} is duplicated and has the same {self.parameter} value" 
-
-    def __str__(self):
-        return self.message
-
 def summary_csv_to_df(bucket, summary_key):
     """
         Downloads btb_wgs_samples.csv and returns the data in a pandas dataframe.
@@ -40,20 +30,18 @@ def summary_csv_to_df(bucket, summary_key):
     with tempfile.TemporaryDirectory() as temp_dirname:
         summary_filepath = os.path.join(temp_dirname, "samples.csv")
         utils.s3_download_file(bucket, summary_key, summary_filepath)
-        summary_df = pd.read_csv(summary_filepath, dtype = {"sample_name":object,
-                                 "submission":object, "project_code":"category",
-                                 "sequencer":"category", "run_id":object,
-                                 "well":"category", "read_1":object, "read_2":object, 
-                                 "lane":"category", "batch_id":"category", 
-                                 "reads_bucket":"category", "results_bucket":"category", 
-                                 "results_prefix":object, "sequenced_datetime":object, 
-                                 "GenomeCov":float, "MeanDepth":float, "NumRawReads":int, 
-                                 "pcMapped":float, "Outcome":"category", "flag":"category",
-                                 "group":"category", "CSSTested":float, "matches":float,
-                                 "mismatches":float, "noCoverage":float, "anomalous":float}
-                                )
-    return summary_df
-
+        df = pd.read_csv(summary_filepath, dtype = {"sample_name":object,
+                         "submission":object, "project_code":"category",
+                         "sequencer":"category", "run_id":object,
+                         "well":"category", "read_1":object, "read_2":object, 
+                         "lane":"category", "batch_id":"category", 
+                         "reads_bucket":"category", "results_bucket":"category", 
+                         "results_prefix":object, "sequenced_datetime":object, 
+                         "GenomeCov":float, "MeanDepth":float, "NumRawReads":int, 
+                         "pcMapped":float, "Outcome":"category", "flag":"category",
+                         "group":"category", "CSSTested":float, "matches":float,
+                         "mismatches":float, "noCoverage":float, "anomalous":float})
+    return df
 
 def remove_duplicates(df, parameter="pcMapped"):
     """
@@ -87,14 +75,13 @@ def get_indexes_to_remove(df, parameter):
                 (df[parameter] != parameter_max)].index)
     return indexes
 
-def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
+def filter_samples(df, pcmap_threshold=(0,100), **kwargs):
     """ 
         Filters the sample summary dataframe which is based off 
         btb_wgs_samples.csv according to a set of criteria. 
 
         Parameters:
-            summary_df (pandas dataframe object): a dataframe read from 
-            the btb_wgs_samples.csv.
+            df (pandas dataframe object): a dataframe read from btb_wgs_samples.csv.
 
             pcmap_threshold (tuple): min and max thresholds for pcMapped
 
@@ -106,25 +93,25 @@ def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
             just these two samples.
 
         Returns:
-            summary_df (pandas dataframe object): a dataframe of 'Pass'
+            df (pandas dataframe object): a dataframe of 'Pass'
             only samples filtered according to criteria set out in 
             arguments.
     """
-    summary_df = filter_df_categorical(summary_df, "Outcome", ["Pass"])
-    summary_df = filter_df_numeric(summary_df, "pcMapped", pcmap_threshold)
+    df = filter_df_categorical(df, "Outcome", ["Pass"])
+    df = filter_df_numeric(df, "pcMapped", pcmap_threshold)
     for column, values in kwargs.items():
         try:
-            if pd.api.types.is_categorical_dtype(summary_df[column]) or\
-                    pd.api.types.is_object_dtype(summary_df[column]):
-                summary_df = filter_df_categorical(summary_df, column, values)
-            elif pd.api.types.is_numeric_dtype(summary_df[column]):
-                summary_df = filter_df_numeric(summary_df, column, values)
+            if pd.api.types.is_categorical_dtype(df[column]) or\
+                    pd.api.types.is_object_dtype(df[column]):
+                df = filter_df_categorical(df, column, values)
+            elif pd.api.types.is_numeric_dtype(df[column]):
+                df = filter_df_numeric(df, column, values)
         except KeyError as e:
             raise ValueError(f"Inavlid kwarg '{column}': must be one of: " 
-                             f"{summary_df.columns.to_list()}")
-    if summary_df.empty:
+                             f"{df.columns.to_list()}")
+    if df.empty:
         raise Exception("0 samples meet specified criteria")
-    return summary_df
+    return df
     
 def filter_df_numeric(df, column_name, values):
     """ 
@@ -138,9 +125,8 @@ def filter_df_numeric(df, column_name, values):
         raise InvalidDtype(dtype="float or int", column_name=column_name)
     if len(values) != 2:
         raise ValueError("pcmap_threshold must be of length 2")
-    df_filtered = df.loc[(df[column_name] > values[0]) & (df[column_name] < values[1])]
-    df_filtered.reset_index(inplace=True, drop=True)
-    return df_filtered
+    return df.loc[(df[column_name] > values[0]) & \
+        (df[column_name] < values[1])].reset_index(drop=True)
 
 def filter_df_categorical(df, column_name, values):
     """ 
@@ -153,9 +139,7 @@ def filter_df_categorical(df, column_name, values):
         raise InvalidDtype(dtype="category or object", column_name=column_name)
     if not isinstance(values, list):
         raise ValueError("Invalid kwarg value: must be of type list")
-    df_filtered = df.loc[df[column_name].isin(values)]
-    df_filtered.reset_index(inplace=True, drop=True)
-    return df_filtered
+    return df.loc[df[column_name].isin(values)].reset_index(drop=True)
 
 #TODO: unit test
 def append_multi_fasta(s3_uri, outfile):
