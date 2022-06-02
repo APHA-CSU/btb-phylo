@@ -18,17 +18,13 @@ class TestBuildSnpMatrix(unittest.TestCase):
                                       pd.DataFrame({"submission":["2", "3"], "pcMapped":[0.4, 0.6]}),
                                       check_dtype=False, check_categorical=False)
 
-    def test_remove_duplicate_samples(self):
+    def test_get_indexes_to_remove(self):
         # define dataframe for input
-        test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1], dtype=float)})
+        test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
         # test expected input
-        pd.testing.assert_frame_equal(build_snp_matrix.remove_duplicate_samples(test_df, "pcMapped", "2"),
-                                      pd.DataFrame({"submission":["1", "2", "1"], "pcMapped":[0.1, 0.4, 0.1]}),
-                                      check_dtype=False, check_categorical=False)
-        # test duplicated pcMapped
-        with self.assertRaises(build_snp_matrix.DuplicateSubmitionError):
-            build_snp_matrix.remove_duplicate_samples(test_df, "pcMapped", "1")
+        pd.testing.assert_index_equal(build_snp_matrix.get_indexes_to_remove(test_df, "pcMapped"),
+                                      pd.Index([0, 1, 2, 4]), check_order=False)
 
     def test_filter_samples(self):
         # define dataframe for input

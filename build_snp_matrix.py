@@ -57,26 +57,34 @@ def summary_csv_to_df(bucket, summary_key):
 
 def remove_duplicates(df, parameter="pcMapped"):
     """
-        Loops through the entire summary dataframe and removes duplicate submisions 
-        according to the policy in remove_duplicate_samples()
+        Drops duplicated submissions from df
     """
     return df.drop(get_indexes_to_remove(df, parameter)).reset_index(drop=True)
 
 def get_indexes_to_remove(df, parameter):
     """
+        Loops through unique submisions in the summary_df and collects indexes
+        for duplicate submisions which should be excluded.
+
+        Parameters:
+            df (pandas dataframe object): a dataframe read from btb_wgs_samples.csv
+
+            parameter (string): a column name from df on which to decide which 
+            duplicate to keep, e.g. keep the submission with the largest pcMapped
+
+        Returns:
+            indexes (pandas index object): indexes to remove from dataframe
     """
     indexes = pd.Index([])
     for submission_no in df.submission.unique():
-        try:
-            parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
-            if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
-                raise DuplicateSubmitionError(submission_no, parameter)
+        parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
+        if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
+            print(f"Submision {submission_no} is duplicated and has the same {parameter} value\n"
+                    f"Skipping submision {submission_no}" )
+            indexes = indexes.append(df.loc[df["submission"]==submission_no].index)
+        else:
             indexes = indexes.append(df.loc[(df["submission"]==submission_no) & \
                 (df[parameter] != parameter_max)].index)
-        except DuplicateSubmitionError as e:
-            print(e.message)
-            print(f"Skipping submission {submission_no}")
-            indexes = indexes.append(df.loc[df["submission"]==submission_no].index)
     return indexes
 
 def filter_samples(summary_df, pcmap_threshold=(0,100), **kwargs):
