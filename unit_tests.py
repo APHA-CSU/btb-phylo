@@ -32,6 +32,7 @@ class TestBuildSnpMatrix(unittest.TestCase):
                                 "Outcome":pd.Series(["A", "Pass", "Pass", "Pass", "Pass"], dtype="category"), 
                                 "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.5], dtype=float),
                                 "column_D":pd.Series([1, 2, 3, 4, 5], dtype=int)})
+        # TODO: test individual filters
         # test multiple filters
         outcome = build_snp_matrix.filter_samples(test_df, pcmap_threshold=(0.15, 0.45), 
                                                   column_A=["b", "c"], column_D=(1, 3)) 

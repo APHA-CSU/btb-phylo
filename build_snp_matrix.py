@@ -85,12 +85,15 @@ def filter_samples(df, pcmap_threshold=(0,100), **kwargs):
 
             pcmap_threshold (tuple): min and max thresholds for pcMapped
 
-            **kwargs (list): 0 or more optional arguments. Names must match
-            a column name in btb_wgs_samples.csv. Vales must be of type 
-            list, specifying a set of values to match against the argument 
+            **kwargs: 0 or more optional arguments. Names must match a 
+            column name in btb_wgs_samples.csv. If column is of type 
+            'categorical' or 'object', vales must be of type 'list' 
+            ispecifying a set of values to match against the argument 
             name's column in btb_wgs_samples.csv. For example, 
             'sample_name=["AFT-61-03769-21", "20-0620719"]' will include 
-            just these two samples.
+            just these two samples. If column is of type 'int' or 'float',
+            values must be of type 'tuple' and of length 2, specifying a 
+            min and max value for that column. 
 
         Returns:
             df (pandas dataframe object): a dataframe of 'Pass'
@@ -161,7 +164,7 @@ def append_multi_fasta(s3_uri, outfile):
 #TODO: unit test - use mocking
 def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
                       summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
-    summary_df = summary_csv_to_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY)
+    summary_df = summary_csv_to_df(bucket=bucket, summary_key=summary_key)
     summary_df = filter_samples(summary_df, pcmap_threshold=(80,100), **kwargs)
     summary_df = remove_duplicates(summary_df)   # - this potentially needs to be performed on the entire set to avoid duplicate samples across different trees i.e. higher up in the code
     summary_df.to_csv("/home/nickpestell/tmp/summary_test.csv")
