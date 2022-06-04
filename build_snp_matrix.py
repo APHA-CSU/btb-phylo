@@ -75,7 +75,7 @@ def get_indexes_to_remove(df, parameter):
                 (df[parameter] != parameter_max)].index)
     return indexes
 
-def filter_samples(df, pcmap_threshold=(0,100), **kwargs):
+def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     """ 
         Filters the sample summary dataframe which is based off 
         btb_wgs_samples.csv according to a set of criteria. 
@@ -100,15 +100,15 @@ def filter_samples(df, pcmap_threshold=(0,100), **kwargs):
             only samples filtered according to criteria set out in 
             arguments.
     """
-    df = filter_df_categorical(df, "Outcome", ["Pass"])
-    df = filter_df_numeric(df, "pcMapped", pcmap_threshold)
+    df = filter_columns_categorical(df, "Outcome", ["Pass"])
+    df = filter_columns_numeric(df, "pcMapped", pcmap_threshold)
     for column, values in kwargs.items():
         try:
             if pd.api.types.is_categorical_dtype(df[column]) or\
                     pd.api.types.is_object_dtype(df[column]):
-                df = filter_df_categorical(df, column, values)
+                df = filter_columns_categorical(df, column, values)
             elif pd.api.types.is_numeric_dtype(df[column]):
-                df = filter_df_numeric(df, column, values)
+                df = filter_columns_numeric(df, column, values)
         except KeyError as e:
             raise ValueError(f"Inavlid kwarg '{column}': must be one of: " 
                              f"{df.columns.to_list()}")
@@ -116,7 +116,7 @@ def filter_samples(df, pcmap_threshold=(0,100), **kwargs):
         raise Exception("0 samples meet specified criteria")
     return df
     
-def filter_df_numeric(df, column_name, values):
+def filter_columns_numeric(df, column_name, values):
     """ 
         Filters the summary dataframe according to the values in 
         'column_name' with min and max values defined by elements in
@@ -131,7 +131,7 @@ def filter_df_numeric(df, column_name, values):
     return df.loc[(df[column_name] > values[0]) & \
         (df[column_name] < values[1])].reset_index(drop=True)
 
-def filter_df_categorical(df, column_name, values):
+def filter_columns_categorical(df, column_name, values):
     """ 
         Filters the summary dataframe according to the values in 
         'column_name' retaining all rows which have summary_df[column_name]
@@ -143,6 +143,13 @@ def filter_df_categorical(df, column_name, values):
     if not isinstance(values, list):
         raise ValueError("Invalid kwarg value: must be of type list")
     return df.loc[df[column_name].isin(values)].reset_index(drop=True)
+
+def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, 
+                   pcmap_threshold=(0,100), **kwargs):
+    df = summary_csv_to_df(bucket=bucket, summary_key=summary_key)
+    df = filter_df(pcmap_threshold=(80,100), **kwargs)
+    df = remove_duplicates(df)
+    return df
 
 #TODO: unit test
 def append_multi_fasta(s3_uri, outfile):
@@ -162,35 +169,40 @@ def append_multi_fasta(s3_uri, outfile):
             outfile.write(consensus_file.read())
 
 #TODO: unit test - use mocking
-def build_multi_fasta(multi_fasta_path, bucket=DEFAULT_RESULTS_BUCKET,
+def build_multi_fasta(multi_fasta_path, df, bucket=DEFAULT_RESULTS_BUCKET,
                       summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
-    summary_df = summary_csv_to_df(bucket=bucket, summary_key=summary_key)
-    summary_df = filter_samples(summary_df, pcmap_threshold=(80,100), **kwargs)
-    summary_df = remove_duplicates(summary_df)   # - this potentially needs to be performed on the entire set to avoid duplicate samples across different trees i.e. higher up in the code
-    summary_df.to_csv("/home/nickpestell/tmp/summary_test.csv")
     with open(multi_fasta_path, 'wb') as outfile:
-        for _, sample in summary_df.iterrows():
+        for _, sample in df.iterrows():
             consensus_key = os.path.join(sample["results_prefix"], "consensus", 
                                          sample["sample_name"])
             append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
 
 #TODO: unit test maybe?
-def snps(output_path, multi_fasta_path):
+def snp_sites(output_prefix, multi_fasta_path):
     """
-        Run snp-sites on consensus files, then runs snp-dists on the results
+        Run snp-sites on consensus files
     """
     # run snp sites 
-    cmd = f'snp-sites {multi_fasta_path} -c -o {output_path}snpsites.fas'
+    cmd = f'snp-sites {multi_fasta_path} -c -o {output_prefix}_snpsites.fas'
     utils.run(cmd, shell=True)
 
+#TODO: unit test maybe?
+def snp_dists(output_prefix):
+    """
+        Run snp-dists
+    """
     # run snp-dists
-    cmd = f'snp-dists {output_path}snpsites.fas > {output_path}snps.tab'
+    cmd = f'snp-dists {output_prefix}_snpsites.fas > {output_path}_snps.tab'
     utils.run(cmd, shell=True)
 
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    build_multi_fasta(multi_fasta_path)
-    snps("/home/nickpestell/tmp/snps", multi_fasta_path)
+    output_prefix = "/home/nickpestell/tmp/snps"
+    samples_df = get_samples_df()
+    # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
+    build_multi_fasta(multi_fasta_path, samples_df)
+    snp_sites(output_prefix, multi_fasta_path)
+    snp_dists(output_prefix)
 
 if __name__ == "__main__":
     main()
