@@ -90,7 +90,7 @@ class TestBuildSnpMatrix(unittest.TestCase):
                                       "column_B":["B", "D"], "column_C":[0.2, 0.4], "column_D":[2, 4]}),
                                       check_dtype=False, check_categorical=False)
         # test empty output
-        self.assertTrue(build_snp_matrix.filter_coluns_categorical(test_df, "column_A", ["E", "F"]).empty)
+        self.assertTrue(build_snp_matrix.filter_columns_categorical(test_df, "column_A", ["E", "F"]).empty)
         # test exceptions
         with self.assertRaises(build_snp_matrix.InvalidDtype):
             build_snp_matrix.filter_columns_categorical(test_df, "column_C", [])
