@@ -125,11 +125,10 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     
 def filter_columns_numeric(df, **kwargs):
     """ 
-        Filters the summary dataframe according to the values in 
-        'column_name' with min and max values defined by elements in
-        'values'. The data in column name must me of dtype int or float
-        and the argument 'values' must be of type list or tuple and 
-        of length 2. 
+        Filters the summary dataframe according to kwargs, where keys
+        are the columns on which to filter and the values must be tuple 
+        of length 2 with min and max thresholds in elements 0 and 1. 
+        The data in column name must me of dtype int or float. 
     """ 
     for column_name in kwargs.keys():
         if not pd.api.types.is_numeric_dtype(df[column_name]):
@@ -140,9 +139,9 @@ def filter_columns_numeric(df, **kwargs):
 
 def filter_columns_categorical(df, **kwargs):
     """ 
-        Filters the summary dataframe according to the values in 
-        'column_name' retaining all rows which have summary_df[column_name]
-        matching one on the elements in the input list 'values'. 
+        Filters the summary dataframe according to kwargs, where keys
+        are the columns on which to filter and the values are lists containing
+        the values of df[kwarg[key]] to retain. 
     """ 
     for column_name in kwargs.keys():
         if not (pd.api.types.is_categorical_dtype(df[column_name]) or \
