@@ -75,7 +75,7 @@ def get_indexes_to_remove(df, parameter):
                 (df[parameter] != parameter_max)].index)
     return indexes
 
-def filter_samples(df, pcmap_threshold=(0,100), **kwargs):
+def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     """ 
         Filters the sample summary dataframe which is based off 
         btb_wgs_samples.csv according to a set of criteria. 
@@ -100,15 +100,15 @@ def filter_samples(df, pcmap_threshold=(0,100), **kwargs):
             only samples filtered according to criteria set out in 
             arguments.
     """
-    df = filter_df_categorical(df, "Outcome", ["Pass"])
-    df = filter_df_numeric(df, "pcMapped", pcmap_threshold)
+    df = filter_columns_categorical(df, "Outcome", ["Pass"])
+    df = filter_columns_numeric(df, "pcMapped", pcmap_threshold)
     for column, values in kwargs.items():
         try:
             if pd.api.types.is_categorical_dtype(df[column]) or\
                     pd.api.types.is_object_dtype(df[column]):
-                df = filter_df_categorical(df, column, values)
+                df = filter_columns_categorical(df, column, values)
             elif pd.api.types.is_numeric_dtype(df[column]):
-                df = filter_df_numeric(df, column, values)
+                df = filter_columns_numeric(df, column, values)
         except KeyError as e:
             raise ValueError(f"Inavlid kwarg '{column}': must be one of: " 
                              f"{df.columns.to_list()}")
@@ -116,7 +116,7 @@ def filter_samples(df, pcmap_threshold=(0,100), **kwargs):
         raise Exception("0 samples meet specified criteria")
     return df
     
-def filter_df_numeric(df, column_name, values):
+def filter_columns_numeric(df, column_name, values):
     """ 
         Filters the summary dataframe according to the values in 
         'column_name' with min and max values defined by elements in
@@ -131,7 +131,7 @@ def filter_df_numeric(df, column_name, values):
     return df.loc[(df[column_name] > values[0]) & \
         (df[column_name] < values[1])].reset_index(drop=True)
 
-def filter_df_categorical(df, column_name, values):
+def filter_columns_categorical(df, column_name, values):
     """ 
         Filters the summary dataframe according to the values in 
         'column_name' retaining all rows which have summary_df[column_name]
@@ -146,10 +146,10 @@ def filter_df_categorical(df, column_name, values):
 
 def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, 
                    pcmap_threshold=(0,100), **kwargs):
-    # df = remove_duplicates(filter_samples(summary_csv_to_df(bucket=bucket, summary_key=summary_key),
+    # df = remove_duplicates(filter_df(summary_csv_to_df(bucket=bucket, summary_key=summary_key),
     #                                       pcmap_threshold=(80,100), **kwargs))
     df = summary_csv_to_df(bucket=bucket, 
-                           summary_key=summary_key).pipe(filter_samples, pcmap_threshold=(80,100), 
+                           summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
                                                          **kwargs).pipe(remove_duplicates)
     return df
 
