@@ -43,7 +43,17 @@ class TestBuildSnpMatrix(unittest.TestCase):
         # test empty output
         with self.assertRaises(Exception):
             build_snp_matrix.filter_df(test_df, pcmap_threshold=(0.15, 0.45), 
-                                            column_A=["b", "c"], column_D=(2.5, 3))
+                                       column_A=["b", "c"], column_D=(2.5, 3))
+        # test exceptions
+        with self.assertRaises(ValueError):
+            # invalid kwarg name
+            build_snp_matrix.filter_df(test_df, foo="foo")
+            # invalid kwarg type: must be list
+            build_snp_matrix.filter_df(test_df, column_A="a")
+            build_snp_matrix.filter_df(test_df, Outcome=("A", "Pass"))
+            # invalid kwarg val: must be len(2)
+            build_snp_matrix.filter_df(test_df, column_D=(1, ))
+            build_snp_matrix.filter_df(test_df, column_D=(1, 2, 3))
 
     def test_filter_column_numeric(self):
         # define dataframe for input
@@ -52,26 +62,34 @@ class TestBuildSnpMatrix(unittest.TestCase):
                                 "column_C":pd.Series([0.1, 0.2, 0.3, 0.4], dtype=float),
                                 "column_D":pd.Series([1, 2, 3, 4,], dtype=int)})
         # test filter on float series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, "column_C", (0.1, 0.4)),
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, column_C=(0.1, 0.4)),
                                       pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
                                                     "column_C":[0.2, 0.3], "column_D":[2, 3]}),
-                                                    check_dtype=False, check_categorical=False)
+                                      check_dtype=False, check_categorical=False)
         # test filter on int series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, "column_D", (1, 4)),
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, 4)),
                                       pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
                                                     "column_C":[0.2, 0.3], "column_D":[2, 3]}),
-                                                    check_dtype=False, check_categorical=False)
+                                      check_dtype=False, check_categorical=False)
+        # test filter on multiple series
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, 4),
+                                                                              column_C=(0.2, 0.4)),
+                                      pd.DataFrame({"column_A":["c"], "column_B":["C"], 
+                                                    "column_C":[0.3], "column_D":[3]}),
+                                      check_dtype=False, check_categorical=False)
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, **{"column_D": (1, 4),
+                                                                              "column_C": (0.1, 0.3)}),
+                                      pd.DataFrame({"column_A":["b"], "column_B":["B"], 
+                                                    "column_C":[0.2], "column_D":[2]}),
+                                      check_dtype=False, check_categorical=False)
         # test empty output
-        self.assertTrue(build_snp_matrix.filter_columns_numeric(test_df, "column_D", (2, 3)).empty)
+        self.assertTrue(build_snp_matrix.filter_columns_numeric(test_df, column_D=(2, 3)).empty)
         # test exceptions
         with self.assertRaises(build_snp_matrix.InvalidDtype):
-            build_snp_matrix.filter_columns_numeric(test_df, "column_A", "foo")
-            build_snp_matrix.filter_columns_numeric(test_df, "column_B", "foo")
+            build_snp_matrix.filter_columns_numeric(test_df, column_A="foo")
+            build_snp_matrix.filter_columns_numeric(test_df, column_B="foo")
         with self.assertRaises(KeyError):
-            build_snp_matrix.filter_columns_numeric(test_df, "foo", "foo")
-        with self.assertRaises(ValueError):
-            build_snp_matrix.filter_columns_numeric(test_df, "column_D", (1, ))
-            build_snp_matrix.filter_columns_numeric(test_df, "column_D", (1, 2, 3))
+            build_snp_matrix.filter_columns_numeric(test_df, foo="foo")
 
     def test_filter_columns_categorical(self):
         # define dataframe for input
@@ -80,26 +98,34 @@ class TestBuildSnpMatrix(unittest.TestCase):
                                 "column_C":pd.Series([0.1, 0.2, 0.3, 0.4], dtype=float),
                                 "column_D":pd.Series([1, 2, 3, 4,], dtype=int)})
         # test filter on category series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, "column_A", ["a"]),
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, column_A=["a"]),
                                       pd.DataFrame({"column_A":["a"], "column_B":["A"], 
                                                     "column_C":[0.1], "column_D":[1]}),
-                                                    check_dtype=False, check_categorical=False)
+                                      check_dtype=False, check_categorical=False)
         # test filter on object series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, "column_B", 
-                                      ["B", "D"]), pd.DataFrame({"column_A":["b", "d"], 
-                                      "column_B":["B", "D"], "column_C":[0.2, 0.4], "column_D":[2, 4]}),
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, column_B=["B", "D"]),
+                                      pd.DataFrame({"column_A":["b", "d"], "column_B":["B", "D"], 
+                                                    "column_C":[0.2, 0.4], "column_D":[2, 4]}),
+                                      check_dtype=False, check_categorical=False)
+        # test filter on multiple series
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, column_B=["B", "D"],
+                                                                                  column_A=["a", "b"]),
+                                      pd.DataFrame({"column_A":["b"], "column_B":["B"], 
+                                                    "column_C":[0.2], "column_D":[2]}),
+                                      check_dtype=False, check_categorical=False)
+        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, **{"column_B": ["B", "D"],
+                                                                                  "column_A": ["c", "d"]}),
+                                      pd.DataFrame({"column_A":["d"], "column_B":["D"], 
+                                                    "column_C":[0.4], "column_D":[4]}),
                                       check_dtype=False, check_categorical=False)
         # test empty output
-        self.assertTrue(build_snp_matrix.filter_columns_categorical(test_df, "column_A", ["E", "F"]).empty)
+        self.assertTrue(build_snp_matrix.filter_columns_categorical(test_df, column_A=["E", "F"]).empty)
         # test exceptions
         with self.assertRaises(build_snp_matrix.InvalidDtype):
-            build_snp_matrix.filter_columns_categorical(test_df, "column_C", [])
-            build_snp_matrix.filter_columns_categorical(test_df, "column_D", [])
+            build_snp_matrix.filter_columns_categorical(test_df, column_C=[])
+            build_snp_matrix.filter_columns_categorical(test_df, column_D=[])
         with self.assertRaises(KeyError):
-            build_snp_matrix.filter_columns_categorical(test_df, "foo", "foo")
-        with self.assertRaises(ValueError):
-            build_snp_matrix.filter_columns_categorical(test_df, "column_A", 1)
-            build_snp_matrix.filter_columns_categorical(test_df, "column_B", (1, 2, 3))
+            build_snp_matrix.filter_columns_categorical(test_df, foo="foo")
 
     def test_build_multi_fasta(self):
         pass

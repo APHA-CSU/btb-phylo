@@ -100,23 +100,30 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
             only samples filtered according to criteria set out in 
             arguments.
     """
-    df = filter_columns_categorical(df, "Outcome", ["Pass"])
-    df = filter_columns_numeric(df, "pcMapped", pcmap_threshold)
-    for column, values in kwargs.items():
-        try:
-            if pd.api.types.is_categorical_dtype(df[column]) or\
-                    pd.api.types.is_object_dtype(df[column]):
-                df = filter_columns_categorical(df, column, values)
-            elif pd.api.types.is_numeric_dtype(df[column]):
-                df = filter_columns_numeric(df, column, values)
-        except KeyError as e:
-            raise ValueError(f"Inavlid kwarg '{column}': must be one of: " 
-                             f"{df.columns.to_list()}")
-    if df.empty:
+    categorical_kwargs = {"Outcome": ["Pass"]}
+    numerical_kwargs = {"pcMapped": pcmap_threshold}
+    for key, value in kwargs.items():
+        if key not in df.columns:
+            raise ValueError(f"Inavlid kwarg '{key}': must be one of: " 
+                             f"{', '.join(df.columns.to_list())}")
+        else:
+            if pd.api.types.is_categorical_dtype(df[key]) or \
+                    pd.api.types.is_object_dtype(df[key]):
+                if not isinstance(value, list):
+                    raise ValueError(f"Invalid kwarg '{key}': must be of type list")
+                categorical_kwargs[key] = kwargs[key]
+            else:
+                if len(value) != 2:
+                    raise ValueError(f"Invalid kwarg '{key}': must be of length 2")
+                numerical_kwargs[key] = kwargs[key]
+    df_filtered = df.pipe(filter_columns_categorical, 
+                          **categorical_kwargs).pipe(filter_columns_numeric, 
+                                                     **numerical_kwargs)
+    if df_filtered.empty:
         raise Exception("0 samples meet specified criteria")
-    return df
+    return df_filtered
     
-def filter_columns_numeric(df, column_name, values):
+def filter_columns_numeric(df, **kwargs):
     """ 
         Filters the summary dataframe according to the values in 
         'column_name' with min and max values defined by elements in
@@ -124,30 +131,28 @@ def filter_columns_numeric(df, column_name, values):
         and the argument 'values' must be of type list or tuple and 
         of length 2. 
     """ 
-    if not pd.api.types.is_numeric_dtype(df[column_name]):
-        raise InvalidDtype(dtype="float or int", column_name=column_name)
-    if len(values) != 2:
-        raise ValueError("pcmap_threshold must be of length 2")
-    return df.loc[(df[column_name] > values[0]) & \
-        (df[column_name] < values[1])].reset_index(drop=True)
+    for column_name in kwargs.keys():
+        if not pd.api.types.is_numeric_dtype(df[column_name]):
+            raise InvalidDtype(dtype="float or int", column_name=column_name)
+    query = ' and '.join(f'{col} > {vals[0]} and {col} < {vals[1]}' \
+        for col, vals in kwargs.items())
+    return df.query(query).reset_index(drop=True)
 
-def filter_columns_categorical(df, column_name, values):
+def filter_columns_categorical(df, **kwargs):
     """ 
         Filters the summary dataframe according to the values in 
         'column_name' retaining all rows which have summary_df[column_name]
         matching one on the elements in the input list 'values'. 
     """ 
-    if not (pd.api.types.is_categorical_dtype(df[column_name]) or \
+    for column_name in kwargs.keys():
+        if not (pd.api.types.is_categorical_dtype(df[column_name]) or \
             pd.api.types.is_object_dtype(df[column_name])):
-        raise InvalidDtype(dtype="category or object", column_name=column_name)
-    if not isinstance(values, list):
-        raise ValueError("Invalid kwarg value: must be of type list")
-    return df.loc[df[column_name].isin(values)].reset_index(drop=True)
+            raise InvalidDtype(dtype="category or object", column_name=column_name)
+    query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
+    return df.query(query).reset_index(drop=True)
 
 def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, 
                    pcmap_threshold=(0,100), **kwargs):
-    # df = remove_duplicates(filter_df(summary_csv_to_df(bucket=bucket, summary_key=summary_key),
-    #                                       pcmap_threshold=(80,100), **kwargs))
     df = summary_csv_to_df(bucket=bucket, 
                            summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
                                                          **kwargs).pipe(remove_duplicates)
@@ -194,7 +199,7 @@ def snp_dists(output_prefix):
         Run snp-dists
     """
     # run snp-dists
-    cmd = f'snp-dists {output_prefix}_snpsites.fas > {output_path}_snps.tab'
+    cmd = f'snp-dists {output_prefix}_snpsites.fas > {output_prefix}_snps.tab'
     utils.run(cmd, shell=True)
 
 def main():
