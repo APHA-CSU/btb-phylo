@@ -42,16 +42,9 @@ class TestBuildSnpMatrix(unittest.TestCase):
         with self.assertRaises(Exception):
             build_snp_matrix.filter_df(test_df, pcmap_threshold=(0.15, 0.45), 
                                        column_A=["b", "c"], column_D=(2.5, 3))
-        # test exceptions
         with self.assertRaises(ValueError):
             # invalid kwarg name
             build_snp_matrix.filter_df(test_df, foo="foo")
-            # invalid kwarg type: must be list
-            build_snp_matrix.filter_df(test_df, column_A="a")
-            build_snp_matrix.filter_df(test_df, Outcome=("A", "Pass"))
-            # invalid kwarg val: must be len(2)
-            build_snp_matrix.filter_df(test_df, column_D=(1, ))
-            build_snp_matrix.filter_df(test_df, column_D=(1, 2, 3))
 
     def test_filter_column_numeric(self):
         # define dataframe for input
@@ -84,6 +77,10 @@ class TestBuildSnpMatrix(unittest.TestCase):
             build_snp_matrix.filter_columns_numeric(test_df, column_B="foo")
         with self.assertRaises(KeyError):
             build_snp_matrix.filter_columns_numeric(test_df, foo="foo")
+        with self.assertRaises(ValueError):
+            # invalid kwarg val: must be len(2)
+            build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, ))
+            build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, 2, 3))
 
     def test_filter_columns_categorical(self):
         # define dataframe for input
@@ -116,6 +113,10 @@ class TestBuildSnpMatrix(unittest.TestCase):
             build_snp_matrix.filter_columns_categorical(test_df, column_D=[])
         with self.assertRaises(KeyError):
             build_snp_matrix.filter_columns_categorical(test_df, foo="foo")
+        with self.assertRaises(ValueError):
+            # invalid kwarg type: must be list
+            build_snp_matrix.filter_columns_categorical(test_df, column_A="a")
+            build_snp_matrix.filter_columns_categorical(test_df, column_B=("A", "Pass"))
 
     def test_build_multi_fasta(self):
         pass
