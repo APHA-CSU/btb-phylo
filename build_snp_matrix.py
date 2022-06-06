@@ -175,8 +175,7 @@ def append_multi_fasta(s3_uri, outfile):
             outfile.write(consensus_file.read())
 
 #TODO: unit test - use mocking
-def build_multi_fasta(multi_fasta_path, df, bucket=DEFAULT_RESULTS_BUCKET,
-                      summary_key=DEFAULT_SUMMARY_KEY, pcmap_threshold=(0,100), **kwargs):
+def build_multi_fasta(multi_fasta_path, df):
     with open(multi_fasta_path, 'wb') as outfile:
         for _, sample in df.iterrows():
             consensus_key = os.path.join(sample["results_prefix"], "consensus", 
