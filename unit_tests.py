@@ -1,6 +1,7 @@
 import unittest
 
 import pandas as pd
+import numpy.testing as nptesting
 
 import build_snp_matrix
 
@@ -13,9 +14,8 @@ class TestBuildSnpMatrix(unittest.TestCase):
         test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
                                 "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
         # test expected input
-        pd.testing.assert_frame_equal(build_snp_matrix.remove_duplicates(test_df, "pcMapped"),
-                                      pd.DataFrame({"submission":["2", "3"], "pcMapped":[0.4, 0.6]}),
-                                      check_dtype=False, check_categorical=False)
+        nptesting.assert_array_equal(build_snp_matrix.remove_duplicates(test_df, "pcMapped").values,
+                                     pd.DataFrame({"submission":["2", "3"], "pcMapped":[0.4, 0.6]}).values)
 
     def test_get_indexes_to_remove(self):
         # define dataframe for input
@@ -36,9 +36,8 @@ class TestBuildSnpMatrix(unittest.TestCase):
         # test multiple filters
         outcome = build_snp_matrix.filter_df(test_df, pcmap_threshold=(0.15, 0.45), 
                                                   column_A=["b", "c"], column_D=(1, 3)) 
-        pd.testing.assert_frame_equal(outcome, pd.DataFrame({"column_A":["b"], "Outcome":["Pass"],
-                                      "pcMapped":[0.2], "column_D":[2]}), check_dtype=False, 
-                                      check_categorical=False)
+        nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b"], "Outcome":["Pass"],
+                                     "pcMapped":[0.2], "column_D":[2]}).values)
         # test empty output
         with self.assertRaises(Exception):
             build_snp_matrix.filter_df(test_df, pcmap_threshold=(0.15, 0.45), 
@@ -61,26 +60,22 @@ class TestBuildSnpMatrix(unittest.TestCase):
                                 "column_C":pd.Series([0.1, 0.2, 0.3, 0.4], dtype=float),
                                 "column_D":pd.Series([1, 2, 3, 4,], dtype=int)})
         # test filter on float series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, column_C=(0.1, 0.4)),
-                                      pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
-                                                    "column_C":[0.2, 0.3], "column_D":[2, 3]}),
-                                      check_dtype=False, check_categorical=False)
+        nptesting.assert_array_equal(build_snp_matrix.filter_columns_numeric(test_df, column_C=(0.1, 0.4)).values,
+                                     pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
+                                                   "column_C":[0.2, 0.3], "column_D":[2, 3]}).values)
         # test filter on int series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, 4)),
+        nptesting.assert_array_equal(build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, 4)).values,
                                       pd.DataFrame({"column_A":["b", "c"], "column_B":["B", "C"], 
-                                                    "column_C":[0.2, 0.3], "column_D":[2, 3]}),
-                                      check_dtype=False, check_categorical=False)
+                                                    "column_C":[0.2, 0.3], "column_D":[2, 3]}).values)
         # test filter on multiple series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, 4),
-                                                                              column_C=(0.2, 0.4)),
-                                      pd.DataFrame({"column_A":["c"], "column_B":["C"], 
-                                                    "column_C":[0.3], "column_D":[3]}),
-                                      check_dtype=False, check_categorical=False)
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_numeric(test_df, **{"column_D": (1, 4),
-                                                                              "column_C": (0.1, 0.3)}),
-                                      pd.DataFrame({"column_A":["b"], "column_B":["B"], 
-                                                    "column_C":[0.2], "column_D":[2]}),
-                                      check_dtype=False, check_categorical=False)
+        nptesting.assert_array_equal(build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, 4),
+                                                                             column_C=(0.2, 0.4)).values,
+                                     pd.DataFrame({"column_A":["c"], "column_B":["C"], 
+                                                   "column_C":[0.3], "column_D":[3]}).values)
+        nptesting.assert_array_equal(build_snp_matrix.filter_columns_numeric(test_df, **{"column_D": (1, 4),
+                                                                             "column_C": (0.1, 0.3)}).values,
+                                     pd.DataFrame({"column_A":["b"], "column_B":["B"], 
+                                                   "column_C":[0.2], "column_D":[2]}).values)
         # test empty output
         self.assertTrue(build_snp_matrix.filter_columns_numeric(test_df, column_D=(2, 3)).empty)
         # test exceptions
@@ -97,26 +92,22 @@ class TestBuildSnpMatrix(unittest.TestCase):
                                 "column_C":pd.Series([0.1, 0.2, 0.3, 0.4], dtype=float),
                                 "column_D":pd.Series([1, 2, 3, 4,], dtype=int)})
         # test filter on category series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, column_A=["a"]),
-                                      pd.DataFrame({"column_A":["a"], "column_B":["A"], 
-                                                    "column_C":[0.1], "column_D":[1]}),
-                                      check_dtype=False, check_categorical=False)
+        nptesting.assert_array_equal(build_snp_matrix.filter_columns_categorical(test_df, column_A=["a"]).values,
+                                     pd.DataFrame({"column_A":["a"], "column_B":["A"], 
+                                                   "column_C":[0.1], "column_D":[1]}).values)
         # test filter on object series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, column_B=["B", "D"]),
-                                      pd.DataFrame({"column_A":["b", "d"], "column_B":["B", "D"], 
-                                                    "column_C":[0.2, 0.4], "column_D":[2, 4]}),
-                                      check_dtype=False, check_categorical=False)
+        nptesting.assert_array_equal(build_snp_matrix.filter_columns_categorical(test_df, column_B=["B", "D"]).values,
+                                     pd.DataFrame({"column_A":["b", "d"], "column_B":["B", "D"], 
+                                                   "column_C":[0.2, 0.4], "column_D":[2, 4]}).values)
         # test filter on multiple series
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, column_B=["B", "D"],
-                                                                                  column_A=["a", "b"]),
-                                      pd.DataFrame({"column_A":["b"], "column_B":["B"], 
-                                                    "column_C":[0.2], "column_D":[2]}),
-                                      check_dtype=False, check_categorical=False)
-        pd.testing.assert_frame_equal(build_snp_matrix.filter_columns_categorical(test_df, **{"column_B": ["B", "D"],
-                                                                                  "column_A": ["c", "d"]}),
-                                      pd.DataFrame({"column_A":["d"], "column_B":["D"], 
-                                                    "column_C":[0.4], "column_D":[4]}),
-                                      check_dtype=False, check_categorical=False)
+        nptesting.assert_array_equal(build_snp_matrix.filter_columns_categorical(test_df, column_B=["B", "D"],
+                                                                                  column_A=["a", "b"]).values,
+                                     pd.DataFrame({"column_A":["b"], "column_B":["B"], 
+                                                   "column_C":[0.2], "column_D":[2]}).values)
+        nptesting.assert_array_equal(build_snp_matrix.filter_columns_categorical(test_df, **{"column_B": ["B", "D"],
+                                                                                 "column_A": ["c", "d"]}).values,
+                                     pd.DataFrame({"column_A":["d"], "column_B":["D"], 
+                                                   "column_C":[0.4], "column_D":[4]}).values)
         # test empty output
         self.assertTrue(build_snp_matrix.filter_columns_categorical(test_df, column_A=["E", "F"]).empty)
         # test exceptions

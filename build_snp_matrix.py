@@ -47,7 +47,7 @@ def remove_duplicates(df, parameter="pcMapped"):
     """
         Drops duplicated submissions from df
     """
-    return df.drop(get_indexes_to_remove(df, parameter)).reset_index(drop=True)
+    return df.drop(get_indexes_to_remove(df, parameter))#.reset_index(drop=True)
 
 def get_indexes_to_remove(df, parameter):
     """
@@ -135,7 +135,7 @@ def filter_columns_numeric(df, **kwargs):
             raise InvalidDtype(dtype="float or int", column_name=column_name)
     query = ' and '.join(f'{col} > {vals[0]} and {col} < {vals[1]}' \
         for col, vals in kwargs.items())
-    return df.query(query).reset_index(drop=True)
+    return df.query(query)
 
 def filter_columns_categorical(df, **kwargs):
     """ 
@@ -148,7 +148,7 @@ def filter_columns_categorical(df, **kwargs):
             pd.api.types.is_object_dtype(df[column_name])):
             raise InvalidDtype(dtype="category or object", column_name=column_name)
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
-    return df.query(query).reset_index(drop=True)
+    return df.query(query)
 
 def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, 
                    pcmap_threshold=(0,100), **kwargs):
@@ -177,13 +177,14 @@ def append_multi_fasta(s3_uri, outfile):
 #TODO: unit test - use mocking
 def build_multi_fasta(multi_fasta_path, df):
     with open(multi_fasta_path, 'wb') as outfile:
-        for _, sample in df.iterrows():
+        for index, sample in df.iterrows():
             try:
                 consensus_key = os.path.join(sample["results_prefix"], "consensus", 
                                             sample["sample_name"])
                 append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
             except utils.NoS3ObjectError as e:
                 print(e.message)
+                print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
 
 #TODO: unit test maybe?
@@ -207,7 +208,7 @@ def snp_dists(output_prefix):
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     output_prefix = "/home/nickpestell/tmp/snps"
-    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v2.csv")
+    samples_df = get_samples_df()
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(output_prefix, multi_fasta_path)
