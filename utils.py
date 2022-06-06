@@ -1,10 +1,16 @@
 import subprocess
 import os
-import sys
-import errno
 
 import boto3
 import botocore
+
+class NoS3ObjectError(Exception):
+    def __init__(self, bucket, key):
+        super().__init__()
+        self.message = f"'{key}' does not exist in bucket '{bucket}'"
+
+    def __str__(self):
+        return self.message
 
 def s3_folder_exists(bucket, path):
     """
@@ -72,7 +78,7 @@ def s3_download_folder(bucket, key, dest):
         dest = os.path.join(dest, "")
         run(["aws", "s3", "cp", "--recursive", "s3://" + bucket + key, dest])
     else:
-        raise Exception("Path '{0}' does not exist in bucket '{1}'".format(key, bucket))
+        raise NoS3ObjectError(bucket, key)
 
 def s3_download_file(bucket, key, dest):
     """
@@ -83,7 +89,7 @@ def s3_download_file(bucket, key, dest):
         s3 = boto3.client('s3')
         s3.download_file(bucket, key, dest)
     else:
-        raise Exception("Path '{0}' does not exist in bucket '{1}'".format(key, bucket))
+        raise NoS3ObjectError(bucket, key)
 
 def list_s3_objects(bucket, prefix):
     """

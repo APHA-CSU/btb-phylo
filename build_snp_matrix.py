@@ -178,9 +178,13 @@ def append_multi_fasta(s3_uri, outfile):
 def build_multi_fasta(multi_fasta_path, df):
     with open(multi_fasta_path, 'wb') as outfile:
         for _, sample in df.iterrows():
-            consensus_key = os.path.join(sample["results_prefix"], "consensus", 
-                                         sample["sample_name"])
-            append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
+            try:
+                consensus_key = os.path.join(sample["results_prefix"], "consensus", 
+                                            sample["sample_name"])
+                append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
+            except utils.NoS3ObjectError as e:
+                print(e.message)
+                raise e
 
 #TODO: unit test maybe?
 def snp_sites(output_prefix, multi_fasta_path):
@@ -203,7 +207,7 @@ def snp_dists(output_prefix):
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     output_prefix = "/home/nickpestell/tmp/snps"
-    samples_df = get_samples_df()
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v2.csv")
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(output_prefix, multi_fasta_path)
