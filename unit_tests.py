@@ -1,4 +1,3 @@
-from subprocess import check_call
 import unittest
 
 import pandas as pd
