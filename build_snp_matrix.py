@@ -244,9 +244,10 @@ def snp_dists(output_prefix):
 def main():
     parser = argparse.ArgumentParser(description="btb-phylo")
     parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+    parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
     kwargs = vars(parser.parse_args())
-    multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    output_prefix = "/home/nickpestell/tmp/snps"
+    multi_fasta_path = "../test_multi_fasta.fas"
+    output_prefix = "../snps"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv", **kwargs)
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     build_multi_fasta(multi_fasta_path, samples_df)
