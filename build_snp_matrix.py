@@ -110,7 +110,7 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     numerical_kwargs = {"pcMapped": pcmap_threshold}
     for key in kwargs.keys():
         if key not in df.columns:
-            raise ValueError(f"Inavlid kwarg '{key}': must be one of: " 
+            raise ValueError(f"Invalid kwarg '{key}': must be one of: " 
                              f"{', '.join(df.columns.to_list())}")
         else:
             if pd.api.types.is_categorical_dtype(df[key]) or \
@@ -242,7 +242,7 @@ def snp_dists(output_prefix):
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     output_prefix = "/home/nickpestell/tmp/snps"
-    samples_df = get_samples_df()
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv")
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(output_prefix, multi_fasta_path)

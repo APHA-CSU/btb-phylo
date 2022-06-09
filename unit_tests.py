@@ -1,4 +1,8 @@
 import unittest
+import tempfile
+from unittest import mock
+import os
+import filecmp
 
 import pandas as pd
 import numpy.testing as nptesting
@@ -118,13 +122,23 @@ class TestBuildSnpMatrix(unittest.TestCase):
             build_snp_matrix.filter_columns_categorical(test_df, column_A="a")
             build_snp_matrix.filter_columns_categorical(test_df, column_B=("A", "Pass"))
 
+    def test_append_multi_fasta(self):
+        build_snp_matrix.utils.s3_download_file = mock.Mock()
+        with tempfile.TemporaryDirectory() as temp_dirname:
+            testfile_path = os.path.join(temp_dirname, "test.txt")
+            with mock.mock_open(read_data="hello world"):
+                build_snp_matrix.append_multi_fasta("foo", testfile_path)
+            self.assertTrue()
+
+        pass
+    
     def test_build_multi_fasta(self):
         pass
 
-    def test_append_multi_fasta(self):
+    def snp_sites(self):
         pass
-    
-    def test_snps(self):
+
+    def snp_dists(self):
         pass
 
 if __name__ == "__main__":
