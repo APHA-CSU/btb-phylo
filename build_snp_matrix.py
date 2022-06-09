@@ -1,6 +1,7 @@
 import tempfile
 import os
 import pandas as pd
+import argparse
 
 import utils
 
@@ -164,6 +165,7 @@ def filter_columns_categorical(df, **kwargs):
         # ensures that values are of type list
         if not isinstance(value, list):
             raise ValueError(f"Invalid kwarg '{column_name}': must be of type list")
+        # TODO: add warning if value doesn't exist
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] and 
     # sample_name in ["AFT-61-03769-21", "20-0620719"]. 
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
@@ -240,9 +242,12 @@ def snp_dists(output_prefix):
     utils.run(cmd, shell=True)
 
 def main():
+    parser = argparse.ArgumentParser(description="btb-phylo")
+    parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+    kwargs = vars(parser.parse_args())
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     output_prefix = "/home/nickpestell/tmp/snps"
-    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv")
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv", **kwargs)
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(output_prefix, multi_fasta_path)
