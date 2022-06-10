@@ -1,8 +1,5 @@
 import unittest
-import tempfile
 from unittest import mock
-import os
-import filecmp
 
 import pandas as pd
 import numpy.testing as nptesting
@@ -136,9 +133,12 @@ class TestBuildSnpMatrix(unittest.TestCase):
         mock_open =  mock.mock_open(read_data="hello world")
         with mock.patch("builtins.open", mock_open):
             build_snp_matrix.build_multi_fasta("foo", test_df)
-        calls = [unittest.mock.call("foo", "wb"), unittest.mock.call(unittest.mock.ANY, "rb"), 
-                 unittest.mock.call(unittest.mock.ANY, "rb"), unittest.mock.call(unittest.mock.ANY, "rb")]
-        mock_open.assert_has_calls(calls)
+        open_calls = [mock.call("foo", "wb"), mock.call(mock.ANY, "rb"), 
+                 mock.call(mock.ANY, "rb"),  mock.call(mock.ANY, "rb")]
+        mock_open.assert_has_calls(open_calls, any_order=True)
+        write_calls = [mock.call().write("hello world"), 
+                       mock.call().write("hello world"), mock.call().write("hello world")]
+        mock_open().write.assert_has_calls(write_calls)
     
     def snp_sites(self):
         pass
