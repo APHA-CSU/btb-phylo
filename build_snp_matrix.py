@@ -212,7 +212,7 @@ def build_multi_fasta(multi_fasta_path, df):
         for index, sample in df.iterrows():
             try:
                 consensus_key = os.path.join(sample["results_prefix"], "consensus", 
-                                            sample["sample_name"])
+                                             sample["sample_name"])
                 # appends sample's consensus sequence to multifasta
                 append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
             except utils.NoS3ObjectError as e:

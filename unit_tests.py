@@ -9,10 +9,17 @@ import numpy.testing as nptesting
 
 import build_snp_matrix
 
-class TestBuildSnpMatrix(unittest.TestCase):
-    def test_build_multi_fasta(self):
-        pass
+TEST_MULTIFASTA_PATH = "test_files/test_multifasta.fas"
 
+class TestBuildSnpMatrix(unittest.TestCase):
+#    @classmethod
+#    def setUpClass(cls):
+#        cls.test_multifasta_file = open(TEST_MULTIFASTA_PATH, 'r')
+#
+#    @classmethod
+#    def tearDownClass(cls):
+#        cls.test_multifasta_file.close()
+#
     def test_remove_duplicates(self):
         # define dataframe for input
         test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
@@ -122,19 +129,17 @@ class TestBuildSnpMatrix(unittest.TestCase):
             build_snp_matrix.filter_columns_categorical(test_df, column_A="a")
             build_snp_matrix.filter_columns_categorical(test_df, column_B=("A", "Pass"))
 
-    def test_append_multi_fasta(self):
-        build_snp_matrix.utils.s3_download_file = mock.Mock()
-        with tempfile.TemporaryDirectory() as temp_dirname:
-            testfile_path = os.path.join(temp_dirname, "test.txt")
-            with mock.mock_open(read_data="hello world"):
-                build_snp_matrix.append_multi_fasta("foo", testfile_path)
-            self.assertTrue()
-
-        pass
-    
     def test_build_multi_fasta(self):
-        pass
-
+        test_df = pd.DataFrame({"sample_name": ["A", "B", "C"], "results_prefix": ["a", "b", "c"], 
+                                "results_bucket": ["foo", "bar", "baz"]})
+        build_snp_matrix.utils.s3_download_file = mock.Mock()
+        mock_open =  mock.mock_open(read_data="hello world")
+        with mock.patch("builtins.open", mock_open):
+            build_snp_matrix.build_multi_fasta("foo", test_df)
+        calls = [unittest.mock.call("foo", "wb"), unittest.mock.call(unittest.mock.ANY, "rb"), 
+                 unittest.mock.call(unittest.mock.ANY, "rb"), unittest.mock.call(unittest.mock.ANY, "rb")]
+        mock_open.assert_has_calls(calls)
+    
     def snp_sites(self):
         pass
 
