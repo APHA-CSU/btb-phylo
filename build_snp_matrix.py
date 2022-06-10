@@ -209,10 +209,14 @@ def append_multi_fasta(s3_uri, outfile):
 def build_multi_fasta(multi_fasta_path, df):
     with open(multi_fasta_path, 'wb') as outfile:
         # loops through all samples to be included in phylogeny
+        count = 0
+        num_samples = len(df)
         for index, sample in df.iterrows():
+            count += 1
+            print(f"Downloading sample: {count} / {num_samples}", end="\r")
             try:
                 consensus_key = os.path.join(sample["results_prefix"], "consensus", 
-                                            sample["sample_name"])
+                                             sample["sample_name"])
                 # appends sample's consensus sequence to multifasta
                 append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
             except utils.NoS3ObjectError as e:
@@ -220,6 +224,7 @@ def build_multi_fasta(multi_fasta_path, df):
                 print(e.message)
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
+        print(f"Downloaded samples: {count} / {num_samples}")
 
 #TODO: unit test maybe?
 def snp_sites(output_prefix, multi_fasta_path):
