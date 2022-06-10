@@ -6,7 +6,6 @@ import numpy.testing as nptesting
 
 import build_snp_matrix
 
-TEST_MULTIFASTA_PATH = "test_files/test_multifasta.fas"
 
 class TestBuildSnpMatrix(unittest.TestCase):
     def test_remove_duplicates(self):

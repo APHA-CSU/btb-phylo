@@ -55,9 +55,9 @@ def get_indexes_to_remove(df, parameter):
         for duplicate submisions which should be excluded.
 
         Parameters:
-            df (pandas dataframe object): a dataframe read from btb_wgs_samples.csv
+            df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv
 
-            parameter (string): a column name from df on which to decide which 
+            parameter (str): a column name from df on which to decide which 
             duplicate to keep, e.g. keep the submission with the largest pcMapped
 
         Returns:
@@ -85,7 +85,7 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
         btb_wgs_samples.csv according to a set of criteria. 
 
         Parameters:
-            df (pandas dataframe object): a dataframe read from btb_wgs_samples.csv.
+            df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv.
 
             pcmap_threshold (tuple): min and max thresholds for pcMapped
 
@@ -100,9 +100,11 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
             min and max value for that column. 
 
         Returns:
-            df_filtered (pandas dataframe object): a dataframe of 'Pass'
+            df_filtered (pandas DataFrame object): a dataframe of 'Pass'
             only samples filtered according to criteria set out in 
             arguments.
+
+            ValueError: if any kwarg is not in df.columns  
     """
     # add "Pass" only samples and pcmap_theshold to the filtering 
     # criteria by default
@@ -130,6 +132,7 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
         raise Exception("0 samples meet specified criteria")
     return df_filtered
     
+# TODO: raise exception if second element is smaller than first
 def filter_columns_numeric(df, **kwargs):
     """ 
         Filters the summary dataframe according to kwargs, where keys
@@ -150,6 +153,7 @@ def filter_columns_numeric(df, **kwargs):
         for col, vals in kwargs.items())
     return df.query(query)
 
+# TODO: warning if any value is not in the specified column
 def filter_columns_categorical(df, **kwargs):
     """ 
         Filters the summary dataframe according to kwargs, where keys
@@ -184,7 +188,6 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
                                                          **kwargs).pipe(remove_duplicates)
     return df
 
-# TODO: unit test
 def append_multi_fasta(s3_uri, outfile):
     """
         Appends a multi fasta file with the consensus sequence stored at s3_uri
@@ -205,8 +208,23 @@ def append_multi_fasta(s3_uri, outfile):
         with open(consensus_filepath, 'rb') as consensus_file:
             outfile.write(consensus_file.read())
 
-#TODO: unit test - use mocking
 def build_multi_fasta(multi_fasta_path, df):
+    """
+        Builds the multi fasta constructed from consensus sequences for all 
+        samples in df
+
+        Parameters:
+            multi_fasta_path (str): path for location of multi fasta sequence
+            (appended consensus sequences for all samples)
+
+            df (pandas DataFrame object): dataframe containing s3_uri for 
+            consensus sequences of samples to be included in phylogeny
+
+        Raises:
+            utils.NoS3ObjectError: if the object cannot be found in the 
+            specified s3 bucket
+    
+    """
     with open(multi_fasta_path, 'wb') as outfile:
         # loops through all samples to be included in phylogeny
         for index, sample in df.iterrows():
