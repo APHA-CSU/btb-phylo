@@ -9,14 +9,6 @@ import build_snp_matrix
 TEST_MULTIFASTA_PATH = "test_files/test_multifasta.fas"
 
 class TestBuildSnpMatrix(unittest.TestCase):
-#    @classmethod
-#    def setUpClass(cls):
-#        cls.test_multifasta_file = open(TEST_MULTIFASTA_PATH, 'r')
-#
-#    @classmethod
-#    def tearDownClass(cls):
-#        cls.test_multifasta_file.close()
-#
     def test_remove_duplicates(self):
         # define dataframe for input
         test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
@@ -127,17 +119,31 @@ class TestBuildSnpMatrix(unittest.TestCase):
             build_snp_matrix.filter_columns_categorical(test_df, column_B=("A", "Pass"))
 
     def test_build_multi_fasta(self):
-        test_df = pd.DataFrame({"sample_name": ["A", "B", "C"], "results_prefix": ["a", "b", "c"], 
-                                "results_bucket": ["foo", "bar", "baz"]})
+        # test dataframe for input - 3 rows imitating three samples
+        test_df = pd.DataFrame({"sample_name": ["A", "B", "C", "D"], 
+                                "results_prefix": ["a", "b", "c", "d"], 
+                                "results_bucket": ["1", "2", "3", "4"]})
+        mock_open =  mock.mock_open()
+        # mock open.read() to return 4 mock consensus sequences
+        mock_open().read.side_effect=["AAA\nAAA", "TTT\nTTT", "CCC\nCCC", "GGG\nGGG"]
         build_snp_matrix.utils.s3_download_file = mock.Mock()
-        mock_open =  mock.mock_open(read_data="hello world")
+        # run build_multi_fasta() with a patched open and test_df
         with mock.patch("builtins.open", mock_open):
             build_snp_matrix.build_multi_fasta("foo", test_df)
-        open_calls = [mock.call("foo", "wb"), mock.call(mock.ANY, "rb"), 
-                 mock.call(mock.ANY, "rb"),  mock.call(mock.ANY, "rb")]
+        # calls to open to test against -> 1 call for the multifasta ("foo") 
+        # and 4 calls for each consensus sequence
+        open_calls = [mock.call("foo", "wb"), 
+                      mock.call(mock.ANY, "rb"), 
+                      mock.call(mock.ANY, "rb"),  
+                      mock.call(mock.ANY, "rb"), 
+                      mock.call(mock.ANY, "rb")]
+        # assert that open was called with open_calls
         mock_open.assert_has_calls(open_calls, any_order=True)
-        write_calls = [mock.call().write("hello world"), 
-                       mock.call().write("hello world"), mock.call().write("hello world")]
+        # assert that open.write() was called with mock consensus sequences
+        write_calls = [mock.call("AAA\nAAA"), 
+                       mock.call("TTT\nTTT"), 
+                       mock.call("CCC\nCCC"), 
+                       mock.call("GGG\nGGG")]
         mock_open().write.assert_has_calls(write_calls)
     
     def snp_sites(self):
