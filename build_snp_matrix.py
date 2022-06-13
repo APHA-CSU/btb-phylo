@@ -147,9 +147,9 @@ def filter_columns_numeric(df, **kwargs):
         # ensures that values are of length 2 (min & max)
         if len(value) != 2:
             raise ValueError(f"Invalid kwarg '{column_name}': must be of length 2")
-    # constructs a query string on which to query df; e.g. 'pcMapped > 90 and 
-    # pcMapped < 100 and GenomeCov > 80 and GenomveCov < 100'
-    query = ' and '.join(f'{col} > {vals[0]} and {col} < {vals[1]}' \
+    # constructs a query string on which to query df; e.g. 'pcMapped >= 90 and 
+    # pcMapped <= 100 and GenomeCov >= 80 and GenomveCov <= 100'
+    query = ' and '.join(f'{col} >= {vals[0]} and {col} <= {vals[1]}' \
         for col, vals in kwargs.items())
     return df.query(query)
 
