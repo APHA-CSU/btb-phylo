@@ -118,19 +118,20 @@ class TestBuildSnpMatrix(unittest.TestCase):
             build_snp_matrix.filter_columns_categorical(test_df, column_B=("A", "Pass"))
 
     def test_build_multi_fasta(self):
-        # test dataframe for input - 3 rows imitating three samples
+        # test dataframe for input - 4 rows imitating 4 samples
         test_df = pd.DataFrame({"sample_name": ["A", "B", "C", "D"], 
                                 "results_prefix": ["a", "b", "c", "d"], 
                                 "results_bucket": ["1", "2", "3", "4"]})
         mock_open =  mock.mock_open()
         # mock open.read() to return 4 mock consensus sequences
         mock_open().read.side_effect=["AAA\nAAA", "TTT\nTTT", "CCC\nCCC", "GGG\nGGG"]
+        # mock utils.s3_download_file
         build_snp_matrix.utils.s3_download_file = mock.Mock()
-        # run build_multi_fasta() with a patched open and test_df
+        # run build_multi_fasta() with test_df and a patched open
         with mock.patch("builtins.open", mock_open):
             build_snp_matrix.build_multi_fasta("foo", test_df)
-        # calls to open to test against -> 1 call for the multifasta ("foo") 
-        # and 4 calls for each consensus sequence
+        # calls to open to test against: 1 call for the output 
+        # multifasta ("foo") and 4 calls for each consensus sequence
         open_calls = [mock.call("foo", "wb"), 
                       mock.call(mock.ANY, "rb"), 
                       mock.call(mock.ANY, "rb"),  
