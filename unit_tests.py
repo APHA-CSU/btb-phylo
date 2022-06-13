@@ -24,7 +24,6 @@ class TestBuildSnpMatrix(unittest.TestCase):
         pd.testing.assert_index_equal(build_snp_matrix.get_indexes_to_remove(test_df, "pcMapped"),
                                       pd.Index([0, 1, 2, 4]), check_order=False)
 
-    # TODO: think of more test cases
     def test_filter_df(self):
         # define dataframe for input
         test_df = pd.DataFrame({"column_A":pd.Series(["a", "b", "c", "d", "e"], dtype="object"),
@@ -131,7 +130,12 @@ class TestBuildSnpMatrix(unittest.TestCase):
                                      pd.DataFrame({"column_A":["d"], "column_B":["D"], 
                                                    "column_C":[0.4], "column_D":[4]}).values)
         # test empty output
-        self.assertTrue(build_snp_matrix.filter_columns_categorical(test_df, column_A=["E", "F"]).empty)
+        self.assertTrue(build_snp_matrix.filter_columns_categorical(test_df, column_A=["a", "b"], 
+                                                                    column_B=["C", "D"]).empty)
+        # test warning
+        # kwarg value is missing in column
+        with self.assertWarns(Warning):
+            build_snp_matrix.filter_columns_categorical(test_df, column_A=["Z", "Y"], column_B=["x"])
         # test exceptions
         # invalid kwarg type
         with self.assertRaises(build_snp_matrix.InvalidDtype):

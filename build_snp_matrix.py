@@ -1,6 +1,7 @@
 import tempfile
 import os
 import pandas as pd
+import warnings
 
 import utils
 
@@ -168,9 +169,14 @@ def filter_columns_categorical(df, **kwargs):
         if not (pd.api.types.is_categorical_dtype(df[column_name]) or \
             pd.api.types.is_object_dtype(df[column_name])):
             raise InvalidDtype(dtype="category or object", column_name=column_name)
-        # ensures that values are of type list
+        # ensures that values are list of strings
         if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
             raise ValueError(f"Invalid kwarg '{column_name}': must be a list of strings")
+        # issues a warning if any value is missing from specified column
+        missing_values = [item for item in value if item not in list(df[column_name])]
+        if missing_values:
+            warnings.warn(f"Column '{column_name}' does not contain the values "
+                          f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] and 
     # sample_name in ["AFT-61-03769-21", "20-0620719"]. 
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
