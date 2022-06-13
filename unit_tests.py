@@ -29,9 +29,19 @@ class TestBuildSnpMatrix(unittest.TestCase):
     def test_filter_df(self):
         # define dataframe for input
         test_df = pd.DataFrame({"column_A":pd.Series(["a", "b", "c", "d", "e"], dtype="object"),
-                                "Outcome":pd.Series(["A", "Pass", "Pass", "Pass", "Pass"], dtype="category"), 
+                                "Outcome":pd.Series(["Fail", "Pass", "Pass", "Pass", "Pass"], dtype="category"), 
                                 "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.5], dtype=float),
                                 "column_D":pd.Series([1, 3, 5, 7, 9], dtype=int)})
+        # test individual filters
+        outcome = build_snp_matrix.filter_df(test_df, pcmap_threshold=(0.1, 0.3))
+        nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b", "c"], "Outcome":["Pass", "Pass"],
+                                     "pcMapped":[0.2, 0.3], "column_D":[3, 5]}).values)
+        outcome = build_snp_matrix.filter_df(test_df, column_A=["a", "e"])
+        nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["e"], "Outcome":["Pass"],
+                                     "pcMapped":[0.5], "column_D":[9]}).values)
+        outcome = build_snp_matrix.filter_df(test_df, column_D=(7, 10))
+        nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["d", "e"], "Outcome":["Pass", "Pass"],
+                                     "pcMapped":[0.4, 0.5], "column_D":[7, 9]}).values)
         # test multiple filters
         outcome = build_snp_matrix.filter_df(test_df, pcmap_threshold=(0.15, 0.45), 
                                                   column_A=["b", "c"], column_D=(2, 4)) 
