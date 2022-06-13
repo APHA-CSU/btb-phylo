@@ -169,8 +169,8 @@ def filter_columns_categorical(df, **kwargs):
             pd.api.types.is_object_dtype(df[column_name])):
             raise InvalidDtype(dtype="category or object", column_name=column_name)
         # ensures that values are of type list
-        if not isinstance(value, list):
-            raise ValueError(f"Invalid kwarg '{column_name}': must be of type list")
+        if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+            raise ValueError(f"Invalid kwarg '{column_name}': must be a list of strings")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] and 
     # sample_name in ["AFT-61-03769-21", "20-0620719"]. 
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())

@@ -145,9 +145,11 @@ class TestBuildSnpMatrix(unittest.TestCase):
         # invalid kwarg type: must be list
         with self.assertRaises(ValueError):
             build_snp_matrix.filter_columns_categorical(test_df, column_A="a")
-        # invalid kwarg type: must be list
         with self.assertRaises(ValueError):
             build_snp_matrix.filter_columns_categorical(test_df, column_B=("A", "Pass"))
+        # invalid kwarg type: must be list of strings
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_columns_categorical(test_df, column_A=[1, 2, 3])
 
     def test_build_multi_fasta(self):
         # test dataframe for input - 4 rows imitating 4 samples
