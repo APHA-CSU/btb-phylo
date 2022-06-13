@@ -144,12 +144,12 @@ def filter_columns_numeric(df, **kwargs):
         # ensures that column_names are of numeric type
         if not pd.api.types.is_numeric_dtype(df[column_name]):
             raise InvalidDtype(dtype="float or int", column_name=column_name)
-        # ensures that values are of length 2 (min & max)
-        if len(value) != 2:
-            raise ValueError(f"Invalid kwarg '{column_name}': must be of length 2")
-        if not type(value[0]) is float and not type(value[0]) is int or\
-            not type(value[1]) is float and not type(value[1]) is int:
-            raise ValueError(f"Invalid kwarg: '{column_name}': elements must be numeric")
+        # ensures that values are of length 2 (min & max) and numeric
+        if (not type(value) is list and not type(value) is tuple) or len(value) != 2 or \
+           (not type(value[0]) is float and not type(value[0]) is int) or\
+           (not type(value[1]) is float and not type(value[1]) is int):
+            raise ValueError(f"Invalid kwarg '{column_name}': must be list or tuple" 
+                              " of numeric type and length 2")
     # constructs a query string on which to query df; e.g. 'pcMapped >= 90 and 
     # pcMapped <= 100 and GenomeCov >= 80 and GenomveCov <= 100'
     query = ' and '.join(f'{col} >= {vals[0]} and {col} <= {vals[1]}' \

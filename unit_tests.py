@@ -50,20 +50,9 @@ class TestBuildSnpMatrix(unittest.TestCase):
         with self.assertRaises(Exception):
             build_snp_matrix.filter_df(test_df, pcmap_threshold=(0.15, 0.16), 
                                        column_A=["b", "c"], column_D=(2, 3))
+        # test invalid kwarg name
         with self.assertRaises(ValueError):
-            # test invalid kwarg name
             build_snp_matrix.filter_df(test_df, foo="foo")
-            # test invalid arg types
-        with self.assertRaises(ValueError):
-            build_snp_matrix.filter_df(test_df, column_A="a")
-        with self.assertRaises(ValueError):
-            build_snp_matrix.filter_df(test_df, column_A=("a","b"))
-        with self.assertRaises(ValueError):
-            build_snp_matrix.filter_df(test_df, column_D="foo")
-        with self.assertRaises(ValueError):
-            build_snp_matrix.filter_df(test_df, column_D=("foo",))
-        with self.assertRaises(ValueError):
-            build_snp_matrix.filter_df(test_df, column_D=("foo", "bar"))
 
     def test_filter_columns_numeric(self):
         # define dataframe for input
@@ -91,15 +80,32 @@ class TestBuildSnpMatrix(unittest.TestCase):
         # test empty output
         self.assertTrue(build_snp_matrix.filter_columns_numeric(test_df, column_C=(0.23, 0.24)).empty)
         # test exceptions
+        # invalid kwarg type
         with self.assertRaises(build_snp_matrix.InvalidDtype):
             build_snp_matrix.filter_columns_numeric(test_df, column_A="foo")
+        with self.assertRaises(build_snp_matrix.InvalidDtype):
             build_snp_matrix.filter_columns_numeric(test_df, column_B="foo")
+        # invlalid kwarg: is not in df.columns
         with self.assertRaises(KeyError):
             build_snp_matrix.filter_columns_numeric(test_df, foo="foo")
+        # invalid kwarg val: must be len(2)
         with self.assertRaises(ValueError):
-            # invalid kwarg val: must be len(2)
             build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, ))
+        with self.assertRaises(ValueError):
             build_snp_matrix.filter_columns_numeric(test_df, column_D=(1, 2, 3))
+        # invalid kwarg val: must be type list or tuple
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_columns_numeric(test_df, column_D=1)
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_columns_numeric(test_df, column_D="foo")
+        # invalid kwarg val: must be len(2)
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_columns_numeric(test_df, column_D=("foo",))
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_columns_numeric(test_df, column_D=("foo", "bar", "baz"))
+        # invalid kwarg val: elements must be numeric 
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_columns_numeric(test_df, column_D=("foo", "bar"))
 
     def test_filter_columns_categorical(self):
         # define dataframe for input
@@ -127,14 +133,20 @@ class TestBuildSnpMatrix(unittest.TestCase):
         # test empty output
         self.assertTrue(build_snp_matrix.filter_columns_categorical(test_df, column_A=["E", "F"]).empty)
         # test exceptions
+        # invalid kwarg type
         with self.assertRaises(build_snp_matrix.InvalidDtype):
             build_snp_matrix.filter_columns_categorical(test_df, column_C=[])
+        # invalid kwarg type
+        with self.assertRaises(build_snp_matrix.InvalidDtype):
             build_snp_matrix.filter_columns_categorical(test_df, column_D=[])
+        # invlalid kwarg: is not in df.columns
         with self.assertRaises(KeyError):
             build_snp_matrix.filter_columns_categorical(test_df, foo="foo")
+        # invalid kwarg type: must be list
         with self.assertRaises(ValueError):
-            # invalid kwarg type: must be list
             build_snp_matrix.filter_columns_categorical(test_df, column_A="a")
+        # invalid kwarg type: must be list
+        with self.assertRaises(ValueError):
             build_snp_matrix.filter_columns_categorical(test_df, column_B=("A", "Pass"))
 
     def test_build_multi_fasta(self):
