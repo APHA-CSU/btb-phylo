@@ -68,9 +68,9 @@ def get_indexes_to_remove(df, parameter):
     for submission_no in df.submission.unique():
         parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
         if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
-            print(f"Submision {submission_no} is duplicated and has the same {parameter} value\n"
-                    f"Skipping submision {submission_no}" )
-            # if duplicate submissions share the maximum paramter value add the all 
+            warnings.warn(f"Submision {submission_no} is duplicated and has the same "
+                          f"{parameter} value\nSkipping submision {submission_no}")
+            # if duplicate submissions share the maximum paramter value add all 
             # entries with submission_no to the list of indexes to remove
             indexes = indexes.append(df.loc[df["submission"]==submission_no].index)
         else:
@@ -148,16 +148,16 @@ def filter_columns_numeric(df, **kwargs):
         # ensures that values are of length 2 (min & max) and numeric
         if (not isinstance(value, list) and not isinstance(value,tuple)) or len(value) != 2 \
             or (not isinstance(value[0], float) and not isinstance(value[0], int)) \
-            or (not isinstance(value[1], float) and not isinstance(value[1], int)):
-            raise ValueError(f"Invalid kwarg '{column_name}': must be list or tuple" 
-                              " of numeric type and length 2")
+            or (not isinstance(value[1], float) and not isinstance(value[1], int)) \
+            or value[0] >= value[1]:
+            raise ValueError(f"Invalid kwarg '{column_name}': must be list or tuple of 2" 
+                              " numbers where the 2nd element is larger than the 1st")
     # constructs a query string on which to query df; e.g. 'pcMapped >= 90 and 
     # pcMapped <= 100 and GenomeCov >= 80 and GenomveCov <= 100'
     query = ' and '.join(f'{col} >= {vals[0]} and {col} <= {vals[1]}' \
         for col, vals in kwargs.items())
     return df.query(query)
 
-# TODO: warning if any value is not in the specified column
 def filter_columns_categorical(df, **kwargs):
     """ 
         Filters the summary dataframe according to kwargs, where keys
@@ -248,7 +248,6 @@ def build_multi_fasta(multi_fasta_path, df):
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
 
-#TODO: unit test maybe?
 def snp_sites(output_prefix, multi_fasta_path):
     """
         Run snp-sites on consensus files
@@ -257,7 +256,6 @@ def snp_sites(output_prefix, multi_fasta_path):
     cmd = f'snp-sites {multi_fasta_path} -c -o {output_prefix}_snpsites.fas'
     utils.run(cmd, shell=True)
 
-#TODO: unit test maybe?
 def snp_dists(output_prefix):
     """
         Run snp-dists

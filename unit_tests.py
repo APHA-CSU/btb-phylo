@@ -19,10 +19,15 @@ class TestBuildSnpMatrix(unittest.TestCase):
     def test_get_indexes_to_remove(self):
         # define dataframe for input
         test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.2, 0.6], dtype=float)})
         # test expected input
         pd.testing.assert_index_equal(build_snp_matrix.get_indexes_to_remove(test_df, "pcMapped"),
-                                      pd.Index([0, 1, 2, 4]), check_order=False)
+                                      pd.Index([0, 1, 2]), check_order=False)
+        # test warning
+        test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
+        with self.assertWarns(Warning):
+            build_snp_matrix.get_indexes_to_remove(test_df, "pcMapped")
 
     def test_filter_df(self):
         # define dataframe for input
@@ -105,6 +110,9 @@ class TestBuildSnpMatrix(unittest.TestCase):
         # invalid kwarg val: elements must be numeric 
         with self.assertRaises(ValueError):
             build_snp_matrix.filter_columns_numeric(test_df, column_D=("foo", "bar"))
+        # invalid kwarg val: elements must be in order min followed by max 
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_columns_numeric(test_df, column_D=(2, 1))
 
     def test_filter_columns_categorical(self):
         # define dataframe for input
@@ -191,4 +199,4 @@ class TestBuildSnpMatrix(unittest.TestCase):
         pass
 
 if __name__ == "__main__":
-    unittest.main()
+    unittest.main(buffer=True)

@@ -12,6 +12,7 @@ class NoS3ObjectError(Exception):
     def __str__(self):
         return self.message
 
+# TODO: remove if unused
 def s3_folder_exists(bucket, path):
     """
         Returns true if the folder is in the S3 bucket. False otherwise
@@ -67,6 +68,7 @@ def run(cmd, *args, **kwargs):
     if "capture_output" in kwargs and kwargs["capture_output"]:
         return ps.stdout.decode().strip('\n')
 
+# TODO: remove if unused
 def s3_download_folder(bucket, key, dest):
     """
         Downloads s3 folder at the key-bucket pair (strings) to dest 
