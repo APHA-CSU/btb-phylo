@@ -24,7 +24,6 @@ class TestBuildSnpMatrix(unittest.TestCase):
         pd.testing.assert_index_equal(build_snp_matrix.get_indexes_to_remove(test_df, "pcMapped"),
                                       pd.Index([0, 1, 2, 4]), check_order=False)
 
-    # TODO: test individual filters, i.e. with only one kwarg
     # TODO: think of more test cases
     def test_filter_df(self):
         # define dataframe for input
@@ -52,10 +51,21 @@ class TestBuildSnpMatrix(unittest.TestCase):
             build_snp_matrix.filter_df(test_df, pcmap_threshold=(0.15, 0.16), 
                                        column_A=["b", "c"], column_D=(2, 3))
         with self.assertRaises(ValueError):
-            # invalid kwarg name
+            # test invalid kwarg name
             build_snp_matrix.filter_df(test_df, foo="foo")
+            # test invalid arg types
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_df(test_df, column_A="a")
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_df(test_df, column_A=("a","b"))
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_df(test_df, column_D="foo")
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_df(test_df, column_D=("foo",))
+        with self.assertRaises(ValueError):
+            build_snp_matrix.filter_df(test_df, column_D=("foo", "bar"))
 
-    def test_filter_column_numeric(self):
+    def test_filter_columns_numeric(self):
         # define dataframe for input
         test_df = pd.DataFrame({"column_A":pd.Series(["a", "b", "c", "d"], dtype="category"),
                                 "column_B":pd.Series(["A", "B", "C", "D"], dtype=object), 
