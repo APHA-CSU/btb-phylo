@@ -145,9 +145,9 @@ def filter_columns_numeric(df, **kwargs):
         if not pd.api.types.is_numeric_dtype(df[column_name]):
             raise InvalidDtype(dtype="float or int", column_name=column_name)
         # ensures that values are of length 2 (min & max) and numeric
-        if (not type(value) is list and not type(value) is tuple) or len(value) != 2 or \
-           (not type(value[0]) is float and not type(value[0]) is int) or\
-           (not type(value[1]) is float and not type(value[1]) is int):
+        if (not isinstance(value, list) and not isinstance(value,tuple)) or len(value) != 2 \
+            or (not isinstance(value[0], float) and not isinstance(value[0], int)) \
+            or (not isinstance(value[1], float) and not isinstance(value[1], int)):
             raise ValueError(f"Invalid kwarg '{column_name}': must be list or tuple" 
                               " of numeric type and length 2")
     # constructs a query string on which to query df; e.g. 'pcMapped >= 90 and 
