@@ -1,6 +1,7 @@
 import tempfile
 import os
 import pandas as pd
+import warnings
 
 import utils
 
@@ -55,9 +56,9 @@ def get_indexes_to_remove(df, parameter):
         for duplicate submisions which should be excluded.
 
         Parameters:
-            df (pandas dataframe object): a dataframe read from btb_wgs_samples.csv
+            df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv
 
-            parameter (string): a column name from df on which to decide which 
+            parameter (str): a column name from df on which to decide which 
             duplicate to keep, e.g. keep the submission with the largest pcMapped
 
         Returns:
@@ -67,9 +68,9 @@ def get_indexes_to_remove(df, parameter):
     for submission_no in df.submission.unique():
         parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
         if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
-            print(f"Submision {submission_no} is duplicated and has the same {parameter} value\n"
-                    f"Skipping submision {submission_no}" )
-            # if duplicate submissions share the maximum paramter value add the all 
+            warnings.warn(f"Submision {submission_no} is duplicated and has the same "
+                          f"{parameter} value\nSkipping submision {submission_no}")
+            # if duplicate submissions share the maximum paramter value add all 
             # entries with submission_no to the list of indexes to remove
             indexes = indexes.append(df.loc[df["submission"]==submission_no].index)
         else:
@@ -85,7 +86,7 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
         btb_wgs_samples.csv according to a set of criteria. 
 
         Parameters:
-            df (pandas dataframe object): a dataframe read from btb_wgs_samples.csv.
+            df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv.
 
             pcmap_threshold (tuple): min and max thresholds for pcMapped
 
@@ -100,9 +101,11 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
             min and max value for that column. 
 
         Returns:
-            df_filtered (pandas dataframe object): a dataframe of 'Pass'
+            df_filtered (pandas DataFrame object): a dataframe of 'Pass'
             only samples filtered according to criteria set out in 
             arguments.
+
+            ValueError: if any kwarg is not in df.columns  
     """
     # add "Pass" only samples and pcmap_theshold to the filtering 
     # criteria by default
@@ -110,7 +113,7 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     numerical_kwargs = {"pcMapped": pcmap_threshold}
     for key in kwargs.keys():
         if key not in df.columns:
-            raise ValueError(f"Inavlid kwarg '{key}': must be one of: " 
+            raise ValueError(f"Invalid kwarg '{key}': must be one of: " 
                              f"{', '.join(df.columns.to_list())}")
         else:
             if pd.api.types.is_categorical_dtype(df[key]) or \
@@ -130,6 +133,7 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
         raise Exception("0 samples meet specified criteria")
     return df_filtered
     
+# TODO: raise exception if second element is smaller than first
 def filter_columns_numeric(df, **kwargs):
     """ 
         Filters the summary dataframe according to kwargs, where keys
@@ -141,12 +145,16 @@ def filter_columns_numeric(df, **kwargs):
         # ensures that column_names are of numeric type
         if not pd.api.types.is_numeric_dtype(df[column_name]):
             raise InvalidDtype(dtype="float or int", column_name=column_name)
-        # ensures that values are of length 2 (min & max)
-        if len(value) != 2:
-            raise ValueError(f"Invalid kwarg '{column_name}': must be of length 2")
-    # constructs a query string on which to query df; e.g. 'pcMapped > 90 and 
-    # pcMapped < 100 and GenomeCov > 80 and GenomveCov < 100'
-    query = ' and '.join(f'{col} > {vals[0]} and {col} < {vals[1]}' \
+        # ensures that values are of length 2 (min & max) and numeric
+        if (not isinstance(value, list) and not isinstance(value,tuple)) or len(value) != 2 \
+            or (not isinstance(value[0], float) and not isinstance(value[0], int)) \
+            or (not isinstance(value[1], float) and not isinstance(value[1], int)) \
+            or value[0] >= value[1]:
+            raise ValueError(f"Invalid kwarg '{column_name}': must be list or tuple of 2" 
+                              " numbers where the 2nd element is larger than the 1st")
+    # constructs a query string on which to query df; e.g. 'pcMapped >= 90 and 
+    # pcMapped <= 100 and GenomeCov >= 80 and GenomveCov <= 100'
+    query = ' and '.join(f'{col} >= {vals[0]} and {col} <= {vals[1]}' \
         for col, vals in kwargs.items())
     return df.query(query)
 
@@ -161,9 +169,14 @@ def filter_columns_categorical(df, **kwargs):
         if not (pd.api.types.is_categorical_dtype(df[column_name]) or \
             pd.api.types.is_object_dtype(df[column_name])):
             raise InvalidDtype(dtype="category or object", column_name=column_name)
-        # ensures that values are of type list
-        if not isinstance(value, list):
-            raise ValueError(f"Invalid kwarg '{column_name}': must be of type list")
+        # ensures that values are list of strings
+        if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+            raise ValueError(f"Invalid kwarg '{column_name}': must be a list of strings")
+        # issues a warning if any value is missing from specified column
+        missing_values = [item for item in value if item not in list(df[column_name])]
+        if missing_values:
+            warnings.warn(f"Column '{column_name}' does not contain the values "
+                          f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] and 
     # sample_name in ["AFT-61-03769-21", "20-0620719"]. 
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
@@ -184,7 +197,6 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
                                                          **kwargs).pipe(remove_duplicates)
     return df
 
-# TODO: unit test
 def append_multi_fasta(s3_uri, outfile):
     """
         Appends a multi fasta file with the consensus sequence stored at s3_uri
@@ -205,14 +217,29 @@ def append_multi_fasta(s3_uri, outfile):
         with open(consensus_filepath, 'rb') as consensus_file:
             outfile.write(consensus_file.read())
 
-#TODO: unit test - use mocking
 def build_multi_fasta(multi_fasta_path, df):
+    """
+        Builds the multi fasta constructed from consensus sequences for all 
+        samples in df
+
+        Parameters:
+            multi_fasta_path (str): path for location of multi fasta sequence
+            (appended consensus sequences for all samples)
+
+            df (pandas DataFrame object): dataframe containing s3_uri for 
+            consensus sequences of samples to be included in phylogeny
+
+        Raises:
+            utils.NoS3ObjectError: if the object cannot be found in the 
+            specified s3 bucket
+    
+    """
     with open(multi_fasta_path, 'wb') as outfile:
         # loops through all samples to be included in phylogeny
         for index, sample in df.iterrows():
             try:
                 consensus_key = os.path.join(sample["results_prefix"], "consensus", 
-                                            sample["sample_name"])
+                                             sample["sample_name"])
                 # appends sample's consensus sequence to multifasta
                 append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
             except utils.NoS3ObjectError as e:
@@ -221,7 +248,6 @@ def build_multi_fasta(multi_fasta_path, df):
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
 
-#TODO: unit test maybe?
 def snp_sites(output_prefix, multi_fasta_path):
     """
         Run snp-sites on consensus files
@@ -230,7 +256,6 @@ def snp_sites(output_prefix, multi_fasta_path):
     cmd = f'snp-sites {multi_fasta_path} -c -o {output_prefix}_snpsites.fas'
     utils.run(cmd, shell=True)
 
-#TODO: unit test maybe?
 def snp_dists(output_prefix):
     """
         Run snp-dists
@@ -242,7 +267,7 @@ def snp_dists(output_prefix):
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     output_prefix = "/home/nickpestell/tmp/snps"
-    samples_df = get_samples_df()
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv")
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(output_prefix, multi_fasta_path)
