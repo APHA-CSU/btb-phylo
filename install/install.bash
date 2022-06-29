@@ -14,6 +14,7 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     make \
     python3 \
     python3-pip \
+    wget \
     awscli
 
 pip3 install -r requirements.txt
@@ -28,3 +29,4 @@ cd $BIOTOOLS_PATH
 
 bash -e install-snp-sites.sh
 bash -e install-snp-dists.sh
+bash -e install-megacc.sh

@@ -264,6 +264,13 @@ def snp_dists(output_prefix):
     cmd = f'snp-dists {output_prefix}_snpsites.fas > {output_prefix}_snps.tab'
     utils.run(cmd, shell=True)
 
+def build_tree(output_prefix):
+    """
+        Run mega
+    """
+    cmd = f'megacc -a infer_MP.mao -d {output_prefix}_snpsites.fas -o {output_prefix}_'
+    utils.run(cmd, shell=True)
+
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     output_prefix = "/home/nickpestell/tmp/snps"
@@ -272,6 +279,7 @@ def main():
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(output_prefix, multi_fasta_path)
     snp_dists(output_prefix)
+    build_tree(output_prefix)
 
 if __name__ == "__main__":
     main()
