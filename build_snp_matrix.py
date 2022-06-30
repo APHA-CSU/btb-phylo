@@ -268,12 +268,12 @@ def build_tree(output_prefix):
     """
         Run mega
     """
-    cmd = f'megacc -a infer_MP.mao -d {output_prefix}_snpsites.fas -o {output_prefix}_'
+    cmd = f'megacc -a infer_MP.mao -d {output_prefix}_snpsites.fas -o {output_prefix}'
     utils.run(cmd, shell=True)
 
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    output_prefix = "/home/nickpestell/tmp/snps"
+    output_prefix = "/home/nickpestell/tmp/"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv")
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     build_multi_fasta(multi_fasta_path, samples_df)
