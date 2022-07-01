@@ -2,6 +2,7 @@ import tempfile
 import os
 import pandas as pd
 import warnings
+import re
 
 import utils
 
@@ -31,17 +32,14 @@ def summary_csv_to_df(bucket, summary_key):
     with tempfile.TemporaryDirectory() as temp_dirname:
         summary_filepath = os.path.join(temp_dirname, "samples.csv")
         utils.s3_download_file(bucket, summary_key, summary_filepath)
-        df = pd.read_csv(summary_filepath, dtype = {"sample_name":object,
-                         "submission":object, "project_code":"category",
-                         "sequencer":"category", "run_id":object,
-                         "well":"category", "read_1":object, "read_2":object, 
-                         "lane":"category", "batch_id":"category", 
-                         "reads_bucket":"category", "results_bucket":"category", 
-                         "results_prefix":object, "sequenced_datetime":object, 
+        df = pd.read_csv(summary_filepath, dtype = {"Sample":"category", 
                          "GenomeCov":float, "MeanDepth":float, "NumRawReads":int, 
                          "pcMapped":float, "Outcome":"category", "flag":"category",
                          "group":"category", "CSSTested":float, "matches":float,
-                         "mismatches":float, "noCoverage":float, "anomalous":float})
+                         "mismatches":float, "noCoverage":float, "anomalous":float,
+                         "Ncount":int, "submission":"object", 
+                         "ResultLoc":"category", "ID":"category",
+                         "TotalReads":int, "Abundance":float})
     return df
 
 def remove_duplicates(df, parameter="pcMapped"):
@@ -197,12 +195,14 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
                                                          **kwargs).pipe(remove_duplicates)
     return df
 
-def append_multi_fasta(s3_uri, outfile):
+def append_multi_fasta(s3_bucket, s3_key, outfile):
     """
         Appends a multi fasta file with the consensus sequence stored at s3_uri
         
         Parameters:
-            s3_uris (list of tuples): list of s3 bucket and key pairs in tuple
+            s3_bucket (string): s3 bucket of consensus file
+            
+            s3_key (string): s3 key of consensus file
 
             outfile (file object): file object refering to the multi fasta output
             file
@@ -212,7 +212,7 @@ def append_multi_fasta(s3_uri, outfile):
     with tempfile.TemporaryDirectory() as temp_dirname:
         consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
         # dowload consensus file from s3 to tempfile
-        utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
+        utils.s3_download_file(s3_bucket, s3_key, consensus_filepath)
         # writes to multifasta
         with open(consensus_filepath, 'rb') as consensus_file:
             outfile.write(consensus_file.read())
@@ -238,6 +238,7 @@ def build_multi_fasta(multi_fasta_path, df):
         # loops through all samples to be included in phylogeny
         for index, sample in df.iterrows():
             try:
+                s3_bucket = sample["ResultLoc"]
                 consensus_key = os.path.join(sample["results_prefix"], "consensus", 
                                              sample["sample_name"])
                 # appends sample's consensus sequence to multifasta
@@ -248,30 +249,55 @@ def build_multi_fasta(multi_fasta_path, df):
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
 
-def snp_sites(output_prefix, multi_fasta_path):
+# TODO: unittest
+def extract_s3_bucket(s3_uri):
+    """
+        Extracts s3_bucket name from an s3_uri using regex
+    """
+    pattern = r'^s3://s3-csu-\d{3,3}/'
+    matches = re.findall(pattern, s3_uri)
+    if matches:
+        sub_pattern = r's3-csu-\d{3,3}'
+        sub_matches = re.findall(sub_pattern, matches[0])
+    else:
+        raise Exception("Incorrectly formatted 'ResultLoc' parameter")
+    return sub_matches[0]
+
+def snp_sites(snp_sites_outpath, multi_fasta_path):
     """
         Run snp-sites on consensus files
     """
     # run snp sites 
-    cmd = f'snp-sites {multi_fasta_path} -c -o {output_prefix}_snpsites.fas'
+    cmd = f'snp-sites {multi_fasta_path} -c -o {snp_sites_outpath}'
     utils.run(cmd, shell=True)
 
-def snp_dists(output_prefix):
+def build_snp_matrix(snp_dists_outpath, snp_sites_outpath):
     """
         Run snp-dists
     """
     # run snp-dists
-    cmd = f'snp-dists {output_prefix}_snpsites.fas > {output_prefix}_snps.tab'
+    cmd = f'snp-dists {snp_sites_outpath} > {snp_dists_outpath}'
+    utils.run(cmd, shell=True)
+
+def build_tree(tree_path, snp_sites_outpath):
+    """
+        Run mega
+    """
+    cmd = f'megacc -a infer_MP.mao -d {snp_sites_outpath} -o {tree_path}'
     utils.run(cmd, shell=True)
 
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    output_prefix = "/home/nickpestell/tmp/snps"
+    results_path = "/home/nickpestell/tmp/"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv")
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
+    snp_sites_outpath = os.path.join(results_path, "snps.fas")
+    snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
+    tree_path = os.path.join(results_path, "mega")
     build_multi_fasta(multi_fasta_path, samples_df)
-    snp_sites(output_prefix, multi_fasta_path)
-    snp_dists(output_prefix)
+    snp_sites(snp_sites_outpath, multi_fasta_path)
+    build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
+    build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
     main()
