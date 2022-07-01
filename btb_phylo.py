@@ -278,7 +278,7 @@ def main():
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
-    tree_path = os.path.join(results_path, "megga")
+    tree_path = os.path.join(results_path, "mega")
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(snp_sites_outpath, multi_fasta_path)
     build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
