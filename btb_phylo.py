@@ -18,9 +18,17 @@ class InvalidDtype(Exception):
         if "column_name" in kwargs:
             self.message = f"Invalid series name '{kwargs['column_name']}'. Series must be of the correct type"
         if "column_name" in kwargs and "dtype" in kwargs:
-            self.message = f"Invalid series name '{kwargs['column_name']}' Series must be of type {kwargs['dtype']}"
+            self.message = f"Invalid series name '{kwargs['column_name']}'. Series must be of type {kwargs['dtype']}"
         else:
             self.message = message
+
+    def __str__(self):
+        return self.message
+
+class BadS3UriError(Exception):
+    def __init__(self, s3_uri):
+        super().__init__()
+        self.message = f"Incorrectly formatted s3 uri: '{s3_uri}'"
 
     def __str__(self):
         return self.message
@@ -32,14 +40,15 @@ def summary_csv_to_df(bucket, summary_key):
     with tempfile.TemporaryDirectory() as temp_dirname:
         summary_filepath = os.path.join(temp_dirname, "samples.csv")
         utils.s3_download_file(bucket, summary_key, summary_filepath)
-        df = pd.read_csv(summary_filepath, dtype = {"Sample":"category", 
-                         "GenomeCov":float, "MeanDepth":float, "NumRawReads":int, 
+        df = pd.read_csv(summary_filepath, comment="#", 
+                         dtype = {"Sample":"category", 
+                         "GenomeCov":float, "MeanDepth":float, "NumRawReads":float, 
                          "pcMapped":float, "Outcome":"category", "flag":"category",
                          "group":"category", "CSSTested":float, "matches":float,
                          "mismatches":float, "noCoverage":float, "anomalous":float,
-                         "Ncount":int, "submission":"object", 
+                         "Ncount":float, "submission":"object", 
                          "ResultLoc":"category", "ID":"category",
-                         "TotalReads":int, "Abundance":float})
+                         "TotalReads":float, "Abundance":float})
     return df
 
 def remove_duplicates(df, parameter="pcMapped"):
@@ -238,11 +247,11 @@ def build_multi_fasta(multi_fasta_path, df):
         # loops through all samples to be included in phylogeny
         for index, sample in df.iterrows():
             try:
-                s3_bucket = sample["ResultLoc"]
-                consensus_key = os.path.join(sample["results_prefix"], "consensus", 
-                                             sample["sample_name"])
+                # extract the bucket and key of consensus file from s3 uri
+                s3_bucket = extract_s3_bucket(sample["ResultLoc"])
+                consensus_key = extract_s3_key(sample["ResultLoc"], sample["Sample"])
                 # appends sample's consensus sequence to multifasta
-                append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
+                append_multi_fasta(s3_bucket, consensus_key, outfile)
             except utils.NoS3ObjectError as e:
                 # if consensus file can't be found in s3, btb_wgs_samples.csv must be corrupted
                 print(e.message)
@@ -260,7 +269,7 @@ def extract_s3_bucket(s3_uri):
         sub_pattern = r's3-csu-\d{3,3}'
         sub_matches = re.findall(sub_pattern, matches[0])
     else:
-        raise Exception("Incorrectly formatted 'ResultLoc' parameter")
+        raise BadS3UriError(s3_uri)
     return sub_matches[0]
 
 # TODO: unittest
@@ -269,7 +278,11 @@ def extract_s3_key(s3_uri, sample_name):
         Generates an s3 key from an s3 uri and filename
     """
     pattern = r'^s3://s3-csu-\d{3,3}/'
-    return os.path.join(re.sub(pattern, "", s3_uri), "consensus", sample_name)
+    matches = re.findall(pattern, s3_uri)
+    if not matches:
+        raise BadS3UriError(s3_uri)
+    return os.path.join(re.sub(pattern, "", s3_uri), 
+                        "consensus", f"{sample_name}_consensus.fas")
 
 def snp_sites(snp_sites_outpath, multi_fasta_path):
     """
@@ -297,7 +310,7 @@ def build_tree(tree_path, snp_sites_outpath):
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     results_path = "/home/nickpestell/tmp/"
-    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv")
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_v4.csv")
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
@@ -305,7 +318,7 @@ def main():
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(snp_sites_outpath, multi_fasta_path)
     build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
-    build_tree(tree_path, snp_sites_outpath)
+    #build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
     main()
