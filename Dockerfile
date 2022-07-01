@@ -22,4 +22,4 @@ RUN bash ./install/install.bash
 
 ################## ENTRY ######################
 
-CMD python build_snp_matrix.py
+CMD python btb_phylo.py

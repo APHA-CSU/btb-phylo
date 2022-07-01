@@ -248,38 +248,41 @@ def build_multi_fasta(multi_fasta_path, df):
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
 
-def snp_sites(output_prefix, multi_fasta_path):
+def snp_sites(snp_sites_outpath, multi_fasta_path):
     """
         Run snp-sites on consensus files
     """
     # run snp sites 
-    cmd = f'snp-sites {multi_fasta_path} -c -o {output_prefix}_snpsites.fas'
+    cmd = f'snp-sites {multi_fasta_path} -c -o {snp_sites_outpath}'
     utils.run(cmd, shell=True)
 
-def snp_dists(output_prefix):
+def build_snp_matrix(snp_dists_outpath, snp_sites_outpath):
     """
         Run snp-dists
     """
     # run snp-dists
-    cmd = f'snp-dists {output_prefix}_snpsites.fas > {output_prefix}_snps.tab'
+    cmd = f'snp-dists {snp_sites_outpath} > {snp_dists_outpath}'
     utils.run(cmd, shell=True)
 
-def build_tree(output_prefix):
+def build_tree(tree_path, snp_sites_outpath):
     """
         Run mega
     """
-    cmd = f'megacc -a infer_MP.mao -d {output_prefix}_snpsites.fas -o {output_prefix}'
+    cmd = f'megacc -a infer_MP.mao -d {snp_sites_outpath} -o {tree_path}'
     utils.run(cmd, shell=True)
 
 def main():
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    output_prefix = "/home/nickpestell/tmp/"
+    results_path = "/home/nickpestell/tmp/"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv")
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
+    snp_sites_outpath = os.path.join(results_path, "snps.fas")
+    snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
+    tree_path = os.path.join(results_path, "megga")
     build_multi_fasta(multi_fasta_path, samples_df)
-    snp_sites(output_prefix, multi_fasta_path)
-    snp_dists(output_prefix)
-    build_tree(output_prefix)
+    snp_sites(snp_sites_outpath, multi_fasta_path)
+    build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
+    build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
     main()
