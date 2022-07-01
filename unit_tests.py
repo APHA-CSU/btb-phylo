@@ -165,10 +165,13 @@ class TestBuildSnpMatrix(unittest.TestCase):
 
     def test_build_multi_fasta(self):
         # test dataframe for input - 4 rows imitating 4 samples
-        test_df = pd.DataFrame({"sample_name": ["A", "B", "C", "D"], 
-                                "results_prefix": ["a", "b", "c", "d"], 
-                                "results_bucket": ["1", "2", "3", "4"]})
+        test_df = pd.DataFrame({"Sample": ["A", "B", "C", "D"], 
+                                "ResultLoc": ["1", "2", "3", "4"]})
         mock_open =  mock.mock_open()
+        # mock extract_s3_bucket and extract_s3_key
+        # TODO: i think these mocks need to be in a context manager because they're persisting through to other test functions.
+        btb_phylo.extract_s3_bucket = mock.Mock(return_value="foo_bucket")
+        btb_phylo.extract_s3_key = mock.Mock(return_value="foo_key")
         # mock open.read() to return 4 mock consensus sequences
         mock_open().read.side_effect=["AAA\nAAA", "TTT\nTTT", "CCC\nCCC", "GGG\nGGG"]
         # mock utils.s3_download_file
@@ -192,10 +195,29 @@ class TestBuildSnpMatrix(unittest.TestCase):
                        mock.call("GGG\nGGG")]
         mock_open().write.assert_has_calls(write_calls)
     
-    def snp_sites(self):
+    def test_extract_s3_bucket(self):
+        # test good input
+        test_input = ["s3://s3-csu-003/abc/123/",
+                      "s3://s3-csu-123//5/1",
+                      "s3://s3-csu-001///"]
+        test_output = ["s3-csu-003",
+                       "s3-csu-123", 
+                       "s3-csu-001"] 
+        fail = False 
+        i = 0
+        for input, output in zip(test_input, test_output):
+            try:
+                self.assertEqual(btb_phylo.extract_s3_bucket(input), output)
+            except AssertionError as e:
+                i += 1
+                fail = True
+                print(f"Test failure {i}: ", e)
+        if fail: 
+            print(f"{i} test failures")
+            raise AssertionError
         pass
 
-    def snp_dists(self):
+    def test_extract_s3_key():
         pass
 
 if __name__ == "__main__":
