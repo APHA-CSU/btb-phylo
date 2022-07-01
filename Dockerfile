@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 
 ################## METADATA ##########################
 
-LABEL base.image=ubuntu:20.04
+LABEL base.image=ubuntu:22.04
 LABEL software="Bovine-TB Phylogeny Pipeline Image"
 LABEL about.summary="Bioinformatics Pipeline for post-processing of sequenced Bovine-TB data"
 LABEL about.documentation="https://github.com/APHA-CSU/btb-phylo"
@@ -22,4 +22,4 @@ RUN bash ./install/install.bash
 
 ################## ENTRY ######################
 
-CMD python build_snp_matrix.py
+CMD python btb_phylo.py
