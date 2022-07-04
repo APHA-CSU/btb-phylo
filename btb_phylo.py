@@ -284,8 +284,9 @@ def main():
     # pcmapped = column 18
     parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
     # genomecov = column 15
+    parser.add_argument("--genomecov", "-cov", dest="GenomeCov", type=float, nargs=2)
     # meandepth = column 16
-
+    parser.add_argument("--meandepth", "-dep", dest="MeanDepth", type=float, nargs=2)
     # parse agrs
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args
