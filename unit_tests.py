@@ -254,5 +254,4 @@ class TestBuildSnpMatrix(unittest.TestCase):
             btb_phylo.match_s3_uri('s3://s3-csu-1234/abc')
 
 if __name__ == "__main__":
-    #unittest.main(buffer=True)
-    unittest.main()
+    unittest.main(buffer=True)
