@@ -2,6 +2,7 @@ import tempfile
 import os
 import pandas as pd
 import warnings
+import argparse
 
 import utils
 
@@ -272,9 +273,12 @@ def build_tree(tree_path, snp_sites_outpath):
     utils.run(cmd, shell=True)
 
 def main():
+    parser = argparse.ArgumentParser(description="btb-phylo")
+    parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+    kwargs = vars(parser.parse_args())
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     results_path = "/home/nickpestell/tmp/"
-    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv")
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv", **kwargs)
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
