@@ -234,6 +234,25 @@ class TestBuildSnpMatrix(unittest.TestCase):
         if fail: 
             print(f"{i} test failures")
 
+    def test_match_s3_uri(self):
+        # test exceptions
+        with self.assertRaises(btb_phylo.BadS3UriError):
+            btb_phylo.match_s3_uri('s3://s3-csu-003')
+        with self.assertRaises(btb_phylo.BadS3UriError):
+            btb_phylo.match_s3_uri('s3://s3-csu-003abc')
+        with self.assertRaises(btb_phylo.BadS3UriError):
+            btb_phylo.match_s3_uri('s3://s3-csu-03/abc')
+        with self.assertRaises(btb_phylo.BadS3UriError):
+            btb_phylo.match_s3_uri('s3:/s3-csu-003/abc')
+        with self.assertRaises(btb_phylo.BadS3UriError):
+            btb_phylo.match_s3_uri('s4://s3-csu-003/abc')
+        with self.assertRaises(btb_phylo.BadS3UriError):
+            btb_phylo.match_s3_uri('s3://s5-abc-003/abc')
+        with self.assertRaises(btb_phylo.BadS3UriError):
+            btb_phylo.match_s3_uri('s3://s3-csu-abc/abc')
+        with self.assertRaises(btb_phylo.BadS3UriError):
+            btb_phylo.match_s3_uri('s3://s3-csu-1234/abc')
+
 if __name__ == "__main__":
     #unittest.main(buffer=True)
     unittest.main()

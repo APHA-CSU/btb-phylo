@@ -262,25 +262,34 @@ def extract_s3_bucket(s3_uri):
     """
         Extracts s3 bucket name from an s3 uri using regex
     """
-    pattern = r'^s3://s3-csu-\d{3,3}/'
-    matches = re.findall(pattern, s3_uri)
-    if matches:
-        sub_pattern = r's3-csu-\d{3,3}'
-        sub_matches = re.findall(sub_pattern, matches[0])
-    else:
-        raise BadS3UriError(s3_uri)
-    return sub_matches[0]
+    # confirm s3 uri is correct and remove key from s3 uri
+    sub_string = match_s3_uri(s3_uri)
+    pattern = r's3-csu-\d{3,3}'
+    # extract the bucket name
+    matches = re.findall(pattern, sub_string)
+    return matches[0]
 
 def extract_s3_key(s3_uri, sample_name):
     """
         Generates an s3 key from an s3 uri and filename
     """
+    # confirm s3 uri is correct 
+    _ = match_s3_uri(s3_uri)
     pattern = r'^s3://s3-csu-\d{3,3}/+'
+    # construct s3 key of consensus file
+    return os.path.join(re.sub(pattern, "", s3_uri), 
+                        "consensus", f"{sample_name}_consensus.fas")
+
+def match_s3_uri(s3_uri):
+    """
+        Returns a substring s3 uri substring with the s3 key stripped away. 
+        Raises BadS3UriError if the pattern is not found within the s3 uri.
+    """
+    pattern=r'^s3://s3-csu-\d{3,3}/+'
     matches = re.findall(pattern, s3_uri)
     if not matches:
         raise BadS3UriError(s3_uri)
-    return os.path.join(re.sub(pattern, "", s3_uri), 
-                        "consensus", f"{sample_name}_consensus.fas")
+    return matches[0]
 
 def snp_sites(snp_sites_outpath, multi_fasta_path):
     """
