@@ -130,8 +130,8 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     df_filtered = df.pipe(filter_columns_categorical, 
                           **categorical_kwargs).pipe(filter_columns_numeric, 
                                                      **numerical_kwargs)
-    if df_filtered.empty:
-        raise Exception("0 samples meet specified criteria")
+    if len(df_filtered) < 2:
+        raise Exception("1 or fewer samples meet specified criteria")
     return df_filtered
     
 # TODO: raise exception if second element is smaller than first
