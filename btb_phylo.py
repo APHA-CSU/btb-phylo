@@ -258,7 +258,6 @@ def build_multi_fasta(multi_fasta_path, df):
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
 
-# TODO: unittest
 def extract_s3_bucket(s3_uri):
     """
         Extracts s3 bucket name from an s3 uri using regex
@@ -272,12 +271,11 @@ def extract_s3_bucket(s3_uri):
         raise BadS3UriError(s3_uri)
     return sub_matches[0]
 
-# TODO: unittest
 def extract_s3_key(s3_uri, sample_name):
     """
         Generates an s3 key from an s3 uri and filename
     """
-    pattern = r'^s3://s3-csu-\d{3,3}/'
+    pattern = r'^s3://s3-csu-\d{3,3}/+'
     matches = re.findall(pattern, s3_uri)
     if not matches:
         raise BadS3UriError(s3_uri)

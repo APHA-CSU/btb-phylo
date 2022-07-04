@@ -194,30 +194,45 @@ class TestBuildSnpMatrix(unittest.TestCase):
                        mock.call("GGG\nGGG")]
         mock_open().write.assert_has_calls(write_calls)
     
-    #def test_extract_s3_bucket(self):
-    #    # test good input
-    #    test_input = ["s3://s3-csu-003/abc/123/",
-    #                  "s3://s3-csu-123//5/1",
-    #                  "s3://s3-csu-001///"]
-    #    test_output = ["s3-csu-003",
-    #                   "s3-csu-123", 
-    #                   "s3-csu-001"] 
-    #    fail = False 
-    #    i = 0
-    #    for input, output in zip(test_input, test_output):
-    #        try:
-    #            self.assertEqual(btb_phylo.extract_s3_bucket(input), output)
-    #        except AssertionError as e:
-    #            i += 1
-    #            fail = True
-    #            print(f"Test failure {i}: ", e)
-    #    if fail: 
-    #        print(f"{i} test failures")
-    #        raise AssertionError
-    #    pass
+    def test_extract_s3_bucket(self):
+        # test good input
+        test_input = ["s3://s3-csu-003/abc/123/",
+                      "s3://s3-csu-123//5/1",
+                      "s3://s3-csu-001///"]
+        test_output = ["s3-csu-003",
+                       "s3-csu-123", 
+                       "s3-csu-001"] 
+        fail = False 
+        i = 0
+        for input, output in zip(test_input, test_output):
+            try:
+                self.assertEqual(btb_phylo.extract_s3_bucket(input), output)
+            except AssertionError as e:
+                i += 1
+                fail = True
+                print(f"Test failure {i}: ", e)
+        if fail: 
+            print(f"{i} test failures")
 
     def test_extract_s3_key(self):
-        pass
+        # test good input
+        test_input = [("s3://s3-csu-003/abc/123/", "foo"),
+                      ("s3://s3-csu-123//5/1", "bar"),
+                      ("s3://s3-csu-001///", "baz")]
+        test_output = ["abc/123/consensus/foo_consensus.fas",
+                       "5/1/consensus/bar_consensus.fas", 
+                       "consensus/baz_consensus.fas"] 
+        fail = False 
+        i = 0
+        for input, output in zip(test_input, test_output):
+            try:
+                self.assertEqual(btb_phylo.extract_s3_key(input[0], input[1]), output)
+            except AssertionError as e:
+                i += 1
+                fail = True
+                print(f"Test failure {i}: ", e)
+        if fail: 
+            print(f"{i} test failures")
 
 if __name__ == "__main__":
     #unittest.main(buffer=True)
