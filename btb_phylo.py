@@ -274,7 +274,8 @@ def build_tree(tree_path, snp_sites_outpath):
 
 def main():
     parser = argparse.ArgumentParser(description="btb-phylo")
-    parser.add_argument("--clade", "-c", dest="group", required=False, type=str, nargs="+")
+    parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+    parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
     parsed = vars(parser.parse_args())
     # remove unused parameters
     kwargs = {k: v for k, v in parsed.items() if v is not None}
