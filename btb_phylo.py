@@ -274,8 +274,10 @@ def build_tree(tree_path, snp_sites_outpath):
 
 def main():
     parser = argparse.ArgumentParser(description="btb-phylo")
-    parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
-    kwargs = vars(parser.parse_args())
+    parser.add_argument("--clade", "-c", dest="group", required=False, type=str, nargs="+")
+    parsed = vars(parser.parse_args())
+    # remove unused parameters
+    kwargs = {k: v for k, v in parsed.items() if v is not None}
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     results_path = "/home/nickpestell/tmp/"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv", **kwargs)
@@ -286,7 +288,7 @@ def main():
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(snp_sites_outpath, multi_fasta_path)
     build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
-    build_tree(tree_path, snp_sites_outpath)
+    #build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
     main()
