@@ -273,12 +273,15 @@ def build_tree(tree_path, snp_sites_outpath):
     utils.run(cmd, shell=True)
 
 def main():
-    parser = argparse.ArgumentParser(description="btb-phylo")
-    parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
-    parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
-    parsed = vars(parser.parse_args())
+    filter_parser = argparse.ArgumentParser(description="filtering parameters")
+    filter_parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+    filter_parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
+    parsed_filter = vars(filter_parser.parse_args())
     # remove unused parameters
-    kwargs = {k: v for k, v in parsed.items() if v is not None}
+    kwargs = {k: v for k, v in parsed_filter.items() if v is not None}
+    #run_parser = argparse.ArgumentParser(description="run parameters")
+    #run_parser.add_argument("results_path", help="path to results directory")
+    #run_args = run_parser.parse_args()
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     results_path = "/home/nickpestell/tmp/"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv", **kwargs)
