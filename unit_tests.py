@@ -163,19 +163,18 @@ class TestBuildSnpMatrix(unittest.TestCase):
         with self.assertRaises(ValueError):
             btb_phylo.filter_columns_categorical(test_df, column_A=[1, 2, 3])
 
-    def test_build_multi_fasta(self):
+    @mock.patch("btb_phylo.utils.s3_download_file")
+    @mock.patch("btb_phylo.extract_s3_bucket")
+    @mock.patch("btb_phylo.extract_s3_key")
+    def test_build_multi_fasta(self, _, mock_extract_s3_bucket, mock_extract_s3_key):
+        mock_extract_s3_bucket.return_value = "foo_bucket"
+        mock_extract_s3_key.return_value = "foo_key"
         # test dataframe for input - 4 rows imitating 4 samples
         test_df = pd.DataFrame({"Sample": ["A", "B", "C", "D"], 
                                 "ResultLoc": ["1", "2", "3", "4"]})
         mock_open =  mock.mock_open()
-        # mock extract_s3_bucket and extract_s3_key
-        # TODO: i think these mocks need to be in a context manager because they're persisting through to other test functions.
-        btb_phylo.extract_s3_bucket = mock.Mock(return_value="foo_bucket")
-        btb_phylo.extract_s3_key = mock.Mock(return_value="foo_key")
         # mock open.read() to return 4 mock consensus sequences
         mock_open().read.side_effect=["AAA\nAAA", "TTT\nTTT", "CCC\nCCC", "GGG\nGGG"]
-        # mock utils.s3_download_file
-        btb_phylo.utils.s3_download_file = mock.Mock()
         # run build_multi_fasta() with test_df and a patched open
         with mock.patch("builtins.open", mock_open):
             btb_phylo.build_multi_fasta("foo", test_df)
@@ -195,30 +194,31 @@ class TestBuildSnpMatrix(unittest.TestCase):
                        mock.call("GGG\nGGG")]
         mock_open().write.assert_has_calls(write_calls)
     
-    def test_extract_s3_bucket(self):
-        # test good input
-        test_input = ["s3://s3-csu-003/abc/123/",
-                      "s3://s3-csu-123//5/1",
-                      "s3://s3-csu-001///"]
-        test_output = ["s3-csu-003",
-                       "s3-csu-123", 
-                       "s3-csu-001"] 
-        fail = False 
-        i = 0
-        for input, output in zip(test_input, test_output):
-            try:
-                self.assertEqual(btb_phylo.extract_s3_bucket(input), output)
-            except AssertionError as e:
-                i += 1
-                fail = True
-                print(f"Test failure {i}: ", e)
-        if fail: 
-            print(f"{i} test failures")
-            raise AssertionError
-        pass
+    #def test_extract_s3_bucket(self):
+    #    # test good input
+    #    test_input = ["s3://s3-csu-003/abc/123/",
+    #                  "s3://s3-csu-123//5/1",
+    #                  "s3://s3-csu-001///"]
+    #    test_output = ["s3-csu-003",
+    #                   "s3-csu-123", 
+    #                   "s3-csu-001"] 
+    #    fail = False 
+    #    i = 0
+    #    for input, output in zip(test_input, test_output):
+    #        try:
+    #            self.assertEqual(btb_phylo.extract_s3_bucket(input), output)
+    #        except AssertionError as e:
+    #            i += 1
+    #            fail = True
+    #            print(f"Test failure {i}: ", e)
+    #    if fail: 
+    #        print(f"{i} test failures")
+    #        raise AssertionError
+    #    pass
 
-    def test_extract_s3_key():
+    def test_extract_s3_key(self):
         pass
 
 if __name__ == "__main__":
-    unittest.main(buffer=True)
+    #unittest.main(buffer=True)
+    unittest.main()
