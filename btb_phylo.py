@@ -273,26 +273,29 @@ def build_tree(tree_path, snp_sites_outpath):
     utils.run(cmd, shell=True)
 
 def main():
-    filter_parser = argparse.ArgumentParser(description="filtering parameters")
-    filter_parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
-    filter_parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
-    parsed_filter = vars(filter_parser.parse_args())
-    # remove unused parameters
-    kwargs = {k: v for k, v in parsed_filter.items() if v is not None}
-    #run_parser = argparse.ArgumentParser(description="run parameters")
-    #run_parser.add_argument("results_path", help="path to results directory")
-    #run_args = run_parser.parse_args()
+    parser = argparse.ArgumentParser(description="filtering parameters")
+    parser.add_argument("results_path", help="path to results directory")
+    parser.add_argument("--build_tree", action="store_true", default=False)
+    parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+    parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
+    # parse agrs
+    clargs = vars(parser.parse_args())
+    # retreive "non-filtering" args
+    results_path = clargs.pop("results_path")
+    tree = clargs.pop("build_tree")
+    # remove unused filtering args
+    kwargs = {k: v for k, v in clargs.items() if v is not None}
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    results_path = "/home/nickpestell/tmp/"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv", **kwargs)
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
-    tree_path = os.path.join(results_path, "mega")
     build_multi_fasta(multi_fasta_path, samples_df)
     snp_sites(snp_sites_outpath, multi_fasta_path)
     build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
-    #build_tree(tree_path, snp_sites_outpath)
+    if tree:
+        tree_path = os.path.join(results_path, "mega")
+        build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
     main()
