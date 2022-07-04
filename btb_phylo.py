@@ -81,6 +81,7 @@ def get_indexes_to_remove(df, parameter):
                 (df[parameter] != parameter_max)].index)
     return indexes
 
+# TODO Add a informative error for when samples do not pass standard QC
 def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     """ 
         Filters the sample summary dataframe which is based off 
@@ -274,16 +275,24 @@ def build_tree(tree_path, snp_sites_outpath):
 
 def main():
     filter_parser = argparse.ArgumentParser(description="filtering parameters")
+    # sample_name = column 1 in csv
+    filter_parser.add_argument("--sampleID", "-s", dest="sample_name", type=str, nargs="+")
+    # clade = column 21
     filter_parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+    # pcmapped = column 18
     filter_parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
+    # genomecov = column 15
+
+    # meandepth = column 16
+
     parsed_filter = vars(filter_parser.parse_args())
     # remove unused parameters
     kwargs = {k: v for k, v in parsed_filter.items() if v is not None}
     #run_parser = argparse.ArgumentParser(description="run parameters")
     #run_parser.add_argument("results_path", help="path to results directory")
     #run_args = run_parser.parse_args()
-    multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    results_path = "/home/nickpestell/tmp/"
+    multi_fasta_path = "../test_multi_fasta.fas"
+    results_path = "../"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv", **kwargs)
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
