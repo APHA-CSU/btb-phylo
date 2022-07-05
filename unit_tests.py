@@ -1,13 +1,15 @@
 import unittest
 from unittest import mock
+import argparse
 
 import pandas as pd
 import numpy.testing as nptesting
 
 import btb_phylo 
+import update_summary
 
 
-class TestBuildSnpMatrix(unittest.TestCase):
+class TestBtbPhylo(unittest.TestCase):
     def test_remove_duplicates(self):
         # define dataframe for input
         test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
@@ -253,5 +255,106 @@ class TestBuildSnpMatrix(unittest.TestCase):
         with self.assertRaises(btb_phylo.BadS3UriError):
             btb_phylo.match_s3_uri('s3://s3-csu-1234/abc')
 
+class TestUpdateSummary(unittest.TestCase):
+    def test_extract_submission_no(self):
+        # Test cases
+        test_input = ["AFxx-12-34567-89",
+                      "ATxx-12-34567-89",
+                      "AFx-12-34567-89",
+                      "Ax-12-34567-89",
+                      "AF-12-34567-89",
+                      "AFx12-34567-89",
+                      "HI-12-34567-89",
+                      "12-34567-89-1L",
+                      "12-34567-89-L1",
+                      "A-12-34567-89",
+                      "12-34567-89-1",
+                      "12-34567-89-L",
+                      "12-34567-89",
+                      "AFxx-12-3456-89",
+                      "ATxx-12-3456-89",
+                      "AFx-12-3456-89",
+                      "Ax-12-3456-89",
+                      "AF-12-3456-89",
+                      "AFx12-3456-89",
+                      "HI-12-3456-89",
+                      "12-3456-89-1L",
+                      "12-3456-89-L1",
+                      "A-12-3456-89",
+                      "12-3456-89-1",
+                      "12-3456-89-L",
+                      "12-3456-89",
+                      "12345678",
+                      "ABCDEFGH",
+                      ""]
+        test_output = ["12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-34567-89",
+                       "12-3456-89",
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12-3456-89", 
+                       "12345678", 
+                       "ABCDEFGH", 
+                       ""] 
+        fail = False 
+        i = 0
+        for input, output in zip(test_input, test_output):
+            try:
+                self.assertEqual(update_summary.extract_submission_no(input), output)
+            except AssertionError as e:
+                i += 1
+                fail = True
+                print(f"Test failure {i}: ", e)
+        if fail: 
+            print(f"{i} test failures")
+            raise AssertionError
+
+def test_suit(test_objs):
+    suit = unittest.TestSuite(test_objs)
+    return suit
+
 if __name__ == "__main__":
-    unittest.main(buffer=True)
+    btb_phylo_test = [TestBtbPhylo('test_remove_duplicates'),
+                        TestBtbPhylo('test_get_indexes_to_remove'),
+                        TestBtbPhylo('test_filter_df'),
+                        TestBtbPhylo('test_filter_columns_numeric'),
+                        TestBtbPhylo('test_filter_columns_categorical'),
+                        TestBtbPhylo('test_build_multi_fasta'),
+                        TestBtbPhylo('test_extract_s3_bucket'),
+                        TestBtbPhylo('test_match_s3_uri')]
+    update_summary_test = [TestUpdateSummary('test_extract_submission_no')]
+    runner = unittest.TextTestRunner()
+    parser = argparse.ArgumentParser(description='Test code')
+    module_arg = parser.add_argument('--module', '-m', nargs=1, 
+                                     help="module to test: 'btb_phylo' or 'update_summary'",
+                                     default=None)
+    args = parser.parse_args()
+    if args.module:
+        if args.module[0] == 'btb_phylo':
+            runner.run(test_suit(btb_phylo_test)) 
+        elif args.module[0] == 'update_summary':
+            runner.run(test_suit(update_summary_test)) 
+        else:
+            raise argparse.ArgumentError(module_arg, "Invalid argument. Please use 'btb_phylo' or 'update_summary'")
+    else:
+        unittest.main(buffer=True)

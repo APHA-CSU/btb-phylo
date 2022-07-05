@@ -33,24 +33,6 @@ class BadS3UriError(Exception):
     def __str__(self):
         return self.message
 
-def summary_csv_to_df(bucket, summary_key):
-    """
-        Downloads btb_wgs_samples.csv and returns the data in a pandas dataframe.
-    """
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        summary_filepath = os.path.join(temp_dirname, "samples.csv")
-        utils.s3_download_file(bucket, summary_key, summary_filepath)
-        df = pd.read_csv(summary_filepath, comment="#", 
-                         dtype = {"Sample":"category", 
-                         "GenomeCov":float, "MeanDepth":float, "NumRawReads":float, 
-                         "pcMapped":float, "Outcome":"category", "flag":"category",
-                         "group":"category", "CSSTested":float, "matches":float,
-                         "mismatches":float, "noCoverage":float, "anomalous":float,
-                         "Ncount":float, "submission":"object", 
-                         "ResultLoc":"category", "ID":"category",
-                         "TotalReads":float, "Abundance":float})
-    return df
-
 def remove_duplicates(df, parameter="pcMapped"):
     """
         Drops duplicated submissions from df
@@ -59,7 +41,7 @@ def remove_duplicates(df, parameter="pcMapped"):
 
 def get_indexes_to_remove(df, parameter):
     """
-        Loops through unique submisions in the summary_df and collects indexes
+        Loops through unique submisions in the df_summary and collects indexes
         for duplicate submisions which should be excluded.
 
         Parameters:
@@ -72,18 +54,18 @@ def get_indexes_to_remove(df, parameter):
             indexes (pandas index object): indexes to remove from dataframe
     """
     indexes = pd.Index([])
-    for submission_no in df.submission.unique():
-        parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
-        if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
-            warnings.warn(f"Submision {submission_no} is duplicated and has the same "
-                          f"{parameter} value\nSkipping submision {submission_no}")
+    for submission_no in df.Submission.unique():
+        parameter_max = df.loc[df["Submission"]==submission_no][parameter].max()
+        if len(df.loc[(df["Submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
+            warnings.warn(f"Submision {submission_no} is duplicated and duplicates have "
+                          f"the same {parameter} value\nSkipping submision {submission_no}")
             # if duplicate submissions share the maximum paramter value add all 
             # entries with submission_no to the list of indexes to remove
-            indexes = indexes.append(df.loc[df["submission"]==submission_no].index)
+            indexes = indexes.append(df.loc[df["Submission"]==submission_no].index)
         else:
             # otherwise add all duplicates except for the one with the maximum 
             # parameter value
-            indexes = indexes.append(df.loc[(df["submission"]==submission_no) & \
+            indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
                 (df[parameter] != parameter_max)].index)
     return indexes
 
@@ -199,9 +181,9 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
     # pipes the output DataFrame from summary_csv_to_df() (all samples) into filter_df()
     # into remove duplicates()
     # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
-    df = summary_csv_to_df(bucket=bucket, 
-                           summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
-                                                         **kwargs).pipe(remove_duplicates)
+    df = utils.summary_csv_to_df(bucket=bucket, 
+                                 summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
+                                                               **kwargs).pipe(remove_duplicates)
     return df
 
 def append_multi_fasta(s3_bucket, s3_key, outfile):
@@ -245,7 +227,11 @@ def build_multi_fasta(multi_fasta_path, df):
     """
     with open(multi_fasta_path, 'wb') as outfile:
         # loops through all samples to be included in phylogeny
+        count = 0
+        num_samples = len(df)
         for index, sample in df.iterrows():
+            count += 1
+            print(f"Downloading sample: {count} / {num_samples}", end="\r")
             try:
                 # extract the bucket and key of consensus file from s3 uri
                 s3_bucket = extract_s3_bucket(sample["ResultLoc"])
@@ -257,6 +243,7 @@ def build_multi_fasta(multi_fasta_path, df):
                 print(e.message)
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
+        print(f"Downloaded samples: {count} / {num_samples}")
 
 def extract_s3_bucket(s3_uri):
     """
@@ -315,14 +302,15 @@ def build_tree(tree_path, snp_sites_outpath):
     utils.run(cmd, shell=True)
 
 def main():
+    warnings.formatwarning = utils.format_warning
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     results_path = "/home/nickpestell/tmp/"
-    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_v4.csv")
+    df_summary = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv")
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
     tree_path = os.path.join(results_path, "mega")
-    build_multi_fasta(multi_fasta_path, samples_df)
+    build_multi_fasta(multi_fasta_path, df_summary)
     snp_sites(snp_sites_outpath, multi_fasta_path)
     build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
     #build_tree(tree_path, snp_sites_outpath)

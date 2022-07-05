@@ -1,8 +1,10 @@
 import subprocess
 import os
+import tempfile
 
 import boto3
 import botocore
+import pandas as pd
 
 class NoS3ObjectError(Exception):
     def __init__(self, bucket, key):
@@ -11,6 +13,27 @@ class NoS3ObjectError(Exception):
 
     def __str__(self):
         return self.message
+
+def format_warning(message, category, filename, lineno, file=None, line=None):
+    return '%s:%s: %s:%s\n' % (filename, lineno, category.__name__, message)
+
+def summary_csv_to_df(bucket, summary_key):
+    """
+        Downloads btb_wgs_samples.csv and returns the data in a pandas dataframe.
+    """
+    with tempfile.TemporaryDirectory() as temp_dirname:
+        summary_filepath = os.path.join(temp_dirname, "samples.csv")
+        s3_download_file(bucket, summary_key, summary_filepath)
+        df = pd.read_csv(summary_filepath, comment="#", 
+                         dtype = {"Sample":"category", "GenomeCov":float, 
+                         "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
+                         "Outcome":"category", "flag":"category", "group":"category", 
+                         "CSSTested":float, "matches":float, "mismatches":float, 
+                         "noCoverage":float, "anomalous":float, "Ncount":float, 
+                         "ResultLoc":"category", "ID":"category", "TotalReads":float, 
+                         "Abundance":float, "Submission": object})
+    return df
+
 
 # TODO: remove if unused
 def s3_folder_exists(bucket, path):
@@ -93,6 +116,11 @@ def s3_download_file(bucket, key, dest):
     else:
         raise NoS3ObjectError(bucket, key)
 
+def s3_upload_file(file, bucket, key):
+    s3_client = boto3.client('s3')
+    s3_client.upload_file(file, bucket, key)
+
+# TODO: remove if unused
 def list_s3_objects(bucket, prefix):
     """
         Return a list of s3 objects with the common prefix (argument)
