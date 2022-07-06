@@ -12,21 +12,21 @@ import update_summary
 class TestBtbPhylo(unittest.TestCase):
     def test_remove_duplicates(self):
         # define dataframe for input
-        test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
+        test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
                                 "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
         # test expected input
         nptesting.assert_array_equal(btb_phylo.remove_duplicates(test_df, "pcMapped").values,
-                                     pd.DataFrame({"submission":["2", "3"], "pcMapped":[0.4, 0.6]}).values)
+                                     pd.DataFrame({"Submission":["2", "3"], "pcMapped":[0.4, 0.6]}).values)
 
     def test_get_indexes_to_remove(self):
         # define dataframe for input
-        test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
+        test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
                                 "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.2, 0.6], dtype=float)})
         # test expected input
         pd.testing.assert_index_equal(btb_phylo.get_indexes_to_remove(test_df, "pcMapped"),
                                       pd.Index([0, 1, 2]), check_order=False)
         # test warning
-        test_df = pd.DataFrame({"submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
+        test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
                                 "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
         with self.assertWarns(Warning):
             btb_phylo.get_indexes_to_remove(test_df, "pcMapped")
@@ -329,20 +329,50 @@ class TestUpdateSummary(unittest.TestCase):
             print(f"{i} test failures")
             raise AssertionError
 
-def test_suit(test_objs):
-    suit = unittest.TestSuite(test_objs)
-    return suit
+    @mock.patch("update_summary.finalout_csv_to_df")
+    def test_append_df_summary(self, mock_finalout_csv_to_df):
+        mock_finalout_csv_to_df.return_value = pd.DataFrame()
+        # simulate 7 new keys
+        test_new_keys = [0, 1, 2, 3, 4, 5, 6]
+        # start with empty df_summary
+        test_df_summary = pd.DataFrame({"foo":[], "bar":[], "baz":[]})
+        with mock.patch("update_summary.add_submission_col") as mock_add_submission_col:
+            # mock sequential return values of calls to update_summary.add_submission_col, 
+            # this effectively mocks the return value of finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
+            mock_add_submission_col.side_effect = [pd.DataFrame({"foo":["a"], "bar":["a"], "baz":["a"]}),
+                                                   pd.DataFrame({"foo":["b"], "bar":["b"], "baz":["b"]}),
+                                                   pd.DataFrame({"foo":["c"], "bar":["c"], "baz":["c"]}),
+                                                   pd.DataFrame({"foo":["d"], "bar":["d"], "baz":["d"]}),
+                                                   pd.DataFrame({"foo":["e"], "bar":["e"], "baz":["e"]}),
+                                                   pd.DataFrame({"foo":["f"], "bar":["f"], "baz":["f"]}),
+                                                   pd.DataFrame({"foo":["g"], "bar":["g"], "baz":["g"]})]
+            test_output = update_summary.append_df_summary(test_df_summary, test_new_keys)
+            # assert correct output
+            nptesting.assert_array_equal(test_output,
+                                         pd.DataFrame({"foo":["a", "b", "c", "d", "e", "f", "g"], 
+                                                       "bar":["a", "b", "c", "d", "e", "f", "g"], 
+                                                       "baz":["a", "b", "c", "d", "e", "f", "g"]}).values)
+            finalout_csv_to_df_calls = [mock.call(0), mock.call(1), mock.call(2), mock.call(3),
+                                        mock.call(4), mock.call(5), mock.call(6)]
+            # assert recursion was called with correct order of arguments
+            mock_finalout_csv_to_df.assert_has_calls(finalout_csv_to_df_calls)
 
-if __name__ == "__main__":
+                                                    
+def test_suit(test_objs):                           
+    suit = unittest.TestSuite(test_objs)            
+    return suit                                     
+                                                    
+if __name__ == "__main__":                          
     btb_phylo_test = [TestBtbPhylo('test_remove_duplicates'),
-                        TestBtbPhylo('test_get_indexes_to_remove'),
-                        TestBtbPhylo('test_filter_df'),
-                        TestBtbPhylo('test_filter_columns_numeric'),
-                        TestBtbPhylo('test_filter_columns_categorical'),
-                        TestBtbPhylo('test_build_multi_fasta'),
-                        TestBtbPhylo('test_extract_s3_bucket'),
-                        TestBtbPhylo('test_match_s3_uri')]
-    update_summary_test = [TestUpdateSummary('test_extract_submission_no')]
+                      TestBtbPhylo('test_get_indexes_to_remove'),
+                      TestBtbPhylo('test_filter_df'),
+                      TestBtbPhylo('test_filter_columns_numeric'),
+                      TestBtbPhylo('test_filter_columns_categorical'),
+                      TestBtbPhylo('test_build_multi_fasta'),
+                      TestBtbPhylo('test_extract_s3_bucket'),
+                      TestBtbPhylo('test_match_s3_uri')]
+    update_summary_test = [TestUpdateSummary('test_extract_submission_no'),
+                           TestUpdateSummary('test_append_df_summary')]
     runner = unittest.TextTestRunner()
     parser = argparse.ArgumentParser(description='Test code')
     module_arg = parser.add_argument('--module', '-m', nargs=1, 

@@ -49,7 +49,6 @@ def get_df_summary(bucket="s3-csu-003", key="v3-2/btb_wgs_samples.csv"):
                         "TotalReads", "Abundance", "Submission"]
         return pd.DataFrame(columns=column_names)
 
-#TODO: unit test
 def new_final_out_keys(df_summary):
     """
         Returns a list of s3_keys for FinalOut.csv files not currently in the
@@ -83,7 +82,6 @@ def add_submission_col(df):
     df["Submission"] = df["Sample"].map(extract_submission_no)
     return df
 
-#TODO: unit test
 def append_df_summary(df_summary, new_keys, itteration=0):
     """
         Appends new FinalOut.csv data (with additional submission number)
