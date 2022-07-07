@@ -219,7 +219,8 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
     # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
     df = utils.summary_csv_to_df(bucket=bucket, 
                                  summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
-                                                               **kwargs).pipe(remove_duplicates)
+                                                               **kwargs).pipe(remove_duplicates, 
+                                                                              pcMapped="max", Ncount="min")
     return df
 
 def append_multi_fasta(s3_bucket, s3_key, outfile):
