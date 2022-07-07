@@ -35,13 +35,20 @@ class BadS3UriError(Exception):
     def __str__(self):
         return self.message
 
-def remove_duplicates(df, parameter_1="pcMapped", parameter_2="Ncount", method_1="max", method_2="min"):
+def remove_duplicates(df, parameters=[("pcMapped", "max"), ("Ncount", "min")]):
     """
         Drops duplicated submissions from df
     """
-    return df.drop(get_indexes_to_remove(df, parameter_1, parameter_2, method_1, method_2))
+    remaining_indexes = df.index
+    for param in parameters:
+        indexes = get_indexes_to_remove(df, param[0], param[1])
+        print(remaining_indexes)
+        print(indexes)
+        remaining_indexes = remaining_indexes.difference(indexes)
+    print(remaining_indexes)
+    return df.drop(df.index.difference(remaining_indexes))
 
-def get_indexes_to_remove(df, parameter_1, parameter_2, method_1, method_2):
+def get_indexes_to_remove(df, parameter, method):
     """
         Loops through unique submisions in the df_summary and collects indexes
         for duplicate submisions which should be excluded.
@@ -57,23 +64,16 @@ def get_indexes_to_remove(df, parameter_1, parameter_2, method_1, method_2):
     """
     indexes = pd.Index([])
     for submission_no in df.Submission.unique():
-        if method_1 == "max":
-            threshold_1 = df.loc[df["Submission"]==submission_no][parameter_1].max()
-        elif method_1 == "min":
-            threshold_1 = df.loc[df["Submission"]==submission_no][parameter_1].min()
-        else:
-            raise Exception("method arguments must be either 'min' or 'max'")
-        if method_2 == "max":
-            threshold_2 = df.loc[(df["Submission"]==submission_no) & \
-                (df[parameter_1] == threshold_1)][parameter_2].max()
-        elif method_2 == "min":
-            threshold_2 = df.loc[(df["Submission"]==submission_no) & \
-                (df[parameter_1] == threshold_1)][parameter_2].min()
+        if method == "max":
+            threshold_1 = df.loc[df["Submission"]==submission_no][parameter].max()
+        elif method == "min":
+            threshold_1 = df.loc[df["Submission"]==submission_no][parameter].min()
         else:
             raise Exception("method arguments must be either 'min' or 'max'")
         indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
-            (df[parameter_1] != threshold_1) | ((df[parameter_1] == threshold_1) & (df[parameter_2] != threshold_2))].index)
-    return indexes.drop_duplicates()
+            (df[parameter] != threshold_1)].index)
+    #return indexes.drop_duplicates()
+    return indexes
 
 def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     """ 
