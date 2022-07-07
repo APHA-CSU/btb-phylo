@@ -71,7 +71,7 @@ def remove_duplicates(df, **kwargs):
             raise ValueError(f"Inavlid kwarg value: {column_name} must be either "
                              "'min' or 'max'")
         # get indexes to remove based on column_name and the selected method (min/max)
-        indexes_to_remove = get_indexes_to_remove(df.iloc[remaining_indexes], 
+        indexes_to_remove = get_indexes_to_remove(df.loc[remaining_indexes], 
                                                   column_name, method)
         # update the remaining indexes by subtracting the indexes to remove
         remaining_indexes = remaining_indexes.difference(indexes_to_remove)
