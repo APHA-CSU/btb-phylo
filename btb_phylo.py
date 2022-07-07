@@ -1,8 +1,10 @@
 import tempfile
 import os
-import pandas as pd
 import warnings
 import re
+import argparse
+
+import pandas as pd
 
 import utils
 
@@ -33,13 +35,13 @@ class BadS3UriError(Exception):
     def __str__(self):
         return self.message
 
-def remove_duplicates(df, parameter="pcMapped"):
+def remove_duplicates(df, parameter_1="pcMapped", parameter_2="Ncount", method_1="max", method_2="min"):
     """
         Drops duplicated submissions from df
     """
-    return df.drop(get_indexes_to_remove(df, parameter))
+    return df.drop(get_indexes_to_remove(df, parameter_1, parameter_2, method_1, method_2))
 
-def get_indexes_to_remove(df, parameter):
+def get_indexes_to_remove(df, parameter_1, parameter_2, method_1, method_2):
     """
         Loops through unique submisions in the df_summary and collects indexes
         for duplicate submisions which should be excluded.
@@ -55,19 +57,23 @@ def get_indexes_to_remove(df, parameter):
     """
     indexes = pd.Index([])
     for submission_no in df.Submission.unique():
-        parameter_max = df.loc[df["Submission"]==submission_no][parameter].max()
-        if len(df.loc[(df["Submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
-            warnings.warn(f"Submision {submission_no} is duplicated and duplicates have "
-                          f"the same {parameter} value\nSkipping submision {submission_no}")
-            # if duplicate submissions share the maximum paramter value add all 
-            # entries with submission_no to the list of indexes to remove
-            indexes = indexes.append(df.loc[df["Submission"]==submission_no].index)
+        if method_1 == "max":
+            threshold_1 = df.loc[df["Submission"]==submission_no][parameter_1].max()
+        elif method_1 == "min":
+            threshold_1 = df.loc[df["Submission"]==submission_no][parameter_1].min()
         else:
-            # otherwise add all duplicates except for the one with the maximum 
-            # parameter value
-            indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
-                (df[parameter] != parameter_max)].index)
-    return indexes
+            raise Exception("method arguments must be either 'min' or 'max'")
+        if method_2 == "max":
+            threshold_2 = df.loc[(df["Submission"]==submission_no) & \
+                (df[parameter_1] == threshold_1)][parameter_2].max()
+        elif method_2 == "min":
+            threshold_2 = df.loc[(df["Submission"]==submission_no) & \
+                (df[parameter_1] == threshold_1)][parameter_2].min()
+        else:
+            raise Exception("method arguments must be either 'min' or 'max'")
+        indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
+            (df[parameter_1] != threshold_1) | ((df[parameter_1] == threshold_1) & (df[parameter_2] != threshold_2))].index)
+    return indexes.drop_duplicates()
 
 def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     """ 
@@ -286,12 +292,12 @@ def snp_sites(snp_sites_outpath, multi_fasta_path):
     cmd = f'snp-sites {multi_fasta_path} -c -o {snp_sites_outpath}'
     utils.run(cmd, shell=True)
 
-def build_snp_matrix(snp_dists_outpath, snp_sites_outpath):
+def build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads=1):
     """
         Run snp-dists
     """
     # run snp-dists
-    cmd = f'snp-dists {snp_sites_outpath} > {snp_dists_outpath}'
+    cmd = f'snp-dists -j {threads} {snp_sites_outpath} > {snp_dists_outpath}'
     utils.run(cmd, shell=True)
 
 def build_tree(tree_path, snp_sites_outpath):
@@ -302,17 +308,23 @@ def build_tree(tree_path, snp_sites_outpath):
     utils.run(cmd, shell=True)
 
 def main():
+    parser = argparse.ArgumentParser(description="filtering parameters")
+    parser.add_argument("--Ncount", "-Nc", dest="Ncount", type=float, nargs=2)
+    parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
+    kwargs = vars(parser.parse_args())
     warnings.formatwarning = utils.format_warning
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     results_path = "/home/nickpestell/tmp/"
-    df_summary = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv")
+    df_summary = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
+    # save df_summary (samples to include in VB) to csv
+    df_summary.to_csv(os.path.join(results_path, "summary.csv"))
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
     tree_path = os.path.join(results_path, "mega")
     build_multi_fasta(multi_fasta_path, df_summary)
     snp_sites(snp_sites_outpath, multi_fasta_path)
-    build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
+    build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads=4)
     #build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":

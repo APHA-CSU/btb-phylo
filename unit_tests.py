@@ -13,23 +13,28 @@ class TestBtbPhylo(unittest.TestCase):
     def test_remove_duplicates(self):
         # define dataframe for input
         test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float),
+                                "Ncount":pd.Series([1, 2, 3, 4, 5, 6], dtype=float)})
         # test expected input
-        nptesting.assert_array_equal(btb_phylo.remove_duplicates(test_df, "pcMapped").values,
-                                     pd.DataFrame({"Submission":["2", "3"], "pcMapped":[0.4, 0.6]}).values)
+        nptesting.assert_array_equal(btb_phylo.remove_duplicates(test_df).values,
+                                     pd.DataFrame({"Submission":["1", "2", "3"], 
+                                                   "pcMapped":[0.1, 0.4, 0.6], "Ncount":[1, 4, 6]}).values)
 
     def test_get_indexes_to_remove(self):
         # define dataframe for input
         test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.2, 0.6], dtype=float)})
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.2, 0.6], dtype=float),
+                                "Ncount":pd.Series([1, 2, 3, 4, 5, 6], dtype=float)})
         # test expected input
-        pd.testing.assert_index_equal(btb_phylo.get_indexes_to_remove(test_df, "pcMapped"),
+        pd.testing.assert_index_equal(btb_phylo.get_indexes_to_remove(test_df, "pcMapped", "Ncount", "max", "min"),
                                       pd.Index([0, 1, 2]), check_order=False)
-        # test warning
+        # test ...
         test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float)})
-        with self.assertWarns(Warning):
-            btb_phylo.get_indexes_to_remove(test_df, "pcMapped")
+                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float),
+                                "Ncount":pd.Series([1, 2, 3, 4, 5, 6], dtype=float)})
+        # test ...
+        pd.testing.assert_index_equal(btb_phylo.get_indexes_to_remove(test_df, "pcMapped", "Ncount", "max", "min"),
+                                      pd.Index([1, 2, 4]), check_order=False)
 
     def test_filter_df(self):
         # define dataframe for input
