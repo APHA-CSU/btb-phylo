@@ -358,7 +358,6 @@ def main():
     samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
     # save df_summary (samples to include in VB) to csv
     samples_df.to_csv(os.path.join(results_path, "summary.csv"))
-    # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
     build_multi_fasta(multi_fasta_path, samples_df)
