@@ -3,6 +3,7 @@ import os
 import warnings
 import re
 import argparse
+import json
 
 import pandas as pd
 
@@ -208,8 +209,7 @@ def filter_columns_categorical(df, **kwargs):
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
     return df.query(query)
 
-def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, 
-                   pcmap_threshold=(0,100), **kwargs):
+def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, **kwargs):
     """
         Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
@@ -219,7 +219,7 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
     # into remove duplicates()
     # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
     df = utils.summary_csv_to_df(bucket=bucket, 
-                                 summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
+                                 summary_key=summary_key).pipe(filter_df,
                                                                **kwargs).pipe(remove_duplicates, 
                                                                               pcMapped="max", Ncount="min")
     return df
@@ -343,17 +343,25 @@ def main():
     parser = argparse.ArgumentParser(description="filtering parameters")
     parser.add_argument("results_path", help="path to results directory")
     parser.add_argument("--build_tree", action="store_true", default=False)
+    parser.add_argument("--json", type=str)
+    parser.add_argument("--sample_name", "-s", dest="Sample", type=str, nargs="+")
     parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
     parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
-    parser.add_argument("--Ncount", "-Nc", dest="Ncount", type=float, nargs=2)
+    parser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2)
+    parser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
     parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
+    parser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
     # parse agrs
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args
     results_path = clargs.pop("results_path")
     tree = clargs.pop("build_tree")
-    # remove unused filtering args
-    kwargs = {k: v for k, v in clargs.items() if v is not None}
+    if "json" in clargs.keys():
+        with open(clargs["json"]) as f:
+            kwargs = json.load(f)
+    else:
+        # remove unused filtering args
+        kwargs = {k: v for k, v in clargs.items() if v is not None}
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
     samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
     # save df_summary (samples to include in VB) to csv
