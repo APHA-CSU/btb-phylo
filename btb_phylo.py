@@ -3,6 +3,7 @@ import os
 import warnings
 import re
 import argparse
+from numpy import result_type
 
 import pandas as pd
 
@@ -208,7 +209,7 @@ def filter_columns_categorical(df, **kwargs):
     return df.query(query)
 
 def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, 
-                   pcmap_threshold=(0,100), **kwargs):
+                   pcmap_threshold=(70,100), **kwargs):
     """
         Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
@@ -221,7 +222,14 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
                                  summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
                                                                **kwargs).pipe(remove_duplicates, 
                                                                               pcMapped="max", Ncount="min")
+    
     return df
+
+def find_new_samples(df, results_path):
+
+    old_df = pd.read_csv(results_path + "summary.csv")
+    join = df.merge(old_df, on = 'Sample', how = "left")
+    join.to_csv(results_path + "test/test.csv")
 
 def append_multi_fasta(s3_bucket, s3_key, outfile):
     """
@@ -344,9 +352,10 @@ def main():
     parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
     kwargs = vars(parser.parse_args())
     warnings.formatwarning = utils.format_warning
-    multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    results_path = "/home/nickpestell/tmp/"
-    df_summary = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
+    multi_fasta_path = "/home/cameronnicholls/tmp/test_multi_fasta.fas"
+    results_path = "/home/cameronnicholls/tmp/"
+    df_summary = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv",  **kwargs)
+    new_samples_df = find_new_samples(df_summary, results_path)
     # save df_summary (samples to include in VB) to csv
     df_summary.to_csv(os.path.join(results_path, "summary.csv"))
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
