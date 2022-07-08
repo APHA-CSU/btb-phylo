@@ -1,8 +1,10 @@
 import tempfile
 import os
-import pandas as pd
 import warnings
+import re
 import argparse
+
+import pandas as pd
 
 import utils
 
@@ -18,43 +20,68 @@ class InvalidDtype(Exception):
         if "column_name" in kwargs:
             self.message = f"Invalid series name '{kwargs['column_name']}'. Series must be of the correct type"
         if "column_name" in kwargs and "dtype" in kwargs:
-            self.message = f"Invalid series name '{kwargs['column_name']}' Series must be of type {kwargs['dtype']}"
+            self.message = f"Invalid series name '{kwargs['column_name']}'. Series must be of type {kwargs['dtype']}"
         else:
             self.message = message
 
     def __str__(self):
         return self.message
 
-def summary_csv_to_df(bucket, summary_key):
-    """
-        Downloads btb_wgs_samples.csv and returns the data in a pandas dataframe.
-    """
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        summary_filepath = os.path.join(temp_dirname, "samples.csv")
-        utils.s3_download_file(bucket, summary_key, summary_filepath)
-        df = pd.read_csv(summary_filepath, dtype = {"sample_name":object,
-                         "submission":object, "project_code":"category",
-                         "sequencer":"category", "run_id":object,
-                         "well":"category", "read_1":object, "read_2":object, 
-                         "lane":"category", "batch_id":"category", 
-                         "reads_bucket":"category", "results_bucket":"category", 
-                         "results_prefix":object, "sequenced_datetime":object, 
-                         "GenomeCov":float, "MeanDepth":float, "NumRawReads":int, 
-                         "pcMapped":float, "Outcome":"category", "flag":"category",
-                         "group":"category", "CSSTested":float, "matches":float,
-                         "mismatches":float, "noCoverage":float, "anomalous":float})
-    return df
+class BadS3UriError(Exception):
+    def __init__(self, s3_uri):
+        super().__init__()
+        self.message = f"Incorrectly formatted s3 uri: '{s3_uri}'"
 
-def remove_duplicates(df, parameter="pcMapped"):
-    """
-        Drops duplicated submissions from df
-    """
-    return df.drop(get_indexes_to_remove(df, parameter))
+    def __str__(self):
+        return self.message
 
-def get_indexes_to_remove(df, parameter):
+def remove_duplicates(df, **kwargs):
     """
-        Loops through unique submisions in the summary_df and collects indexes
-        for duplicate submisions which should be excluded.
+        Drops duplicated submissions from df based on the names and values of kwargs.
+        Duplicated samples are kept if their entry in the column specified by the 
+        kwarg name contains either the min or max value (specified by the kwarg value). 
+        If more than one sample in the column name contain the min or max value then 
+        the second kwarg is used to choose which of these duplicates to keep. This 
+        pattern continues for n kwargs. If no more kwargs exist, the duplicated sample 
+        appearing first in the dataframe is chosen.
+
+        Parameters:
+            df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv
+
+            **kwargs: 1 (minimum) or more optional arguments. The names of the 
+            arguments must be a column name in df, the values must be of type str equal 
+            to either "min" or "max".    
+
+        Returns:
+            df (pandas DataFrame object)
+
+    """
+    if not kwargs:
+        raise TypeError("no kwargs provided, provide a column name and method for "
+                        "dropping duplicates, e.g. pcMapped='min'")
+    # reamining indexes: starts as all indexes
+    remaining_indexes = df.index
+    for column_name, method in kwargs.items():
+        if column_name not in df.columns:
+            raise ValueError(f"Invalid kwarg '{column_name}': must be one of: " 
+                             f"{', '.join(df.columns.to_list())}")
+        if not pd.api.types.is_numeric_dtype(df[column_name]):
+            raise InvalidDtype(dtype="float or int", column_name=column_name)
+        if method != "min" and method != "max":
+            raise ValueError(f"Inavlid kwarg value: {column_name} must be either "
+                             "'min' or 'max'")
+        # get indexes to remove based on column_name and the selected method (min/max)
+        indexes_to_remove = get_indexes_to_remove(df.loc[remaining_indexes], 
+                                                  column_name, method)
+        # update the remaining indexes by subtracting the indexes to remove
+        remaining_indexes = remaining_indexes.difference(indexes_to_remove)
+    # drop the indexes to remove
+    return df.drop(df.index.difference(remaining_indexes)).drop_duplicates(["Submission"])
+
+def get_indexes_to_remove(df, parameter, method):
+    """
+        Loops through unique submisions in the df and collects indexes for duplicate 
+        submisions which should be excluded.
 
         Parameters:
             df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv
@@ -62,34 +89,29 @@ def get_indexes_to_remove(df, parameter):
             parameter (str): a column name from df on which to decide which 
             duplicate to keep, e.g. keep the submission with the largest pcMapped
 
+            method (str): either 'min' or 'max', depending on whether the sample with
+            the samllest or largest parameter value should be kept 
+
         Returns:
             indexes (pandas index object): indexes to remove from dataframe
     """
     indexes = pd.Index([])
-    for submission_no in df.submission.unique():
-        parameter_max = df.loc[df["submission"]==submission_no][parameter].max()
-        if len(df.loc[(df["submission"]==submission_no) & (df[parameter] == parameter_max)]) > 1:
-            warnings.warn(f"Submision {submission_no} is duplicated and has the same "
-                          f"{parameter} value\nSkipping submision {submission_no}")
-            # if duplicate submissions share the maximum paramter value add all 
-            # entries with submission_no to the list of indexes to remove
-            indexes = indexes.append(df.loc[df["submission"]==submission_no].index)
-        else:
-            # otherwise add all duplicates except for the one with the maximum 
-            # parameter value
-            indexes = indexes.append(df.loc[(df["submission"]==submission_no) & \
-                (df[parameter] != parameter_max)].index)
+    for submission_no in df.Submission.unique():
+        if method == "max":
+            threshold_1 = df.loc[df["Submission"]==submission_no][parameter].max()
+        elif method == "min":
+            threshold_1 = df.loc[df["Submission"]==submission_no][parameter].min()
+        indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
+            (df[parameter] != threshold_1)].index)
     return indexes
 
-def filter_df(df, pcmap_threshold=(0,100), **kwargs):
+def filter_df(df, **kwargs):
     """ 
         Filters the sample summary dataframe which is based off 
         btb_wgs_samples.csv according to a set of criteria. 
 
         Parameters:
             df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv.
-
-            pcmap_threshold (tuple): min and max thresholds for pcMapped
 
             **kwargs: 0 or more optional arguments. Names must match a 
             column name in btb_wgs_samples.csv. If column is of type 
@@ -111,7 +133,7 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     # add "Pass" only samples and pcmap_theshold to the filtering 
     # criteria by default
     categorical_kwargs = {"Outcome": ["Pass"]}
-    numerical_kwargs = {"pcMapped": pcmap_threshold}
+    numerical_kwargs = {}
     for key in kwargs.keys():
         if key not in df.columns:
             raise ValueError(f"Invalid kwarg '{key}': must be one of: " 
@@ -127,9 +149,12 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     # calls filter_columns_catergorical() with **categorical_kwargs on df, pipes 
     # the output into filter_columns_numeric() with **numerical_kwargs and assigns
     # the output to a new df_filtered
-    df_filtered = df.pipe(filter_columns_categorical, 
-                          **categorical_kwargs).pipe(filter_columns_numeric, 
-                                                     **numerical_kwargs)
+    if numerical_kwargs:
+        df_filtered = df.pipe(filter_columns_categorical, 
+                            **categorical_kwargs).pipe(filter_columns_numeric, 
+                                                        **numerical_kwargs)
+    else:
+        df_filtered = df.pipe(filter_columns_categorical, **categorical_kwargs)
     if len(df_filtered) < 2:
         raise Exception("1 or fewer samples meet specified criteria")
     return df_filtered
@@ -193,17 +218,20 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
     # pipes the output DataFrame from summary_csv_to_df() (all samples) into filter_df()
     # into remove duplicates()
     # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
-    df = summary_csv_to_df(bucket=bucket, 
-                           summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
-                                                         **kwargs).pipe(remove_duplicates)
+    df = utils.summary_csv_to_df(bucket=bucket, 
+                                 summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
+                                                               **kwargs).pipe(remove_duplicates, 
+                                                                              pcMapped="max", Ncount="min")
     return df
 
-def append_multi_fasta(s3_uri, outfile):
+def append_multi_fasta(s3_bucket, s3_key, outfile):
     """
         Appends a multi fasta file with the consensus sequence stored at s3_uri
         
         Parameters:
-            s3_uris (list of tuples): list of s3 bucket and key pairs in tuple
+            s3_bucket (string): s3 bucket of consensus file
+            
+            s3_key (string): s3 key of consensus file
 
             outfile (file object): file object refering to the multi fasta output
             file
@@ -213,7 +241,7 @@ def append_multi_fasta(s3_uri, outfile):
     with tempfile.TemporaryDirectory() as temp_dirname:
         consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
         # dowload consensus file from s3 to tempfile
-        utils.s3_download_file(s3_uri[0], s3_uri[1], consensus_filepath)
+        utils.s3_download_file(s3_bucket, s3_key, consensus_filepath)
         # writes to multifasta
         with open(consensus_filepath, 'rb') as consensus_file:
             outfile.write(consensus_file.read())
@@ -237,17 +265,56 @@ def build_multi_fasta(multi_fasta_path, df):
     """
     with open(multi_fasta_path, 'wb') as outfile:
         # loops through all samples to be included in phylogeny
+        count = 0
+        num_samples = len(df)
         for index, sample in df.iterrows():
+            count += 1
+            print(f"Downloading sample: {count} / {num_samples}", end="\r")
             try:
-                consensus_key = os.path.join(sample["results_prefix"], "consensus", 
-                                             sample["sample_name"])
+                # extract the bucket and key of consensus file from s3 uri
+                s3_bucket = extract_s3_bucket(sample["ResultLoc"])
+                consensus_key = extract_s3_key(sample["ResultLoc"], sample["Sample"])
                 # appends sample's consensus sequence to multifasta
-                append_multi_fasta((sample["results_bucket"], consensus_key+"_consensus.fas"), outfile)
+                append_multi_fasta(s3_bucket, consensus_key, outfile)
             except utils.NoS3ObjectError as e:
                 # if consensus file can't be found in s3, btb_wgs_samples.csv must be corrupted
                 print(e.message)
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
+        print(f"Downloaded samples: {count} / {num_samples}")
+
+def extract_s3_bucket(s3_uri):
+    """
+        Extracts s3 bucket name from an s3 uri using regex
+    """
+    # confirm s3 uri is correct and remove key from s3 uri
+    sub_string = match_s3_uri(s3_uri)
+    pattern = r's3-csu-\d{3,3}'
+    # extract the bucket name
+    matches = re.findall(pattern, sub_string)
+    return matches[0]
+
+def extract_s3_key(s3_uri, sample_name):
+    """
+        Generates an s3 key from an s3 uri and filename
+    """
+    # confirm s3 uri is correct 
+    _ = match_s3_uri(s3_uri)
+    pattern = r'^s3://s3-csu-\d{3,3}/+'
+    # construct s3 key of consensus file
+    return os.path.join(re.sub(pattern, "", s3_uri), 
+                        "consensus", f"{sample_name}_consensus.fas")
+
+def match_s3_uri(s3_uri):
+    """
+        Returns a substring s3 uri substring with the s3 key stripped away. 
+        Raises BadS3UriError if the pattern is not found within the s3 uri.
+    """
+    pattern=r'^s3://s3-csu-\d{3,3}/+'
+    matches = re.findall(pattern, s3_uri)
+    if not matches:
+        raise BadS3UriError(s3_uri)
+    return matches[0]
 
 def snp_sites(snp_sites_outpath, multi_fasta_path):
     """
@@ -257,12 +324,12 @@ def snp_sites(snp_sites_outpath, multi_fasta_path):
     cmd = f'snp-sites {multi_fasta_path} -c -o {snp_sites_outpath}'
     utils.run(cmd, shell=True)
 
-def build_snp_matrix(snp_dists_outpath, snp_sites_outpath):
+def build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads=1):
     """
         Run snp-dists
     """
     # run snp-dists
-    cmd = f'snp-dists {snp_sites_outpath} > {snp_dists_outpath}'
+    cmd = f'snp-dists -j {threads} {snp_sites_outpath} > {snp_dists_outpath}'
     utils.run(cmd, shell=True)
 
 def build_tree(tree_path, snp_sites_outpath):
@@ -278,6 +345,8 @@ def main():
     parser.add_argument("--build_tree", action="store_true", default=False)
     parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
     parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
+    parser.add_argument("--Ncount", "-Nc", dest="Ncount", type=float, nargs=2)
+    parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
     # parse agrs
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args
@@ -286,7 +355,9 @@ def main():
     # remove unused filtering args
     kwargs = {k: v for k, v in clargs.items() if v is not None}
     multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    samples_df = get_samples_df("s3-staging-area", "nickpestell/summary_test_v3.csv", **kwargs)
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
+    # save df_summary (samples to include in VB) to csv
+    samples_df.to_csv(os.path.join(results_path, "summary.csv"))
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
