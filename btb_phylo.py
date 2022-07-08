@@ -340,10 +340,11 @@ def build_tree(tree_path, snp_sites_outpath):
     utils.run(cmd, shell=True)
 
 def main():
+    # command line arguments
     parser = argparse.ArgumentParser(description="filtering parameters")
     parser.add_argument("results_path", help="path to results directory")
     parser.add_argument("--build_tree", action="store_true", default=False)
-    parser.add_argument("--json", type=str)
+    parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--sample_name", "-s", dest="Sample", type=str, nargs="+")
     parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
     parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
@@ -356,23 +357,38 @@ def main():
     # retreive "non-filtering" args
     results_path = clargs.pop("results_path")
     tree = clargs.pop("build_tree")
-    if "json" in clargs.keys():
-        with open(clargs["json"]) as f:
+    config = clargs.pop("config")
+    # if config json file provided
+    if config:
+        error_keys = [key for key, val in clargs.items() if val]
+        # if any arguments provided with --config
+        if any(error_keys):
+            raise parser.error(f"arguments '{', '.join(error_keys)}' are incompatible with "
+                               "the 'config' argument")
+        # parse config file
+        with open(config) as f:
             kwargs = json.load(f)
     else:
         # remove unused filtering args
         kwargs = {k: v for k, v in clargs.items() if v is not None}
-    multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
-    # save df_summary (samples to include in VB) to csv
-    samples_df.to_csv(os.path.join(results_path, "summary.csv"))
+    # set output paths
+    summary_csv_path = os.path.join(results_path, "sample_summary.csv")
+    multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
+    tree_path = os.path.join(results_path, "mega")
+    # get samples from btb_wgs_samples.csv and filter
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
+    # save df_summary (samples to include in VB) to csv
+    samples_df.to_csv(summary_csv_path)
+    # concatonate fasta files
     build_multi_fasta(multi_fasta_path, samples_df)
+    # run snp-sites
     snp_sites(snp_sites_outpath, multi_fasta_path)
+    # run snp-dists
     build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
+    # build tree
     if tree:
-        tree_path = os.path.join(results_path, "mega")
         build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
