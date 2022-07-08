@@ -388,6 +388,35 @@ class TestUpdateSummary(unittest.TestCase):
             # assert recursion was called with correct order of arguments
             mock_finalout_csv_to_df.assert_has_calls(finalout_csv_to_df_calls)
 
+    def test_get_finalout_s3_keys(self):
+        # mock AWS s3 CLI command for getting s3 metadata
+        with mock.patch("update_summary.utils.run") as mock_run:
+            mock_run.return_value = "2022-06-28 06:38:51      45876 v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv\n \
+                                     2022-06-28 06:38:51 45876 v3-2/Results_10032_27Jun22/bar\n \
+                                     a b c foo" 
+            test_output = ["v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv",
+                           "v3-2/Results_10032_27Jun22/bar",
+                           "foo"]
+            self.assertEqual(update_summary.get_finalout_s3_keys(), test_output)
+
+    def test_extract_s3_key(self):
+        #test cases
+        test_input = ["2022-06-28 06:38:51      45876 v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv",
+                      "2022-06-28 06:38:51 45876 v3-2/Results_10032_27Jun22/bar",
+                      "a b c foo"]
+        test_output = ["v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv",
+                       "v3-2/Results_10032_27Jun22/bar",
+                       "foo"]
+        fail = False
+        for input, output in zip(test_input, test_output):
+            try:
+                self.assertEqual(update_summary.extract_s3_key(input), output)
+            except AssertionError as e:
+                fail = True
+                print(e)
+        if fail:
+            raise AssertionError
+
                                                     
 def test_suit(test_objs):                           
     suit = unittest.TestSuite(test_objs)            
@@ -403,7 +432,9 @@ if __name__ == "__main__":
                       TestBtbPhylo('test_extract_s3_bucket'),
                       TestBtbPhylo('test_match_s3_uri')]
     update_summary_test = [TestUpdateSummary('test_extract_submission_no'),
-                           TestUpdateSummary('test_append_df_summary')]
+                           TestUpdateSummary('test_append_df_summary'),
+                           TestUpdateSummary('test_get_finalout_s3_keys'),
+                           TestUpdateSummary('test_extract_s3_key')]
     runner = unittest.TextTestRunner()
     parser = argparse.ArgumentParser(description='Test code')
     module_arg = parser.add_argument('--module', '-m', nargs=1, 
