@@ -131,7 +131,7 @@ def main():
     parser.add_argument("--summary_key", help="s3 key for sample metadata .csv file", 
                         type=str, default=DEFAULT_SUMMARY_KEY)
     args = parser.parse_args()
-    print("\nUpdate summary CSV \n")
+    print("\nupdate_summary\n")
     print("Downloading summary csv file ... \n")
     # download sample summary csv
     df_summary = get_df_summary(args.summary_bucket, args.summary_key)

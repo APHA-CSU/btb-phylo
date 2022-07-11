@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 ################## METADATA ##########################
 
@@ -20,6 +20,9 @@ RUN apt-get -y update
 # Biotools
 RUN bash ./install/install.bash
 
+# Make executable
+RUN chmod +x btb-phylo
+
 ################## ENTRY ######################
 
-CMD python btb_phylo.py
+ENTRYPOINT ["./btb-phylo"]
