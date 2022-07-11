@@ -222,9 +222,10 @@ def get_samples_df(bucket=DEFAULT_SUMMARY_BUCKET, summary_key=DEFAULT_SUMMARY_KE
                                  summary_key=summary_key).pipe(filter_df,
                                                                **kwargs).pipe(remove_duplicates, 
                                                                               pcMapped="max", Ncount="min")
+    
     return df
 
-def append_multi_fasta(s3_bucket, s3_key, outfile):
+def append_multi_fasta(s3_bucket, s3_key, outfile, sample, consensus_path):
     """
         Appends a multi fasta file with the consensus sequence stored at s3_uri
         
@@ -236,22 +237,21 @@ def append_multi_fasta(s3_bucket, s3_key, outfile):
             outfile (file object): file object refering to the multi fasta output
             file
     """
-    # temp directory for storing individual consensus files - deleted when function
-    # returns
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
+    # check if file is already present in the consensus directory 
+    consensus_filepath = os.path.join(consensus_path , sample + '.fas')
+    if not os.path.exists(consensus_filepath):
         # dowload consensus file from s3 to tempfile
         utils.s3_download_file(s3_bucket, s3_key, consensus_filepath)
-        # writes to multifasta
-        with open(consensus_filepath, 'rb') as consensus_file:
-            outfile.write(consensus_file.read())
+    # writes to multifasta
+    with open(consensus_filepath, 'rb') as consensus_file:
+        outfile.write(consensus_file.read())
 
-def build_multi_fasta(multi_fasta_path, df):
+def build_multi_fasta(multi_fasta_path, df, consensus_path):
     """
         Builds the multi fasta constructed from consensus sequences for all 
         samples in df
 
-        Parameters:
+        Parameters: 
             multi_fasta_path (str): path for location of multi fasta sequence
             (appended consensus sequences for all samples)
 
@@ -269,19 +269,19 @@ def build_multi_fasta(multi_fasta_path, df):
         num_samples = len(df)
         for index, sample in df.iterrows():
             count += 1
-            print(f"downloading sample: {count} / {num_samples}", end="\r")
+            print(f"adding sample: {count} / {num_samples}", end="\r")
             try:
                 # extract the bucket and key of consensus file from s3 uri
                 s3_bucket = extract_s3_bucket(sample["ResultLoc"])
                 consensus_key = extract_s3_key(sample["ResultLoc"], sample["Sample"])
                 # appends sample's consensus sequence to multifasta
-                append_multi_fasta(s3_bucket, consensus_key, outfile)
+                append_multi_fasta(s3_bucket, consensus_key, outfile, sample["Sample"], consensus_path)
             except utils.NoS3ObjectError as e:
                 # if consensus file can't be found in s3, btb_wgs_samples.csv must be corrupted
                 print(e.message)
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
-        print(f"downloaded samples: {count} / {num_samples} \n")
+        print(f"added samples: {count} / {num_samples} \n")
 
 def extract_s3_bucket(s3_uri):
     """
@@ -357,6 +357,7 @@ def main():
     parser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
     parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
     parser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
+    parser.add_argument("--fsx_path", help = "Path to fsx drive where consensus files will be held", default='/mnt/fsx-017/')
     # parse agrs
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args
@@ -366,6 +367,7 @@ def main():
     summary_bucket = clargs.pop("summary_bucket")
     summary_key = clargs.pop("summary_key")
     config = clargs.pop("config")
+    fsx = clargs.pop("fsx_path")
     # if config json file provided
     if config:
         error_keys = [key for key, val in clargs.items() if val]
@@ -384,6 +386,7 @@ def main():
     multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
+    consensus_downloads = os.path.join(fsx, "phyloConsensus")
     tree_path = os.path.join(results_path, "mega")
     # get samples from btb_wgs_samples.csv and filter
     print("\nbtb_phylo\n")
@@ -392,8 +395,12 @@ def main():
     # save df_summary (samples to include in VB) to csv
     samples_df.to_csv(summary_csv_path)
     # concatonate fasta files
+<<<<<<< HEAD
     print("Building multifasta ... ")
     build_multi_fasta(multi_fasta_path, samples_df)
+=======
+    build_multi_fasta(multi_fasta_path, samples_df, consensus_downloads) 
+>>>>>>> main
     # run snp-sites
     print("Running snp_sites ... \n")
     snp_sites(snp_sites_outpath, multi_fasta_path)
