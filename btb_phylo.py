@@ -237,12 +237,9 @@ def append_multi_fasta(s3_bucket, s3_key, outfile, sample, consensus_path):
             outfile (file object): file object refering to the multi fasta output
             file
     """
-    # temp directory for storing individual consensus files - deleted when function
-    # returns
-    consensus_filepath = consensus_path + sample['Sample'] + '.fas'
-    if os.path.exists(consensus_filepath):
-        pass
-    else:
+    # check if file is already present in the consensus directory 
+    consensus_filepath = os.path.join(consensus_path , sample , '.fas')
+    if not os.path.exists(consensus_filepath):
         # dowload consensus file from s3 to tempfile
         utils.s3_download_file(s3_bucket, s3_key, consensus_filepath)
     # writes to multifasta
@@ -254,7 +251,7 @@ def build_multi_fasta(multi_fasta_path, df, consensus_path):
         Builds the multi fasta constructed from consensus sequences for all 
         samples in df
 
-        Parameters:
+        Parameters: 
             multi_fasta_path (str): path for location of multi fasta sequence
             (appended consensus sequences for all samples)
 
@@ -278,7 +275,7 @@ def build_multi_fasta(multi_fasta_path, df, consensus_path):
                 s3_bucket = extract_s3_bucket(sample["ResultLoc"])
                 consensus_key = extract_s3_key(sample["ResultLoc"], sample["Sample"])
                 # appends sample's consensus sequence to multifasta
-                append_multi_fasta(s3_bucket, consensus_key, outfile, sample, consensus_path)
+                append_multi_fasta(s3_bucket, consensus_key, outfile, sample["Sample"], consensus_path)
             except utils.NoS3ObjectError as e:
                 # if consensus file can't be found in s3, btb_wgs_samples.csv must be corrupted
                 print(e.message)
@@ -381,7 +378,7 @@ def main():
     multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
-    consensus_downloads = '/mnt/fsx-017/phyloConsensus/'
+    consensus_downloads = os.path.join(results_path, "phyloConsensus")
     tree_path = os.path.join(results_path, "mega")
     # get samples from btb_wgs_samples.csv and filter
     samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
