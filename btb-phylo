@@ -10,7 +10,7 @@ DOCKER=${4:-foo}
 
 if [ $DOCKER = "--with-docker" ]; then
     #docker build -t btb-phylo:latest .
-    docker run --rm --mount type=bind,source=$RESULTS,target=/results aphacsubot/btb-phylo:dockerize /results $CONFIG $THREADS
+    docker run --rm --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONFIG,target=/config.json btb-phylo:latest /results /config.json $THREADS
 elif [ $DOCKER = "foo" ]; then
     python update_summary.py --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv
     python btb_phylo.py $RESULTS --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv -j $THREADS --config $CONFIG 
