@@ -1,12 +1,15 @@
 import tempfile
 import re
 import os
+import argparse
 
 import pandas as pd
 
 import utils
 
-#TODO: unit test
+DEFAULT_SUMMARY_BUCKET = "s3-csu-003"
+DEFAULT_SUMMARY_KEY = "v3-2/btb_wgs_samples.csv"
+
 def get_finalout_s3_keys(bucket="s3-csu-003", prefix="v3-2"):
     """
         Returns a list of s3 keys for all FinalOut.csv files stored under the 
@@ -116,11 +119,24 @@ def df_to_s3(df_summary, bucket="s3-csu-003", key="v3-2/btb_wgs_samples.csv"):
         df_summary.to_csv(summary_path, index=False)
         utils.s3_upload_file(summary_path, bucket, key)
 
-if __name__ == "__main__":
+def main():
+    # command line arguments
+    parser = argparse.ArgumentParser(description="update summary")
+    parser.add_argument("--summary_bucket", help="s3 bucket containing sample metadata .csv file", 
+                        type=str, default=DEFAULT_SUMMARY_BUCKET)
+    parser.add_argument("--summary_key", help="s3 key for sample metadata .csv file", 
+                        type=str, default=DEFAULT_SUMMARY_KEY)
+    args = parser.parse_args()
+    # download sample summary csv
+    df_summary = get_df_summary(args.summary_bucket, args.summary_key)
     print("getting list of s3 keys ... ")
-    #df_summary = get_df_summary("s3-csu-003", "v3-2/btb_wgs_samples.csv")
-    df_summary = get_df_summary("s3-staging-area", "nickpestell/btb_wgs_samples.csv")
+    # get s3 keys of FinalOut.csv for new batches of samples
     new_keys = new_final_out_keys(df_summary)
     print("appending new metadata to df_summary ... ")
+    # update the summary dataframe
     updated_df_summary = append_df_summary(df_summary, new_keys)
-    df_to_s3(updated_df_summary, "s3-staging-area", "nickpestell/btb_wgs_samples.csv")
+    # upload to s3
+    df_to_s3(updated_df_summary, args.summary_bucket, args.summary_key)
+
+if __name__ == "__main__":
+    main()
