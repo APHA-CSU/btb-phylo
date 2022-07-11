@@ -102,12 +102,16 @@ def append_df_summary(df_summary, new_keys, itteration=0):
             metadata added
     """
     # if not yet on last itteration (last new_key element)
-    if itteration < len(new_keys):
+    num_batches = len(new_keys)
+    if itteration < num_batches:
+        print(f"downloading batch summary: {itteration+1} / {num_batches}", end="\r")
         # read FinalOut.csv for current key
         finalout_df = finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
         # append to df_summary
         df_summary = append_df_summary(pd.concat([df_summary, finalout_df]), 
                                        new_keys, itteration+1)
+    else:
+        print(f"downloaded batch summaries: {num_batches} / {num_batches} \n")
     return df_summary
 
 def df_to_s3(df_summary, bucket="s3-csu-003", key="v3-2/btb_wgs_samples.csv"):
@@ -127,16 +131,17 @@ def main():
     parser.add_argument("--summary_key", help="s3 key for sample metadata .csv file", 
                         type=str, default=DEFAULT_SUMMARY_KEY)
     args = parser.parse_args()
-    print("downloading summary csv file ... ")
+    print("\nUpdate summary CSV \n")
+    print("Downloading summary csv file ... \n")
     # download sample summary csv
     df_summary = get_df_summary(args.summary_bucket, args.summary_key)
-    print("getting list of s3 keys ... ")
+    print("Getting list of s3 keys ... \n")
     # get s3 keys of FinalOut.csv for new batches of samples
     new_keys = new_final_out_keys(df_summary)
-    print("appending new metadata to df_summary ... ")
+    print("Appending new metadata to df_summary ... ")
     # update the summary dataframe
     updated_df_summary = append_df_summary(df_summary, new_keys)
-    print("uploading summary csv file ... ")
+    print("Uploading summary csv file ... \n")
     # upload to s3
     df_to_s3(updated_df_summary, args.summary_bucket, args.summary_key)
 
