@@ -9,8 +9,8 @@ import pandas as pd
 
 import utils
 
-DEFAULT_RESULTS_BUCKET = "s3-csu-003"
-DEFAULT_SUMMARY_KEY = "v3/summary/test.csv"
+DEFAULT_SUMMARY_BUCKET = "s3-csu-003"
+DEFAULT_SUMMARY_KEY = "v3-2/btb_wgs_samples.csv"
 
 class InvalidDtype(Exception):
     def __init__(self, message="Invalid series name. Series must be of correct type", 
@@ -209,7 +209,7 @@ def filter_columns_categorical(df, **kwargs):
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
     return df.query(query)
 
-def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, **kwargs):
+def get_samples_df(bucket=DEFAULT_SUMMARY_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, **kwargs):
     """
         Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
@@ -345,6 +345,10 @@ def main():
     parser.add_argument("results_path", help="path to results directory")
     parser.add_argument("--n_threads", "-j", type=str, default=1, help="number of threads for snp-dists")
     parser.add_argument("--build_tree", action="store_true", default=False)
+    parser.add_argument("--summary_bucket", help="s3 bucket containing sample metadata .csv file", 
+                        type=str, default=DEFAULT_SUMMARY_BUCKET)
+    parser.add_argument("--summary_key", help="s3 key for sample metadata .csv file", 
+                        type=str, default=DEFAULT_SUMMARY_KEY)
     parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--sample_name", "-s", dest="Sample", type=str, nargs="+")
     parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
@@ -359,6 +363,8 @@ def main():
     results_path = clargs.pop("results_path")
     threads = clargs.pop("n_threads")
     tree = clargs.pop("build_tree")
+    summary_bucket = clargs.pop("summary_bucket")
+    summary_key = clargs.pop("summary_key")
     config = clargs.pop("config")
     # if config json file provided
     if config:
@@ -382,7 +388,7 @@ def main():
     # get samples from btb_wgs_samples.csv and filter
     print("\nbtb_phylo\n")
     print("Downloading summary csv file ... \n")
-    samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
+    samples_df = get_samples_df(summary_bucket, summary_key, **kwargs)
     # save df_summary (samples to include in VB) to csv
     samples_df.to_csv(summary_csv_path)
     # concatonate fasta files
