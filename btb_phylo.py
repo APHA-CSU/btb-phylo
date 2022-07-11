@@ -238,7 +238,7 @@ def append_multi_fasta(s3_bucket, s3_key, outfile, sample, consensus_path):
             file
     """
     # check if file is already present in the consensus directory 
-    consensus_filepath = os.path.join(consensus_path , sample , '.fas')
+    consensus_filepath = os.path.join(consensus_path , sample + '.fas')
     if not os.path.exists(consensus_filepath):
         # dowload consensus file from s3 to tempfile
         utils.s3_download_file(s3_bucket, s3_key, consensus_filepath)
