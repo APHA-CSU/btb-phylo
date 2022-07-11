@@ -341,8 +341,9 @@ def build_tree(tree_path, snp_sites_outpath):
 
 def main():
     # command line arguments
-    parser = argparse.ArgumentParser(description="filtering parameters")
+    parser = argparse.ArgumentParser(description="btb-phylo")
     parser.add_argument("results_path", help="path to results directory")
+    parser.add_argument("--n_threads", "-j", type=str, default=1, help="number of threads for snp-dists")
     parser.add_argument("--build_tree", action="store_true", default=False)
     parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--sample_name", "-s", dest="Sample", type=str, nargs="+")
@@ -356,6 +357,7 @@ def main():
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args
     results_path = clargs.pop("results_path")
+    threads = clargs.pop("n_threads")
     tree = clargs.pop("build_tree")
     config = clargs.pop("config")
     # if config json file provided
@@ -386,7 +388,7 @@ def main():
     # run snp-sites
     snp_sites(snp_sites_outpath, multi_fasta_path)
     # run snp-dists
-    build_snp_matrix(snp_dists_outpath, snp_sites_outpath)
+    build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads)
     # build tree
     if tree:
         build_tree(tree_path, snp_sites_outpath)
