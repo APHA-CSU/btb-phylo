@@ -353,7 +353,7 @@ def main():
     parser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
     parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
     parser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
-    parser.add_argument("fsx_path", help = "Path to fsx drive where consensus files will be held", default='/mnt/fsx-017/')
+    parser.add_argument("--fsx_path", help = "Path to fsx drive where consensus files will be held", default='/mnt/fsx-017/')
     # parse agrs
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args
