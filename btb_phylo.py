@@ -225,13 +225,7 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
     
     return df
 
-def find_new_samples(df, results_path):
-
-    old_df = pd.read_csv(results_path + "summary.csv")
-    join = df.merge(old_df, on = 'Sample', how = "left")
-    join.to_csv(results_path + "test/test.csv")
-
-def append_multi_fasta(s3_bucket, s3_key, outfile):
+def append_multi_fasta(s3_bucket, s3_key, outfile, sample, consensus_path):
     """
         Appends a multi fasta file with the consensus sequence stored at s3_uri
         
@@ -245,15 +239,17 @@ def append_multi_fasta(s3_bucket, s3_key, outfile):
     """
     # temp directory for storing individual consensus files - deleted when function
     # returns
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        consensus_filepath = os.path.join(temp_dirname, "temp.fas") 
+    consensus_filepath = consensus_path + sample['Sample'] + '.fas'
+    if os.path.exists(consensus_filepath):
+        pass
+    else:
         # dowload consensus file from s3 to tempfile
         utils.s3_download_file(s3_bucket, s3_key, consensus_filepath)
-        # writes to multifasta
-        with open(consensus_filepath, 'rb') as consensus_file:
-            outfile.write(consensus_file.read())
+    # writes to multifasta
+    with open(consensus_filepath, 'rb') as consensus_file:
+        outfile.write(consensus_file.read())
 
-def build_multi_fasta(multi_fasta_path, df):
+def build_multi_fasta(multi_fasta_path, df, consensus_path):
     """
         Builds the multi fasta constructed from consensus sequences for all 
         samples in df
@@ -276,19 +272,19 @@ def build_multi_fasta(multi_fasta_path, df):
         num_samples = len(df)
         for index, sample in df.iterrows():
             count += 1
-            print(f"Downloading sample: {count} / {num_samples}", end="\r")
+            print(f"adding sample: {count} / {num_samples}", end="\r")
             try:
                 # extract the bucket and key of consensus file from s3 uri
                 s3_bucket = extract_s3_bucket(sample["ResultLoc"])
                 consensus_key = extract_s3_key(sample["ResultLoc"], sample["Sample"])
                 # appends sample's consensus sequence to multifasta
-                append_multi_fasta(s3_bucket, consensus_key, outfile)
+                append_multi_fasta(s3_bucket, consensus_key, outfile, sample, consensus_path)
             except utils.NoS3ObjectError as e:
                 # if consensus file can't be found in s3, btb_wgs_samples.csv must be corrupted
                 print(e.message)
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
-        print(f"Downloaded samples: {count} / {num_samples}")
+        print(f"Added samples: {count} / {num_samples}")
 
 def extract_s3_bucket(s3_uri):
     """
@@ -354,15 +350,15 @@ def main():
     warnings.formatwarning = utils.format_warning
     multi_fasta_path = "/home/cameronnicholls/tmp/test_multi_fasta.fas"
     results_path = "/home/cameronnicholls/tmp/"
-    df_summary = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv",  **kwargs)
-    new_samples_df = find_new_samples(df_summary, results_path)
+    consensus_path = "/mnt/fsx-017/phyloConsensus/"
+    df_summary = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs) 
     # save df_summary (samples to include in VB) to csv
     df_summary.to_csv(os.path.join(results_path, "summary.csv"))
     # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
     tree_path = os.path.join(results_path, "mega")
-    build_multi_fasta(multi_fasta_path, df_summary)
+    build_multi_fasta(multi_fasta_path, df_summary, consensus_path)
     snp_sites(snp_sites_outpath, multi_fasta_path)
     build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads=4)
     #build_tree(tree_path, snp_sites_outpath)
