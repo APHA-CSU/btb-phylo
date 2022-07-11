@@ -215,7 +215,7 @@ class TestBtbPhylo(unittest.TestCase):
         mock_open().read.side_effect=["AAA\nAAA", "TTT\nTTT", "CCC\nCCC", "GGG\nGGG"]
         # run build_multi_fasta() with test_df and a patched open
         with mock.patch("builtins.open", mock_open):
-            btb_phylo.build_multi_fasta("foo", test_df)
+            btb_phylo.build_multi_fasta("foo", test_df, '/mnt/fsx-017/phyloConsensus/')
         # calls to open to test against: 1 call for the output 
         # multifasta ("foo") and 4 calls for each consensus sequence
         open_calls = [mock.call("foo", "wb"), 
