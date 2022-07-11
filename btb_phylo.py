@@ -353,6 +353,7 @@ def main():
     parser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
     parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
     parser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
+    parser.add_argument("fsx_path", help = "Path to fsx drive where consensus files will be held", default='/mnt/fsx-017/')
     # parse agrs
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args
@@ -360,6 +361,7 @@ def main():
     threads = clargs.pop("n_threads")
     tree = clargs.pop("build_tree")
     config = clargs.pop("config")
+    fsx = clargs.pop("fsx_path")
     # if config json file provided
     if config:
         error_keys = [key for key, val in clargs.items() if val]
@@ -378,7 +380,7 @@ def main():
     multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
-    consensus_downloads = os.path.join(results_path, "phyloConsensus")
+    consensus_downloads = os.path.join(fsx, "phyloConsensus")
     tree_path = os.path.join(results_path, "mega")
     # get samples from btb_wgs_samples.csv and filter
     samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
