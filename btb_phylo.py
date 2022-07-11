@@ -269,7 +269,7 @@ def build_multi_fasta(multi_fasta_path, df):
         num_samples = len(df)
         for index, sample in df.iterrows():
             count += 1
-            print(f"Downloading sample: {count} / {num_samples}", end="\r")
+            print(f"downloading sample: {count} / {num_samples}", end="\r")
             try:
                 # extract the bucket and key of consensus file from s3 uri
                 s3_bucket = extract_s3_bucket(sample["ResultLoc"])
@@ -281,7 +281,7 @@ def build_multi_fasta(multi_fasta_path, df):
                 print(e.message)
                 print(f"Check results objects in row {index} of btb_wgs_sample.csv")
                 raise e
-        print(f"Downloaded samples: {count} / {num_samples}")
+        print(f"downloaded samples: {count} / {num_samples} \n")
 
 def extract_s3_bucket(s3_uri):
     """
@@ -380,17 +380,23 @@ def main():
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
     tree_path = os.path.join(results_path, "mega")
     # get samples from btb_wgs_samples.csv and filter
+    print("\nbtb_phylo\n")
+    print("Downloading summary csv file ... \n")
     samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
     # save df_summary (samples to include in VB) to csv
     samples_df.to_csv(summary_csv_path)
     # concatonate fasta files
+    print("Building multifasta ... ")
     build_multi_fasta(multi_fasta_path, samples_df)
     # run snp-sites
+    print("Running snp_sites ... \n")
     snp_sites(snp_sites_outpath, multi_fasta_path)
     # run snp-dists
+    print("Running snp_dists ... ")
     build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads)
     # build tree
     if tree:
+        print("\nRunning mega ... ")
         build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
