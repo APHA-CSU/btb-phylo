@@ -18,7 +18,6 @@ def get_finalout_s3_keys(bucket="s3-csu-003", prefix="v3-2"):
     # extract s3 key from output of cmd
     return list(map(extract_s3_key, finalout_s3_data.split("\n")))
 
-#TODO: unit test
 def extract_s3_key(final_out_s3_object):
     """
         Extracts the s3 key from s3 metadata of a single FinalOut.csv file

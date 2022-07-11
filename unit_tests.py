@@ -69,24 +69,29 @@ class TestBtbPhylo(unittest.TestCase):
                                 "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.5], dtype=float),
                                 "column_D":pd.Series([1, 3, 5, 7, 9], dtype=int)})
         # test individual filters
-        outcome = btb_phylo.filter_df(test_df, pcmap_threshold=(0.1, 0.3))
+        outcome = btb_phylo.filter_df(test_df, pcMapped=(0.1, 0.3))
         nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b", "c"], "Outcome":["Pass", "Pass"],
                                      "pcMapped":[0.2, 0.3], "column_D":[3, 5]}).values)
-        outcome = btb_phylo.filter_df(test_df, column_A=["a", "e"])
-        nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["e"], "Outcome":["Pass"],
-                                     "pcMapped":[0.5], "column_D":[9]}).values)
+        outcome = btb_phylo.filter_df(test_df, column_A=["a", "b", "e"])
+        #nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b", "e"], "Outcome":["Pass", "Pass"],
+        #                             "pcMapped":[0.2, 0.5], "column_D":[3, 9]}).values)
         outcome = btb_phylo.filter_df(test_df, column_D=(7, 10))
         nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["d", "e"], "Outcome":["Pass", "Pass"],
                                      "pcMapped":[0.4, 0.5], "column_D":[7, 9]}).values)
         # test multiple filters
-        outcome = btb_phylo.filter_df(test_df, pcmap_threshold=(0.15, 0.45), 
-                                                  column_A=["b", "c"], column_D=(2, 4)) 
-        nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b"], "Outcome":["Pass"],
-                                     "pcMapped":[0.2], "column_D":[3]}).values)
-        # test empty output
+        outcome = btb_phylo.filter_df(test_df, pcMapped=(0.15, 0.45), 
+                                                  column_A=["a", "b", "d", "e"], column_D=(2, 8)) 
+        nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b", "d"], "Outcome":["Pass", "Pass"],
+                                     "pcMapped":[0.2, 0.4], "column_D":[3, 7]}).values)
+        # test empty output < 1 samples
+        # empty
         with self.assertRaises(Exception):
-            btb_phylo.filter_df(test_df, pcmap_threshold=(0.15, 0.16), 
+            btb_phylo.filter_df(test_df, pcMapped=(0.15, 0.16), 
                                        column_A=["b", "c"], column_D=(2, 3))
+        # 1 sample
+        with self.assertRaises(Exception):
+            btb_phylo.filter_df(test_df, pcMapped=(0.15, 0.25), 
+                                       column_A=["b", "c"], column_D=(2, 4))
         # test invalid kwarg name
         with self.assertRaises(ValueError):
             btb_phylo.filter_df(test_df, foo="foo")
@@ -388,6 +393,35 @@ class TestUpdateSummary(unittest.TestCase):
             # assert recursion was called with correct order of arguments
             mock_finalout_csv_to_df.assert_has_calls(finalout_csv_to_df_calls)
 
+    def test_get_finalout_s3_keys(self):
+        # mock AWS s3 CLI command for getting s3 metadata
+        with mock.patch("update_summary.utils.run") as mock_run:
+            mock_run.return_value = "2022-06-28 06:38:51      45876 v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv\n \
+                                     2022-06-28 06:38:51 45876 v3-2/Results_10032_27Jun22/bar\n \
+                                     a b c foo" 
+            test_output = ["v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv",
+                           "v3-2/Results_10032_27Jun22/bar",
+                           "foo"]
+            self.assertEqual(update_summary.get_finalout_s3_keys(), test_output)
+
+    def test_extract_s3_key(self):
+        #test cases
+        test_input = ["2022-06-28 06:38:51      45876 v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv",
+                      "2022-06-28 06:38:51 45876 v3-2/Results_10032_27Jun22/bar",
+                      "a b c foo"]
+        test_output = ["v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv",
+                       "v3-2/Results_10032_27Jun22/bar",
+                       "foo"]
+        fail = False
+        for input, output in zip(test_input, test_output):
+            try:
+                self.assertEqual(update_summary.extract_s3_key(input), output)
+            except AssertionError as e:
+                fail = True
+                print(e)
+        if fail:
+            raise AssertionError
+
                                                     
 def test_suit(test_objs):                           
     suit = unittest.TestSuite(test_objs)            
@@ -403,7 +437,9 @@ if __name__ == "__main__":
                       TestBtbPhylo('test_extract_s3_bucket'),
                       TestBtbPhylo('test_match_s3_uri')]
     update_summary_test = [TestUpdateSummary('test_extract_submission_no'),
-                           TestUpdateSummary('test_append_df_summary')]
+                           TestUpdateSummary('test_append_df_summary'),
+                           TestUpdateSummary('test_get_finalout_s3_keys'),
+                           TestUpdateSummary('test_extract_s3_key')]
     runner = unittest.TextTestRunner()
     parser = argparse.ArgumentParser(description='Test code')
     module_arg = parser.add_argument('--module', '-m', nargs=1, 

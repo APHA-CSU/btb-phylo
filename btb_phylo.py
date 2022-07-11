@@ -3,6 +3,7 @@ import os
 import warnings
 import re
 import argparse
+import json
 
 import pandas as pd
 
@@ -105,15 +106,13 @@ def get_indexes_to_remove(df, parameter, method):
             (df[parameter] != threshold_1)].index)
     return indexes
 
-def filter_df(df, pcmap_threshold=(0,100), **kwargs):
+def filter_df(df, **kwargs):
     """ 
         Filters the sample summary dataframe which is based off 
         btb_wgs_samples.csv according to a set of criteria. 
 
         Parameters:
             df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv.
-
-            pcmap_threshold (tuple): min and max thresholds for pcMapped
 
             **kwargs: 0 or more optional arguments. Names must match a 
             column name in btb_wgs_samples.csv. If column is of type 
@@ -135,7 +134,7 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     # add "Pass" only samples and pcmap_theshold to the filtering 
     # criteria by default
     categorical_kwargs = {"Outcome": ["Pass"]}
-    numerical_kwargs = {"pcMapped": pcmap_threshold}
+    numerical_kwargs = {}
     for key in kwargs.keys():
         if key not in df.columns:
             raise ValueError(f"Invalid kwarg '{key}': must be one of: " 
@@ -151,11 +150,14 @@ def filter_df(df, pcmap_threshold=(0,100), **kwargs):
     # calls filter_columns_catergorical() with **categorical_kwargs on df, pipes 
     # the output into filter_columns_numeric() with **numerical_kwargs and assigns
     # the output to a new df_filtered
-    df_filtered = df.pipe(filter_columns_categorical, 
-                          **categorical_kwargs).pipe(filter_columns_numeric, 
-                                                     **numerical_kwargs)
-    if df_filtered.empty:
-        raise Exception("0 samples meet specified criteria")
+    if numerical_kwargs:
+        df_filtered = df.pipe(filter_columns_categorical, 
+                            **categorical_kwargs).pipe(filter_columns_numeric, 
+                                                        **numerical_kwargs)
+    else:
+        df_filtered = df.pipe(filter_columns_categorical, **categorical_kwargs)
+    if len(df_filtered) < 2:
+        raise Exception("1 or fewer samples meet specified criteria")
     return df_filtered
     
 # TODO: raise exception if second element is smaller than first
@@ -207,8 +209,7 @@ def filter_columns_categorical(df, **kwargs):
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
     return df.query(query)
 
-def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, 
-                   pcmap_threshold=(0,100), **kwargs):
+def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, **kwargs):
     """
         Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
@@ -218,7 +219,7 @@ def get_samples_df(bucket=DEFAULT_RESULTS_BUCKET, summary_key=DEFAULT_SUMMARY_KE
     # into remove duplicates()
     # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
     df = utils.summary_csv_to_df(bucket=bucket, 
-                                 summary_key=summary_key).pipe(filter_df, pcmap_threshold=pcmap_threshold, 
+                                 summary_key=summary_key).pipe(filter_df,
                                                                **kwargs).pipe(remove_duplicates, 
                                                                               pcMapped="max", Ncount="min")
     return df
@@ -339,24 +340,58 @@ def build_tree(tree_path, snp_sites_outpath):
     utils.run(cmd, shell=True)
 
 def main():
-    parser = argparse.ArgumentParser(description="filtering parameters")
-    parser.add_argument("--Ncount", "-Nc", dest="Ncount", type=float, nargs=2)
+    # command line arguments
+    parser = argparse.ArgumentParser(description="btb-phylo")
+    parser.add_argument("results_path", help="path to results directory")
+    parser.add_argument("--n_threads", "-j", type=str, default=1, help="number of threads for snp-dists")
+    parser.add_argument("--build_tree", action="store_true", default=False)
+    parser.add_argument("--config", type=str, default=None)
+    parser.add_argument("--sample_name", "-s", dest="Sample", type=str, nargs="+")
+    parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+    parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
+    parser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2)
+    parser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
     parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
-    kwargs = vars(parser.parse_args())
-    warnings.formatwarning = utils.format_warning
-    multi_fasta_path = "/home/nickpestell/tmp/test_multi_fasta.fas"
-    results_path = "/home/nickpestell/tmp/"
-    df_summary = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
-    # save df_summary (samples to include in VB) to csv
-    df_summary.to_csv(os.path.join(results_path, "summary.csv"))
-    # TODO: make multi_fasta_path a tempfile and pass file object into build_multi_fasta
+    parser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
+    # parse agrs
+    clargs = vars(parser.parse_args())
+    # retreive "non-filtering" args
+    results_path = clargs.pop("results_path")
+    threads = clargs.pop("n_threads")
+    tree = clargs.pop("build_tree")
+    config = clargs.pop("config")
+    # if config json file provided
+    if config:
+        error_keys = [key for key, val in clargs.items() if val]
+        # if any arguments provided with --config
+        if any(error_keys):
+            raise parser.error(f"arguments '{', '.join(error_keys)}' are incompatible with "
+                               "the 'config' argument")
+        # parse config file
+        with open(config) as f:
+            kwargs = json.load(f)
+    else:
+        # remove unused filtering args
+        kwargs = {k: v for k, v in clargs.items() if v is not None}
+    # set output paths
+    summary_csv_path = os.path.join(results_path, "sample_summary.csv")
+    multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
     tree_path = os.path.join(results_path, "mega")
-    build_multi_fasta(multi_fasta_path, df_summary)
+    # get samples from btb_wgs_samples.csv and filter
+    samples_df = get_samples_df("s3-staging-area", "nickpestell/btb_wgs_samples.csv", **kwargs)
+    # save df_summary (samples to include in VB) to csv
+    samples_df.to_csv(summary_csv_path)
+    # concatonate fasta files
+    build_multi_fasta(multi_fasta_path, samples_df)
+    # run snp-sites
     snp_sites(snp_sites_outpath, multi_fasta_path)
-    build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads=4)
-    #build_tree(tree_path, snp_sites_outpath)
+    # run snp-dists
+    build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads)
+    # build tree
+    if tree:
+        build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
     main()
