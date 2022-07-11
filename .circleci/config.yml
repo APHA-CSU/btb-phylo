@@ -21,7 +21,7 @@ jobs:
   build:
     docker:
       # Circleci base ubuntu image
-      - image: &build_img cimg/base:2020.01
+      - image: &build_img ubuntu-2204:2022.04.2
 
     steps:
       - build-and-push:
