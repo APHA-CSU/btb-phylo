@@ -10,7 +10,7 @@ commands:
     steps:
       - checkout
       - setup_remote_docker:
-        version: 20.10.14 
+          version: 20.10.14 
       - run: |
           TAG=<< parameters.tag >>
           docker build -t aphacsubot/btb-phylo:$TAG .
