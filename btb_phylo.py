@@ -395,12 +395,7 @@ def main():
     # save df_summary (samples to include in VB) to csv
     samples_df.to_csv(summary_csv_path)
     # concatonate fasta files
-<<<<<<< HEAD
-    print("Building multifasta ... ")
-    build_multi_fasta(multi_fasta_path, samples_df)
-=======
     build_multi_fasta(multi_fasta_path, samples_df, consensus_downloads) 
->>>>>>> main
     # run snp-sites
     print("Running snp_sites ... \n")
     snp_sites(snp_sites_outpath, multi_fasta_path)
