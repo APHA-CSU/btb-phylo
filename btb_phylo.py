@@ -1,4 +1,3 @@
-import tempfile
 import os
 import warnings
 import re
@@ -11,6 +10,7 @@ import utils
 
 DEFAULT_SUMMARY_BUCKET = "s3-csu-003"
 DEFAULT_SUMMARY_KEY = "v3-2/btb_wgs_samples.csv"
+DEFAULT_FSX_PATH = "/mnt/fsx-017"
 
 class InvalidDtype(Exception):
     def __init__(self, message="Invalid series name. Series must be of correct type", 
@@ -343,21 +343,22 @@ def main():
     # command line arguments
     parser = argparse.ArgumentParser(description="btb-phylo")
     parser.add_argument("results_path", help="path to results directory")
-    parser.add_argument("--n_threads", "-j", type=str, default=1, help="number of threads for snp-dists")
+    parser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
     parser.add_argument("--build_tree", action="store_true", default=False)
     parser.add_argument("--summary_bucket", help="s3 bucket containing sample metadata .csv file", 
-                        type=str, default=DEFAULT_SUMMARY_BUCKET)
+                        default=DEFAULT_SUMMARY_BUCKET)
     parser.add_argument("--summary_key", help="s3 key for sample metadata .csv file", 
-                        type=str, default=DEFAULT_SUMMARY_KEY)
-    parser.add_argument("--config", type=str, default=None)
-    parser.add_argument("--sample_name", "-s", dest="Sample", type=str, nargs="+")
-    parser.add_argument("--clade", "-c", dest="group", type=str, nargs="+")
+                        default=DEFAULT_SUMMARY_KEY)
+    parser.add_argument("--fsx_path", help="path to fsx drive where consensus files will be held", 
+                        default=DEFAULT_FSX_PATH)
+    parser.add_argument("--config", default=None)
+    parser.add_argument("--sample_name", "-s", dest="Sample", nargs="+")
+    parser.add_argument("--clade", "-c", dest="group", nargs="+")
     parser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
     parser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2)
     parser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
-    parser.add_argument("--flag", "-f", dest="flag", type=str, nargs="+")
+    parser.add_argument("--flag", "-f", dest="flag", nargs="+")
     parser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
-    parser.add_argument("--fsx_path", help = "Path to fsx drive where consensus files will be held", default='/mnt/fsx-017/')
     # parse agrs
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args

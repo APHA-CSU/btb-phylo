@@ -6,14 +6,17 @@
 RESULTS=$1
 CONFIG=$2
 THREADS=$3
-DOCKER=${4:-foo}
+FSX=$4
+DOCKER=${5:-no-docker}
+
+echo $FSX
 
 if [ $DOCKER = "--with-docker" ]; then
-    #docker build -t btb-phylo:latest .
-    docker run --rm --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONFIG,target=/config.json btb-phylo:latest /results /config.json $THREADS
-elif [ $DOCKER = "foo" ]; then
+    docker run --rm --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONFIG,target=/config.json --mount type=volume,source=mydockervolume,target=/fsx aphacsubot/btb-phylo:dockerize /results /config.json $THREADS /fsx
+elif [ $DOCKER = "no-docker" ]; then
+    ./mount.sh
     python update_summary.py --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv
-    python btb_phylo.py $RESULTS --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv -j $THREADS --config $CONFIG 
+    python btb_phylo.py $RESULTS --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv -j $THREADS --config $CONFIG --fsx_path $FSX 
 else
     echo "unrecognised argument: if running with docker, use '--with-docker'"
 fi
