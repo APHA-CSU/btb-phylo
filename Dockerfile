@@ -20,9 +20,8 @@ RUN apt-get -y update
 # Biotools
 RUN bash ./install/install.bash
 
-# Make executables
+# Make executable
 RUN chmod +x btb-phylo
-RUN chmod +x mount.sh
 
 ################## ENTRY ######################
 
