@@ -6,12 +6,13 @@
 RESULTS=$1
 CONFIG=$2
 THREADS=$3
-DOCKER=${4:-no-docker}
+HOSTUSER=$4
+DOCKER=${5:-no-docker}
 
 if [ $DOCKER = "--with-docker" ]; then
-    docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONFIG,target=/config.json aphacsubot/btb-phylo:dockerize /results /config.json $THREADS
+    docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONFIG,target=/config.json aphacsubot/btb-phylo:dockerize /results /config.json $THREADS $USER
 elif [ $DOCKER = "no-docker" ]; then
-    bash mount.sh
+    bash mount.sh $HOSTUSER
     python update_summary.py --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv
     python btb_phylo.py $RESULTS --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv -j $THREADS --config $CONFIG 
 else
