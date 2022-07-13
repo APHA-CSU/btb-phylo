@@ -10,6 +10,6 @@ if grep -qs "$REMOTE_SHARE" /proc/mounts; then
 	    printf " - Already mounted.  See details:\n $(grep $REMOTE_SHARE /proc/mounts)\n - Exiting.\n"
     else
 		mkdir /mnt/fsx-017
-		mount -t cifs -o vers=2.1,sec=ntlmsspi $REMOTE_SHARE $MOUNT_POINT \
+		mount -t cifs -o vers=2.1,sec=ntlmsspi,user=$USER,uid=$USER $REMOTE_SHARE $MOUNT_POINT \
 			&& echo " - Successfully mounted at: $MOUNT_POINT"
 fi
