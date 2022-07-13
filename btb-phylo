@@ -6,7 +6,7 @@
 RESULTS=$1
 CONFIG=$2
 THREADS=$3
-DOCKER=${5:-no-docker}
+DOCKER=${4:-no-docker}
 
 if [ $DOCKER = "--with-docker" ]; then
     docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONFIG,target=/config.json aphacsubot/btb-phylo:dockerize /results /config.json $THREADS
