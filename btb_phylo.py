@@ -10,7 +10,6 @@ import utils
 
 DEFAULT_SUMMARY_BUCKET = "s3-csu-003"
 DEFAULT_SUMMARY_KEY = "v3-2/btb_wgs_samples.csv"
-DEFAULT_FSX_PATH = "/mnt/fsx-017"
 
 class InvalidDtype(Exception):
     def __init__(self, message="Invalid series name. Series must be of correct type", 
@@ -352,8 +351,6 @@ def main():
                         default=DEFAULT_SUMMARY_BUCKET)
     parser.add_argument("--summary_key", help="s3 key for sample metadata .csv file", 
                         default=DEFAULT_SUMMARY_KEY)
-    parser.add_argument("--fsx_path", help="path to fsx drive where consensus files will be held", 
-                        default=DEFAULT_FSX_PATH)
     parser.add_argument("--config", default=None)
     parser.add_argument("--sample_name", "-s", dest="Sample", nargs="+")
     parser.add_argument("--clade", "-c", dest="group", nargs="+")
