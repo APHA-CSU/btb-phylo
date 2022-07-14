@@ -4,16 +4,17 @@
 #================================================================
 
 RESULTS=$1
-CONFIG=$2
-THREADS=$3
-DOCKER=${4:-no-docker}
+CONSENSUS=$2
+CONFIG=$3
+THREADS=$4
+DOCKER=${5:-no-docker}
 
 if [ $DOCKER = "--with-docker" ]; then
-    docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONFIG,target=/config.json aphacsubot/btb-phylo:dockerize /results /config.json $THREADS
+    docker pull aphacsubot/btb-phylo:dockerize
+    docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json aphacsubot/btb-phylo:dockerize /results /consensus /config.json $THREADS
 elif [ $DOCKER = "no-docker" ]; then
-    bash mount.sh
     python update_summary.py --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv
-    python btb_phylo.py $RESULTS --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv -j $THREADS --config $CONFIG 
+    python btb_phylo.py $RESULTS $CONSENSUS --summary_bucket s3-staging-area --summary_key nickpestell/btb_wgs_samples.csv -j $THREADS --config $CONFIG 
 else
     echo "unrecognised argument: if running with docker, use '--with-docker'"
 fi

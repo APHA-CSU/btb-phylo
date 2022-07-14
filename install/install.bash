@@ -15,7 +15,6 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     python3 \
     python3-pip \
     wget \
-    cifs-utils \
     awscli
 
 pip3 install -r requirements.txt
