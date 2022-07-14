@@ -12,7 +12,7 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git \
     gcc \
     make \
-    python3 \
+    python3.8 \
     python3-pip \
     wget \
     awscli
