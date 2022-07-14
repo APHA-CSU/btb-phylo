@@ -201,7 +201,7 @@ class TestBtbPhylo(unittest.TestCase):
         with self.assertRaises(ValueError):
             btb_phylo.filter_columns_categorical(test_df, column_A=[1, 2, 3])
 
-    @mock.patch("btb_phylo.utils.s3_download_file")
+    @mock.patch("btb_phylo.utils.s3_download_file_cli")
     @mock.patch("btb_phylo.extract_s3_bucket")
     @mock.patch("btb_phylo.extract_s3_key")
     def test_build_multi_fasta(self, _, mock_extract_s3_bucket, mock_extract_s3_key):
