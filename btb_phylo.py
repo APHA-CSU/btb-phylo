@@ -1,15 +1,13 @@
-import os
 import warnings
 import re
 import argparse
 import json
+from os import path
 
 import pandas as pd
 
 import utils
 
-DEFAULT_SUMMARY_BUCKET = "s3-csu-003"
-DEFAULT_SUMMARY_KEY = "v3-2/btb_wgs_samples.csv"
 
 class InvalidDtype(Exception):
     def __init__(self, message="Invalid series name. Series must be of correct type", 
@@ -208,7 +206,7 @@ def filter_columns_categorical(df, **kwargs):
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
     return df.query(query)
 
-def get_samples_df(bucket=DEFAULT_SUMMARY_BUCKET, summary_key=DEFAULT_SUMMARY_KEY, **kwargs):
+def get_samples_df(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
     """
         Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
@@ -217,10 +215,9 @@ def get_samples_df(bucket=DEFAULT_SUMMARY_BUCKET, summary_key=DEFAULT_SUMMARY_KE
     # pipes the output DataFrame from summary_csv_to_df() (all samples) into filter_df()
     # into remove duplicates()
     # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
-    df = utils.summary_csv_to_df(bucket=bucket, 
-                                 summary_key=summary_key).pipe(filter_df,
-                                                               **kwargs).pipe(remove_duplicates, 
-                                                                              pcMapped="max", Ncount="min")
+    df = utils.summary_csv_to_df(summary_filepath).pipe(filter_df,
+                                                        **kwargs).pipe(remove_duplicates, 
+                                                                       pcMapped="max", Ncount="min")
     
     return df
 
@@ -237,8 +234,8 @@ def append_multi_fasta(s3_bucket, s3_key, outfile, sample, consensus_path):
             file
     """
     # check if file is already present in the consensus directory 
-    consensus_filepath = os.path.join(consensus_path , sample + '.fas')
-    if not os.path.exists(consensus_filepath):
+    consensus_filepath = path.join(consensus_path , sample + '.fas')
+    if not path.exists(consensus_filepath):
         # dowload consensus file from s3 to tempfile
         utils.s3_download_file_cli(s3_bucket, s3_key, consensus_filepath)
     # writes to multifasta
@@ -301,7 +298,7 @@ def extract_s3_key(s3_uri, sample_name):
     _ = match_s3_uri(s3_uri)
     pattern = r'^s3://s3-csu-\d{3,3}/+'
     # construct s3 key of consensus file
-    return os.path.join(re.sub(pattern, "", s3_uri), 
+    return path.join(re.sub(pattern, "", s3_uri), 
                         "consensus", f"{sample_name}_consensus.fas")
 
 def match_s3_uri(s3_uri):
@@ -347,10 +344,8 @@ def main():
                         action="store_true", default=False)
     parser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
     parser.add_argument("--build_tree", action="store_true", default=False)
-    parser.add_argument("--summary_bucket", help="s3 bucket containing sample metadata .csv file", 
-                        default=DEFAULT_SUMMARY_BUCKET)
-    parser.add_argument("--summary_key", help="s3 key for sample metadata .csv file", 
-                        default=DEFAULT_SUMMARY_KEY)
+    parser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
+                        default=utils.DEFAULT_SUMMARY_FILEPATH)
     parser.add_argument("--config", default=None)
     parser.add_argument("--sample_name", "-s", dest="Sample", nargs="+")
     parser.add_argument("--clade", "-c", dest="group", nargs="+")
@@ -367,8 +362,7 @@ def main():
     download_only = clargs.pop("download_only")
     threads = clargs.pop("n_threads")
     tree = clargs.pop("build_tree")
-    summary_bucket = clargs.pop("summary_bucket")
-    summary_key = clargs.pop("summary_key")
+    summary_filepath = clargs.pop("summary_filepath")
     config = clargs.pop("config")
     # if config json file provided
     if config:
@@ -384,15 +378,15 @@ def main():
         # remove unused filtering args
         kwargs = {k: v for k, v in clargs.items() if v is not None}
     # set output paths
-    summary_csv_path = os.path.join(results_path, "sample_summary.csv")
-    multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
-    snp_sites_outpath = os.path.join(results_path, "snps.fas")
-    snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
-    tree_path = os.path.join(results_path, "mega")
+    summary_csv_path = path.join(results_path, "sample_summary.csv")
+    multi_fasta_path = path.join(results_path, "multi_fasta.fas")
+    snp_sites_outpath = path.join(results_path, "snps.fas")
+    snp_dists_outpath = path.join(results_path, "snp_matrix.tab")
+    tree_path = path.join(results_path, "mega")
     # get samples from btb_wgs_samples.csv and filter
     print("\nbtb_phylo\n")
-    print("Downloading summary csv file ... \n")
-    samples_df = get_samples_df(summary_bucket, summary_key, **kwargs)
+    print("Filtering samples ... \n")
+    samples_df = get_samples_df(summary_filepath, **kwargs)
     # save df_summary (samples to include in VB) to csv
     samples_df.to_csv(summary_csv_path)
     # concatonate fasta files

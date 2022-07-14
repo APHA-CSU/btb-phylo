@@ -1,14 +1,12 @@
 import tempfile
 import re
-import os
 import argparse
+from os import path
 
 import pandas as pd
 
 import utils
 
-DEFAULT_SUMMARY_BUCKET = "s3-csu-003"
-DEFAULT_SUMMARY_KEY = "v3-2/btb_wgs_samples.csv"
 
 def get_finalout_s3_keys(bucket="s3-csu-003", prefix="v3-2"):
     """
@@ -32,19 +30,19 @@ def finalout_csv_to_df(s3_key, s3_bucket="s3-csu-003"):
         Downloads FinalOut.csv files and writes to pandas dataframe
     """
     with tempfile.TemporaryDirectory() as temp_dirname:
-        finalout_path = os.path.join(temp_dirname, "FinalOut.csv") 
+        finalout_path = path.join(temp_dirname, "FinalOut.csv") 
         utils.s3_download_file(s3_bucket, s3_key, finalout_path)
         return pd.read_csv(finalout_path, comment="#")
 
-def get_df_summary(bucket="s3-csu-003", key="v3-2/btb_wgs_samples.csv"):
+def get_df_summary(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
         Reads btb_wgs_samples.csv into pandas dataframe. Creates new empty dataframe
         if btb_wgs_samples.csv does not exist.
     """
-    try:
-        return utils.summary_csv_to_df(bucket, key)
+    if path.exists(summary_filepath):
+        return utils.summary_csv_to_df(summary_filepath)
     # if running for the first time (i.e. no btb_wgs_samples.csv), create new empty dataframe
-    except utils.NoS3ObjectError:
+    else:
         column_names = ["Sample", "GenomeCov", "MeanDepth", "NumRawReads", "pcMapped", 
                         "Outcome", "flag", "group", "CSSTested", "matches","mismatches", 
                         "noCoverage", "anomalous", "Ncount", "ResultLoc", "ID", 
@@ -114,36 +112,31 @@ def append_df_summary(df_summary, new_keys, itteration=0):
         print(f"downloaded batch summaries: {num_batches} / {num_batches} \n")
     return df_summary
 
-def df_to_s3(df_summary, bucket="s3-csu-003", key="v3-2/btb_wgs_samples.csv"):
+def df_to_csv(df_summary, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
-        Upload df_summary to s3
+        Save df_summary to csv
     """
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        summary_path = os.path.join(temp_dirname, "btb_wgs_samples.csv") 
-        df_summary.to_csv(summary_path, index=False)
-        utils.s3_upload_file(summary_path, bucket, key)
+    df_summary.to_csv(summary_filepath, index=False)
 
 def main():
     # command line arguments
     parser = argparse.ArgumentParser(description="update summary")
-    parser.add_argument("--summary_bucket", help="s3 bucket containing sample metadata .csv file", 
-                        type=str, default=DEFAULT_SUMMARY_BUCKET)
-    parser.add_argument("--summary_key", help="s3 key for sample metadata .csv file", 
-                        type=str, default=DEFAULT_SUMMARY_KEY)
+    parser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
+                        default=utils.DEFAULT_SUMMARY_FILEPATH)
     args = parser.parse_args()
     print("\nupdate_summary\n")
     print("Downloading summary csv file ... \n")
     # download sample summary csv
-    df_summary = get_df_summary(args.summary_bucket, args.summary_key)
+    df_summary = get_df_summary(args.summary_filepath)
     print("Getting list of s3 keys ... \n")
     # get s3 keys of FinalOut.csv for new batches of samples
     new_keys = new_final_out_keys(df_summary)
     print("Appending new metadata to df_summary ... ")
     # update the summary dataframe
     updated_df_summary = append_df_summary(df_summary, new_keys)
-    print("Uploading summary csv file ... \n")
+    print("Saving summary csv file ... \n")
     # upload to s3
-    df_to_s3(updated_df_summary, args.summary_bucket, args.summary_key)
+    df_to_csv(updated_df_summary, args.summary_filepath)
 
 if __name__ == "__main__":
     main()

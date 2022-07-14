@@ -1,10 +1,13 @@
 import subprocess
-import os
-import tempfile
+from os import path
 
 import boto3
 import botocore
 import pandas as pd
+
+
+DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.abspath(__file__)), "summary.csv")
+
 
 class NoS3ObjectError(Exception):
     def __init__(self, bucket, key):
@@ -17,21 +20,18 @@ class NoS3ObjectError(Exception):
 def format_warning(message, category, filename, lineno, file=None, line=None):
     return '%s:%s: %s:%s\n' % (filename, lineno, category.__name__, message)
 
-def summary_csv_to_df(bucket, summary_key):
+def summary_csv_to_df(summary_filepath):
     """
         Downloads btb_wgs_samples.csv and returns the data in a pandas dataframe.
     """
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        summary_filepath = os.path.join(temp_dirname, "samples.csv")
-        s3_download_file(bucket, summary_key, summary_filepath)
-        df = pd.read_csv(summary_filepath, comment="#", 
-                         dtype = {"Sample":"category", "GenomeCov":float, 
-                         "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
-                         "Outcome":"category", "flag":"category", "group":"category", 
-                         "CSSTested":float, "matches":float, "mismatches":float, 
-                         "noCoverage":float, "anomalous":float, "Ncount":float, 
-                         "ResultLoc":"category", "ID":"category", "TotalReads":float, 
-                         "Abundance":float, "Submission": object})
+    df = pd.read_csv(summary_filepath, comment="#", 
+                     dtype = {"Sample":"category", "GenomeCov":float, 
+                     "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
+                     "Outcome":"category", "flag":"category", "group":"category", 
+                     "CSSTested":float, "matches":float, "mismatches":float, 
+                     "noCoverage":float, "anomalous":float, "Ncount":float, 
+                     "ResultLoc":"category", "ID":"category", "TotalReads":float, 
+                     "Abundance":float, "Submission": object})
     return df
 
 
@@ -42,7 +42,7 @@ def s3_folder_exists(bucket, path):
     """
     exists = False
     client = boto3.client('s3')
-    path = os.path.join(path, "")
+    path = path.join(path, "")
     response = client.list_objects(Bucket=bucket, Prefix=path, MaxKeys=1)
     if 'Contents' in response:
         exists = True
@@ -98,9 +98,9 @@ def s3_download_folder(bucket, key, dest):
         path (string)
     """
     if s3_folder_exists(bucket, key):
-        key = os.path.join(key, "")
-        bucket = os.path.join(bucket, "")
-        dest = os.path.join(dest, "")
+        key = path.join(key, "")
+        bucket = path.join(bucket, "")
+        dest = path.join(dest, "")
         run(["aws", "s3", "cp", "--recursive", "s3://" + bucket + key, dest])
     else:
         raise NoS3ObjectError(bucket, key)

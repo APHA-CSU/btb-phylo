@@ -7,9 +7,11 @@ RESULTS=$1
 CONSENSUS=$2
 CONFIG=$3
 THREADS=$4
-DOCKER=${5:-no-docker}
+if $THREADS
+    DOCKER=${5:-no-docker}
 
 if [ $DOCKER = "--with-docker" ]; then
+    echo "Running btb-phylo with docker"
     docker pull aphacsubot/btb-phylo:dockerize
     docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json aphacsubot/btb-phylo:dockerize /results /consensus /config.json $THREADS
 elif [ $DOCKER = "no-docker" ]; then
