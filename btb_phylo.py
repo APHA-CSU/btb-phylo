@@ -241,7 +241,7 @@ def append_multi_fasta(s3_bucket, s3_key, outfile, sample, consensus_path):
     consensus_filepath = os.path.join(consensus_path , sample + '.fas')
     if not os.path.exists(consensus_filepath):
         # dowload consensus file from s3 to tempfile
-        utils.s3_download_file(s3_bucket, s3_key, consensus_filepath)
+        utils.s3_download_file_cli(s3_bucket, s3_key, consensus_filepath)
     # writes to multifasta
     with open(consensus_filepath, 'rb') as consensus_file:
         outfile.write(consensus_file.read())
@@ -343,6 +343,9 @@ def main():
     # command line arguments
     parser = argparse.ArgumentParser(description="btb-phylo")
     parser.add_argument("results_path", help="path to results directory")
+    parser.add_argument("consensus_path", help = "path to where consensus files will be held")
+    parser.add_argument("--download_only", help = "if only dowloading connsensus sequences",
+                        action="store_true", default=False)
     parser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
     parser.add_argument("--build_tree", action="store_true", default=False)
     parser.add_argument("--summary_bucket", help="s3 bucket containing sample metadata .csv file", 
@@ -363,12 +366,13 @@ def main():
     clargs = vars(parser.parse_args())
     # retreive "non-filtering" args
     results_path = clargs.pop("results_path")
+    consensus_path = clargs.pop("consensus_path")
+    download_only = clargs.pop("download_only")
     threads = clargs.pop("n_threads")
     tree = clargs.pop("build_tree")
     summary_bucket = clargs.pop("summary_bucket")
     summary_key = clargs.pop("summary_key")
     config = clargs.pop("config")
-    fsx = clargs.pop("fsx_path")
     # if config json file provided
     if config:
         error_keys = [key for key, val in clargs.items() if val]
@@ -387,7 +391,6 @@ def main():
     multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
-    consensus_downloads = os.path.join(fsx, "phyloConsensus")
     tree_path = os.path.join(results_path, "mega")
     # get samples from btb_wgs_samples.csv and filter
     print("\nbtb_phylo\n")
@@ -396,17 +399,18 @@ def main():
     # save df_summary (samples to include in VB) to csv
     samples_df.to_csv(summary_csv_path)
     # concatonate fasta files
-    build_multi_fasta(multi_fasta_path, samples_df, consensus_downloads) 
-    # run snp-sites
-    print("Running snp_sites ... \n")
-    snp_sites(snp_sites_outpath, multi_fasta_path)
-    # run snp-dists
-    print("Running snp_dists ... ")
-    build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads)
-    # build tree
-    if tree:
-        print("\nRunning mega ... ")
-        build_tree(tree_path, snp_sites_outpath)
+    build_multi_fasta(multi_fasta_path, samples_df, consensus_path) 
+    if not download_only:
+        # run snp-sites
+        print("Running snp_sites ... \n")
+        snp_sites(snp_sites_outpath, multi_fasta_path)
+        # run snp-dists
+        print("Running snp_dists ... ")
+        build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads)
+        # build tree
+        if tree:
+            print("\nRunning mega ... ")
+            build_tree(tree_path, snp_sites_outpath)
 
 if __name__ == "__main__":
     main()

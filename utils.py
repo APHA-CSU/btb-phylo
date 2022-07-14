@@ -116,6 +116,16 @@ def s3_download_file(bucket, key, dest):
     else:
         raise NoS3ObjectError(bucket, key)
 
+def s3_download_file_cli(bucket, key, dest):
+    """
+        Downloads s3 folder at the key-bucket pair (strings) to dest 
+        path (string)
+    """
+    if s3_object_exists(bucket, key):
+        run(["aws", "s3", "cp", f"s3://{bucket}/{key}", dest])
+    else:
+        raise NoS3ObjectError(bucket, key)
+
 def s3_upload_file(file, bucket, key):
     s3_client = boto3.client('s3')
     s3_client.upload_file(file, bucket, key)
