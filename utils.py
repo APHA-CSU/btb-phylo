@@ -88,7 +88,6 @@ def run(cmd, *args, **kwargs):
             %s
             cmd failed with exit code %i
           *****""" % (cmd, returncode))
-
     if "capture_output" in kwargs and kwargs["capture_output"]:
         return ps.stdout.decode().strip('\n')
 
@@ -110,7 +109,7 @@ def s3_download_folder(bucket, key, dest):
 def s3_download_file(bucket, key, dest):
     """
         Downloads s3 folder at the key-bucket pair (strings) to dest 
-        path (string)
+        path (string) using boto3
     """
     if s3_object_exists(bucket, key):
         s3 = boto3.client('s3')
@@ -121,10 +120,10 @@ def s3_download_file(bucket, key, dest):
 def s3_download_file_cli(bucket, key, dest):
     """
         Downloads s3 folder at the key-bucket pair (strings) to dest 
-        path (string)
+        path (string) using the AWS CLI
     """
     if s3_object_exists(bucket, key):
-        run(["aws", "s3", "cp", f"s3://{bucket}/{key}", dest])
+        run(["aws", "s3", "cp", f"s3://{bucket}/{key}", dest], capture_output=True)
     else:
         raise NoS3ObjectError(bucket, key)
 
