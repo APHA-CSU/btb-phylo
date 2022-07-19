@@ -31,7 +31,7 @@ def finalout_csv_to_df(s3_key, s3_bucket="s3-csu-003"):
     """
     with tempfile.TemporaryDirectory() as temp_dirname:
         finalout_path = path.join(temp_dirname, "FinalOut.csv") 
-        utils.s3_download_file(s3_bucket, s3_key, finalout_path)
+        utils.s3_download_file_cli(s3_bucket, s3_key, finalout_path)
         return pd.read_csv(finalout_path, comment="#")
 
 def get_df_summary(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
