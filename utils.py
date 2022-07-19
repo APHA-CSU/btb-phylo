@@ -23,7 +23,8 @@ def summary_csv_to_df(bucket, summary_key):
     """
     with tempfile.TemporaryDirectory() as temp_dirname:
         summary_filepath = os.path.join(temp_dirname, "samples.csv")
-        s3_download_file(bucket, summary_key, summary_filepath)
+        # TODO: use s3_download_file() if boto3 is fixed
+        s3_download_file_cli(bucket, summary_key, summary_filepath)
         df = pd.read_csv(summary_filepath, comment="#", 
                          dtype = {"Sample":"category", "GenomeCov":float, 
                          "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
@@ -105,6 +106,7 @@ def s3_download_folder(bucket, key, dest):
     else:
         raise NoS3ObjectError(bucket, key)
 
+# TODO: remove if unused
 def s3_download_file(bucket, key, dest):
     """
         Downloads s3 folder at the key-bucket pair (strings) to dest 
