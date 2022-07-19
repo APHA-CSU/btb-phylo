@@ -23,7 +23,8 @@ def summary_csv_to_df(bucket, summary_key):
     """
     with tempfile.TemporaryDirectory() as temp_dirname:
         summary_filepath = os.path.join(temp_dirname, "samples.csv")
-        s3_download_file(bucket, summary_key, summary_filepath)
+        # TODO: use s3_download_file() if boto3 is fixed
+        s3_download_file_cli(bucket, summary_key, summary_filepath)
         df = pd.read_csv(summary_filepath, comment="#", 
                          dtype = {"Sample":"category", "GenomeCov":float, 
                          "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
@@ -87,7 +88,6 @@ def run(cmd, *args, **kwargs):
             %s
             cmd failed with exit code %i
           *****""" % (cmd, returncode))
-
     if "capture_output" in kwargs and kwargs["capture_output"]:
         return ps.stdout.decode().strip('\n')
 
@@ -105,14 +105,25 @@ def s3_download_folder(bucket, key, dest):
     else:
         raise NoS3ObjectError(bucket, key)
 
+# TODO: remove if unused
 def s3_download_file(bucket, key, dest):
     """
         Downloads s3 folder at the key-bucket pair (strings) to dest 
-        path (string)
+        path (string) using boto3
     """
     if s3_object_exists(bucket, key):
         s3 = boto3.client('s3')
         s3.download_file(bucket, key, dest)
+    else:
+        raise NoS3ObjectError(bucket, key)
+
+def s3_download_file_cli(bucket, key, dest):
+    """
+        Downloads s3 folder at the key-bucket pair (strings) to dest 
+        path (string) using the AWS CLI
+    """
+    if s3_object_exists(bucket, key):
+        run(["aws", "s3", "cp", f"s3://{bucket}/{key}", dest], capture_output=True)
     else:
         raise NoS3ObjectError(bucket, key)
 
