@@ -247,7 +247,9 @@ def main():
     print("Filtering samples ... \n")
     samples_df = get_samples_df(summary_filepath, **kwargs)
     # save df_summary (samples to include in VB) to csv
-    samples_df.to_csv(filtered_filepath)
+    print("Saving filtered samples csv ... \n")
+    samples_df.to_csv(filtered_filepath, index=False)
+    print("Done\n")
 
 if __name__ == "__main__":
     main()

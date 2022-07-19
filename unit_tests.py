@@ -5,15 +5,15 @@ import argparse
 import pandas as pd
 import numpy.testing as nptesting
 
-import btb_phylo 
+import phylogeny 
 import filter_samples
 import update_summary
 
 
-class TestBtbPhylo(unittest.TestCase):
-    @mock.patch("btb_phylo.utils.s3_download_file_cli")
-    @mock.patch("btb_phylo.extract_s3_bucket")
-    @mock.patch("btb_phylo.extract_s3_key")
+class TestPhylogeny(unittest.TestCase):
+    @mock.patch("phylogeny.utils.s3_download_file_cli")
+    @mock.patch("phylogeny.extract_s3_bucket")
+    @mock.patch("phylogeny.extract_s3_key")
     def test_build_multi_fasta(self, _, mock_extract_s3_bucket, mock_extract_s3_key):
         mock_extract_s3_bucket.return_value = "foo_bucket"
         mock_extract_s3_key.return_value = "foo_key"
@@ -25,7 +25,7 @@ class TestBtbPhylo(unittest.TestCase):
         mock_open().read.side_effect=["AAA\nAAA", "TTT\nTTT", "CCC\nCCC", "GGG\nGGG"]
         # run build_multi_fasta() with test_df and a patched open
         with mock.patch("builtins.open", mock_open):
-            btb_phylo.build_multi_fasta("foo", test_df, 'bar')
+            phylogeny.build_multi_fasta("foo", test_df, 'bar')
         # calls to open to test against: 1 call for the output 
         # multifasta ("foo") and 4 calls for each consensus sequence
         open_calls = [mock.call("foo", "wb"), 
@@ -54,7 +54,7 @@ class TestBtbPhylo(unittest.TestCase):
         i = 0
         for input, output in zip(test_input, test_output):
             try:
-                self.assertEqual(btb_phylo.extract_s3_bucket(input), output)
+                self.assertEqual(phylogeny.extract_s3_bucket(input), output)
             except AssertionError as e:
                 i += 1
                 fail = True
@@ -74,7 +74,7 @@ class TestBtbPhylo(unittest.TestCase):
         i = 0
         for input, output in zip(test_input, test_output):
             try:
-                self.assertEqual(btb_phylo.extract_s3_key(input[0], input[1]), output)
+                self.assertEqual(phylogeny.extract_s3_key(input[0], input[1]), output)
             except AssertionError as e:
                 i += 1
                 fail = True
@@ -84,22 +84,22 @@ class TestBtbPhylo(unittest.TestCase):
 
     def test_match_s3_uri(self):
         # test exceptions
-        with self.assertRaises(btb_phylo.BadS3UriError):
-            btb_phylo.match_s3_uri('s3://s3-csu-003')
-        with self.assertRaises(btb_phylo.BadS3UriError):
-            btb_phylo.match_s3_uri('s3://s3-csu-003abc')
-        with self.assertRaises(btb_phylo.BadS3UriError):
-            btb_phylo.match_s3_uri('s3://s3-csu-03/abc')
-        with self.assertRaises(btb_phylo.BadS3UriError):
-            btb_phylo.match_s3_uri('s3:/s3-csu-003/abc')
-        with self.assertRaises(btb_phylo.BadS3UriError):
-            btb_phylo.match_s3_uri('s4://s3-csu-003/abc')
-        with self.assertRaises(btb_phylo.BadS3UriError):
-            btb_phylo.match_s3_uri('s3://s5-abc-003/abc')
-        with self.assertRaises(btb_phylo.BadS3UriError):
-            btb_phylo.match_s3_uri('s3://s3-csu-abc/abc')
-        with self.assertRaises(btb_phylo.BadS3UriError):
-            btb_phylo.match_s3_uri('s3://s3-csu-1234/abc')
+        with self.assertRaises(phylogeny.BadS3UriError):
+            phylogeny.match_s3_uri('s3://s3-csu-003')
+        with self.assertRaises(phylogeny.BadS3UriError):
+            phylogeny.match_s3_uri('s3://s3-csu-003abc')
+        with self.assertRaises(phylogeny.BadS3UriError):
+            phylogeny.match_s3_uri('s3://s3-csu-03/abc')
+        with self.assertRaises(phylogeny.BadS3UriError):
+            phylogeny.match_s3_uri('s3:/s3-csu-003/abc')
+        with self.assertRaises(phylogeny.BadS3UriError):
+            phylogeny.match_s3_uri('s4://s3-csu-003/abc')
+        with self.assertRaises(phylogeny.BadS3UriError):
+            phylogeny.match_s3_uri('s3://s5-abc-003/abc')
+        with self.assertRaises(phylogeny.BadS3UriError):
+            phylogeny.match_s3_uri('s3://s3-csu-abc/abc')
+        with self.assertRaises(phylogeny.BadS3UriError):
+            phylogeny.match_s3_uri('s3://s3-csu-1234/abc')
 
 class TestFilterSamples(unittest.TestCase):
     def test_remove_duplicates(self):
@@ -430,9 +430,9 @@ def test_suit(test_objs):
     return suit                                     
                                                     
 if __name__ == "__main__":                          
-    btb_phylo_test = [TestBtbPhylo('test_build_multi_fasta'),
-                      TestBtbPhylo('test_extract_s3_bucket'),
-                      TestBtbPhylo('test_match_s3_uri')]
+    phylogeny_test = [TestPhylogeny('test_build_multi_fasta'),
+                      TestPhylogeny('test_extract_s3_bucket'),
+                      TestPhylogeny('test_match_s3_uri')]
     filter_samples_test = [TestFilterSamples('test_remove_duplicates'),
                            TestFilterSamples('test_get_indexes_to_remove'),
                            TestFilterSamples('test_filter_df'),
@@ -445,18 +445,18 @@ if __name__ == "__main__":
     runner = unittest.TextTestRunner()
     parser = argparse.ArgumentParser(description='Test code')
     module_arg = parser.add_argument('--module', '-m', nargs=1, 
-                                     help="module to test: 'btb_phylo', 'update_summary' or 'filter_samples'",
+                                     help="module to test: 'phylogeny', 'update_summary' or 'filter_samples'",
                                      default=None)
     args = parser.parse_args()
     if args.module:
-        if args.module[0] == 'btb_phylo':
-            runner.run(test_suit(btb_phylo_test)) 
-        if args.module[0] == 'filter_samples':
+        if args.module[0] == 'phylogeny':
+            runner.run(test_suit(phylogeny_test)) 
+        elif args.module[0] == 'filter_samples':
             runner.run(test_suit(filter_samples_test)) 
         elif args.module[0] == 'update_summary':
             runner.run(test_suit(update_summary_test)) 
         else:
             raise argparse.ArgumentError(module_arg, 
-                                         "Invalid argument. Please use 'btb_phylo', 'update_summary' or 'filter_samples'")
+                                         "Invalid argument. Please use 'phylogeny', 'update_summary' or 'filter_samples'")
     else:
         unittest.main(buffer=True)
