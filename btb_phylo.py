@@ -21,7 +21,7 @@ def update_samples(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     print("Loading summary csv file ... \n")
     # download sample summary csv
     df_summary = update_summary.get_df_summary(summary_filepath)
-    print("Getting list of s3 keys ... \n")
+    print("Getting s3 keys for batch summary files ... \n")
     # get s3 keys of FinalOut.csv for new batches of samples
     new_keys = update_summary.new_final_out_keys(df_summary)
     print("Appending new metadata to df_summary ... ")

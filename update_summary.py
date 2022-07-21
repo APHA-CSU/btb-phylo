@@ -39,6 +39,7 @@ def get_df_summary(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
         Reads summary csv into pandas dataframe. Creates new empty dataframe
         if local copy of summary csv does not exist.
     """
+    print("***", summary_filepath)
     if path.exists(summary_filepath):
         return utils.summary_csv_to_df(summary_filepath)
     # if running for the first time (i.e. no btb_wgs_samples.csv), create new empty dataframe
