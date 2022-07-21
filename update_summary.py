@@ -36,8 +36,8 @@ def finalout_csv_to_df(s3_key, s3_bucket="s3-csu-003"):
 
 def get_df_summary(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
-        Reads btb_wgs_samples.csv into pandas dataframe. Creates new empty dataframe
-        if btb_wgs_samples.csv does not exist.
+        Reads summary csv into pandas dataframe. Creates new empty dataframe
+        if local copy of summary csv does not exist.
     """
     if path.exists(summary_filepath):
         return utils.summary_csv_to_df(summary_filepath)
@@ -111,32 +111,3 @@ def append_df_summary(df_summary, new_keys, itteration=0):
     else:
         print(f"downloaded batch summaries: {num_batches} / {num_batches} \n")
     return df_summary
-
-def df_to_csv(df_summary, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
-    """
-        Save df_summary to csv
-    """
-    df_summary.to_csv(summary_filepath, index=False)
-
-def main():
-    # command line arguments
-    parser = argparse.ArgumentParser(description="update summary")
-    parser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
-                        default=utils.DEFAULT_SUMMARY_FILEPATH)
-    args = parser.parse_args()
-    print("\nupdate_summary\n")
-    print("Downloading summary csv file ... \n")
-    # download sample summary csv
-    df_summary = get_df_summary(args.summary_filepath)
-    print("Getting list of s3 keys ... \n")
-    # get s3 keys of FinalOut.csv for new batches of samples
-    new_keys = new_final_out_keys(df_summary)
-    print("Appending new metadata to df_summary ... ")
-    # update the summary dataframe
-    updated_df_summary = append_df_summary(df_summary, new_keys)
-    print("Saving summary csv file ... \n")
-    # upload to s3
-    df_to_csv(updated_df_summary, args.summary_filepath)
-
-if __name__ == "__main__":
-    main()

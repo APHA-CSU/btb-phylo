@@ -6,7 +6,7 @@ import botocore
 import pandas as pd
 
 
-DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.abspath(__file__)), "summary.csv")
+DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.abspath(__file__)), "all_samples.csv")
 
 
 class NoS3ObjectError(Exception):
@@ -138,3 +138,9 @@ def list_s3_objects(bucket, prefix):
     s3_client = boto3.client('s3')
     response = s3_client.list_objects_v2(Bucket=bucket, Delimiter = '/', Prefix=prefix)
     return [i['Prefix'] for i in response['CommonPrefixes']]
+
+def df_to_csv(df_summary, summary_filepath=DEFAULT_SUMMARY_FILEPATH):
+    """
+        Save df_summary to csv
+    """
+    df_summary.to_csv(summary_filepath, index=False)
