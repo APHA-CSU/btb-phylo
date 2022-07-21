@@ -8,7 +8,8 @@ SCRIPT="${0##*/}"
 parse_args() {
     THREADS=$(nproc)
     DOCKER=0
-    SOPTS="j:"
+    CONFIG=0
+    SOPTS="j:c:"
 
     TMP=$(getopt -o "$SOPTS" -n "$SCRIPT" -- "$@") || exit 1
 
@@ -21,6 +22,10 @@ parse_args() {
                 THREADS=$2
                 shift
                 ;;
+            -c)
+                CONFIG=$2
+                shift
+                ;;
             --)
                 shift
                 break
@@ -29,16 +34,15 @@ parse_args() {
         shift
     done
 
-    if (( $#<3 ))
+    if (( $#<2 ))
     then
-        printf "Must include positional arguments of paths to: results folder, "
-        printf "consensus folder and configuraiton file\n"
+        printf "Must include positional arguments of paths to: results folder "
+        printf "and consensus folder\n"
         exit 1
     fi
 
     RESULTS=$1
     CONSENSUS=$2
-    CONFIG=$3
     shift
     shift
     shift
@@ -50,8 +54,8 @@ parse_args() {
         DOCKER=1
         else
         printf "Unrecognised argument: '%s'. Please include positional arguments for " "$1"
-        printf "paths to: results folder, consensus folder and configuration file. "
-        printf "Additional optional arguments include 'with-docker' and '-j' (see Readme)\n"
+        printf "paths to: results folder and consensus folder. Additional optional arguments "
+        printf "include 'with-docker', '-j' and '-c' (see Readme)\n"
         exit 1
         fi
         shift
@@ -59,6 +63,11 @@ parse_args() {
 }
 
 parse_args "$@"
+
+if [ $CONFIG == 0 ]; then
+    echo "{}" > filter.json
+    CONFIG=$(realpath filter.json)
+fi
 
 if [ $DOCKER == 1 ]; then
     printf "\nRunning btb-phylo with docker\n\n"

@@ -11,7 +11,7 @@ The software can run on any linux EC2 instance within DEFRA's scientific computi
 The full pipeline can be run with [Docker](https://www.docker.com/) and needs only Docker to be installed. It can be run with the following command:
 
 ```
-./btb-phylo path/to/results/directory path/to/consensus/directory path/to/config/json with-docker -j 1
+./btb-phylo path/to/results/directory path/to/consensus/directory with-docker -c path/to/config/json -j 1  
 ```
 
 This will download the latest docker image from [DockerHub](https://hub.docker.com/r/aphacsubot/btb-phylo) and run the full btb-phylo software. Consensus files are downloaded from `s3-csu-003` and a snp-matrix is built using a single thread. 
@@ -42,7 +42,7 @@ Each `parameter` key should be one of the following:
 
 (i.e. the column names in `FinalOut.csv` output from `btb-seq`). 
 
-For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a maxium and minimum number. For categorical variables, e.g. `Sample` or `flag` (clade) the criteria should be a list of strings. 
+For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a maxium and minimum number. For categorical variables, e.g. `Sample`, `group` (clade) or `flag` the criteria should be a list of strings. 
 
 For example:
 
@@ -50,7 +50,11 @@ For example:
 {
     "Sample":["AF-12-01663-21", "AF-61-00725-15", "AFT-61-00846-22", "AF-12-02550-18", "16-3828-08-a"],
     "pcMapped":[95, 100],
-    "flag":["B6-11"],
+    "group":["B6-11"],
+    "flag":["BritishbTB", "nonBritishbTB"],
     "Ncount":[0, 5500]
 }
 ```
+will only include samples `AF-12-01663-21`, `AF-61-00725-15`, `AFT-61-00846-22`, `AF-12-02550-18` and `16-3828-08-a`, if, they have `pcMapped` > 95%; are in the B6-11 clade; are either BritishbTB or nonBritishand have a maximum `Ncount` of 5500.
+  
+To perform phylogeny without any filters, i.e. on all pass samples, simply omit the `-c` option.
