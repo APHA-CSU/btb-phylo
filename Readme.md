@@ -36,7 +36,9 @@ The config file specifies what filtering criteria should be used to choose sampl
     "parameter_n":[criteria]
 }
 ```
-Each `parameter` key should be one of the following: `Sample`, `GenomeCov`, `MeanDepth`, `NumRawReads`, `pcMapped`, `Outcome`, `flag`, `group`, `CSSTested`, `matches`, `mismatches`, `noCoverage`, `anomalous`, `Ncount`, `ResultLoc`, `ID`, `TotalReads`, `Abundance`, (i.e. the column names in `FinalOut.csv` output from `btb-seq`). 
+Each `parameter` key should be one of the following: 
+`Sample`, `GenomeCov`, `MeanDepth`, `NumRawReads`, `pcMapped`, `Outcome`, `flag`, `group`, `CSSTested`, `matches`, `mismatches`, `noCoverage`, `anomalous`, `Ncount`, `ResultLoc`, `ID`, `TotalReads`, `Abundance`, 
+(i.e. the column names in `FinalOut.csv` output from `btb-seq`). 
 
 For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a maxium and minimum number. For categorical variables, e.g. `Sample` or `flag` (clade) the criteria should be a list of strings. 
 
