@@ -61,7 +61,7 @@ parse_args() {
 parse_args "$@"
 
 if [ $DOCKER == 1 ]; then
-    echo "Running btb-phylo with docker\n"
+    printf "Running btb-phylo with docker\n"
     if [ ! -f all_samples.csv ]
     then
         echo -e "Sample,GenomeCov,MeanDepth,NumRawReads,pcMapped,Outcome,flag,group,CSSTested,matches,mismatches,noCoverage,anomalous,Ncount,ResultLoc,ID,TotalReads,Abundance,Submission" > all_samples.csv

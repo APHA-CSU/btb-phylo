@@ -164,7 +164,7 @@ def full_pipeline(results_path, consensus_path,
     """
     filtered_filepath = path.join(results_path, "filtered_samples.csv")
     # update full sample summary and filter samples
-    df_filtered = update_and_filter(summary_filepath, filtered_filepath, **kwargs)
+    df_filtered = update_and_filter(filtered_filepath, summary_filepath, **kwargs)
     # run phylogeny
     phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
           df_filtered=df_filtered)
