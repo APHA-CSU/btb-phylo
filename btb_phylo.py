@@ -141,7 +141,7 @@ def update_and_filter(filtered_filepath, summary_filepath=utils.DEFAULT_SUMMARY_
     # update full sample summary
     update_samples(summary_filepath)
     # filter samples
-    return sample_filter(summary_filepath, filtered_filepath, **kwargs)
+    return sample_filter(filtered_filepath, summary_filepath, **kwargs)
 
 def filter_and_phylo(results_path, consensus_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, 
                      n_threads=1, build_tree=False, download_only=False, **kwargs):
