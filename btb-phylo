@@ -6,7 +6,7 @@
 SCRIPT="${0##*/}"
 
 parse_args() {
-    THREADS="1"
+    THREADS=$(nproc)
     DOCKER=0
     SOPTS="j:"
 
