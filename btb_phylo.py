@@ -67,7 +67,7 @@ def sample_filter(filtered_filepath, summary_filepath=utils.DEFAULT_SUMMARY_FILE
                               "the 'config' argument")
         # parse config file
         with open(config) as f:
-            kwargs = json.load(f)
+            filter_args = json.load(f)
     else:
         # remove unused filtering args
         filter_args = {k: v for k, v in kwargs.items() if v is not None}
