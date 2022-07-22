@@ -62,14 +62,14 @@ This script installs the following dependencies:
 ## <a name="pipe-dets"></a> Pipeline details
 
 The full pipeline consists of four main stages:
-1. Updating a local `.csv` that contains metadata for every processed APHA bovine-TB sample. The default path of this file is `./all_samples.csv`. When new samples are available in `s3-csu-003` this file is updated with new samples.
+1. Updating a local `.csv` that contains metadata for every processed APHA bovine-TB sample. The default path of this file is `./all_samples.csv`. When new samples are available in `s3-csu-003` this file is updated with new samples only.
 2. Filtering the samples by a set of criteria defined in either the [configuration file](#config-file) or a set of command line arguments. The metadata file for filtered samples is saved in the results directory. 
 3. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.
 4. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
 
 ## Using the software
 
-Stages 1-4 in [pipeline detials](#pipe-dets) can be run in isolation or combination.
+Stages 1-4 in [pipeline detials](#pipe-dets) can be run in isolation or combination via a set of sub-commands.
 
 ### `python btb_phylo.py -h` (help)
 
@@ -90,45 +90,34 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 
-**To run the full pipeline**
-
-This will perform all stages 1-4 in [pipeline details](#pipe-dets)
-```
-python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
-```
-- `path/to/results/directory` is an output path to the local directory for storing results; 
-- `path/to/consensus/directory` is an output path to a local director where consensus sequences are downloaded; 
-Common optional arguments are:
-- `--config`: specifying a path to the [configuration file](#config-file) for filtering
-- `--download_only`: optional switch to download consensus sequences without doing phylogeny
-- `-j`: the number of threads to use with `snp-dists`; default is 1
-
-**To only update the local summary file, `./all_samples.csv`**
-
-```
-python btb_phylo.py update_samples
-```
-
-**To only filter the local summary file**
-
-```
-python btb_phylo.py filter path/to/filtered/csv
-```
-- `path/to/filtered/csv/` is an output path to the metadata csv file for filtered samples. When running with phylogeny this defaults to `path/to/results/directory/filtered_samples.csv`; 
-Common optional arguments are:
-- `--config`: specifying a path to the [configuration file](#config-file) for filtering
-
-**To only run phylogeny**
-
-```
-python btb_phylo.py phylo path/to/results/directory path/to/consensus/directory path/to/filtered/csv
-```
-
 **Get full list of optional arguments for any sub-command:**
 ```
 python btb_phylo.py sub-command -h
 ```
 - `sub-command` is one of `update_samples`, `filter`, `phylo`, `update_and_filter`, `filter_and_phylo`, `full_pipeline`.
+
+### Common usage patterns
+
+**Running the full pipeline**
+
+- all pass samples
+```
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
+```
+
+- filtering with a [configuration file](#config-file)
+```
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --config path/to/config/file
+```
+
+- on a subset of samples*
+```
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --sample_name AFT-61-00846-22 AF-12-02550-18 16-3828-08-a
+```
+
+Other common optional arguments are:
+- `--download_only`: optional switch to download consensus sequences without doing phylogeny
+- `-j`: the number of threads to use with `snp-dists`; default is 1
 
 ## Production - serving ViewBovine app
 
@@ -170,3 +159,37 @@ For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a m
 See example, [example_config.json](https://github.com/APHA-CSU/btb-phylo/blob/dockerize/example_config.json), which includes a selection of 5 samples if; they have `pcMapped` > 95%; are in the B6-11 clade; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 5500.
 
 To perform phylogeny without any filters, i.e. on all pass samples, simply omit the `-c` option.
+
+**To run the full pipeline**
+
+This will perform all stages 1-4 in [pipeline details](#pipe-dets)
+```
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
+```
+- `path/to/results/directory` is an output path to the local directory for storing results; 
+- `path/to/consensus/directory` is an output path to a local director where consensus sequences are downloaded; 
+Common optional arguments are:
+- `--config`: specifying a path to the [configuration file](#config-file) for filtering
+- `--download_only`: optional switch to download consensus sequences without doing phylogeny
+- `-j`: the number of threads to use with `snp-dists`; default is 1
+
+**To only update the local summary file, `./all_samples.csv`**
+
+```
+python btb_phylo.py update_samples
+```
+
+**To only filter the local summary file**
+
+```
+python btb_phylo.py filter path/to/filtered/csv
+```
+- `path/to/filtered/csv/` is an output path to the metadata csv file for filtered samples. When running with phylogeny this defaults to `path/to/results/directory/filtered_samples.csv`; 
+Common optional arguments are:
+- `--config`: specifying a path to the [configuration file](#config-file) for filtering
+
+**To only run phylogeny**
+
+```
+python btb_phylo.py phylo path/to/results/directory path/to/consensus/directory path/to/filtered/csv
+```
