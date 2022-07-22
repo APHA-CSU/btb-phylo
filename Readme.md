@@ -18,7 +18,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 
 - `path/to/results/directory` is an output path to the local directory for storing results; 
 - `path/to/consensus/directory` is an output path to a local director where consensus sequences are downloaded; 
-- `path/to/config/json` is a path to the [configuration `.json` file](#config-file) specifying filtering criteria describing which samples to be included in phylogeny;
+- `path/to/config/json` is a path to the [configuration file](#config-file), in `.json` format, that specifies filtering criteria for including samples;
 - `-j` is an optional argument setting the number of threads to use for building snp matricies. If omitted it defaults to the number of available CPU cores.
 
 By default the results directory will contain:
@@ -26,6 +26,18 @@ By default the results directory will contain:
 - `multi_fasta.fas`: a fasta file containing consensus sequences for all samples included in the results;
 - `snps.fas`: a fasta file containing consensus sequences for all samples included results where only snp sites are retained;
 - `snp_matrix.tab`: a snp-matrix
+
+## Production - serving ViewBovine app
+
+`btb-phylo` provides a snp-matrix for ViewBovine APHA. Updating the snp-matrix is triggered manually and should be run either weekly or on arrival of new processed WGS data.
+
+To update the snp-matrix serving ViewBovine:
+1. Mount FSx drive, `fsx-ranch-017`;
+2. Run the following command; 
+```
+./btb-phylo path/to/fsx-017 path/to/fsx-017 with-docker -c $PWD/vb_configuration.json
+```
+This will uses predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
 
 ### <a name="config-file"></a> Configuration file
 
