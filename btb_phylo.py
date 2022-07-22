@@ -185,14 +185,14 @@ def main():
     subparser.add_argument("filtered_filepath", help="path to output filtered sample metadata .csv file")
     subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
                            default=utils.DEFAULT_SUMMARY_FILEPATH)
-    subparser.add_argument("--config", default=None)
-    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+")
-    subparser.add_argument("--clade", "-c", dest="group", nargs="+")
-    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
-    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2)
-    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
-    subparser.add_argument("--flag", "-f", dest="flag", nargs="+")
-    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
+    subparser.add_argument("--config", default=None, help="path to configuration file")
+    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
+    subparser.add_argument("--clade", "-c", dest="group", nargs="+", help="optional filter")
+    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
+    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
     subparser.set_defaults(func=sample_filter)
 
     # run phylogeny
@@ -203,7 +203,7 @@ def main():
     subparser.add_argument("--download_only", help="if only dowloading connsensus sequences",
                            action="store_true", default=False)
     subparser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
-    subparser.add_argument("--build_tree", action="store_true", default=False)
+    subparser.add_argument("--build_tree", action="store_true", default=False, help="build a tree")
     subparser.set_defaults(func=phylo)
 
     # update and filter
@@ -212,14 +212,14 @@ def main():
     subparser.add_argument("filtered_filepath", help="path to output filtered sample metadata .csv file")
     subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
                            default=utils.DEFAULT_SUMMARY_FILEPATH)
-    subparser.add_argument("--config", default=None)
-    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+")
-    subparser.add_argument("--clade", "-c", dest="group", nargs="+")
-    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
-    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2)
-    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
-    subparser.add_argument("--flag", "-f", dest="flag", nargs="+")
-    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
+    subparser.add_argument("--config", default=None, help="path to configuration file")
+    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
+    subparser.add_argument("--clade", "-c", dest="group", nargs="+", help="optional filter")
+    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
+    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
     subparser.set_defaults(func=update_and_filter)
 
     # filter and phylo
@@ -231,15 +231,15 @@ def main():
     subparser.add_argument("--download_only", help="if only dowloading connsensus sequences",
                            action="store_true", default=False)
     subparser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
-    subparser.add_argument("--build_tree", action="store_true", default=False)
-    subparser.add_argument("--config", default=None)
-    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+")
-    subparser.add_argument("--clade", "-c", dest="group", nargs="+")
-    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
-    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2)
-    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
-    subparser.add_argument("--flag", "-f", dest="flag", nargs="+")
-    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
+    subparser.add_argument("--build_tree", action="store_true", default=False, help="build a tree")
+    subparser.add_argument("--config", default=None, help="path to configuration file")
+    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
+    subparser.add_argument("--clade", "-c", dest="group", nargs="+", help="optional filter")
+    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
+    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
     subparser.set_defaults(func=filter_and_phylo)
 
     # full pipeline
@@ -250,18 +250,18 @@ def main():
     subparser.add_argument("consensus_path", help = "path to where consensus files will be held")
     subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
                            default=utils.DEFAULT_SUMMARY_FILEPATH)
-    subparser.add_argument("--download_only", help = "if only dowloading connsensus sequences",
+    subparser.add_argument("--download_only", help="if only dowloading connsensus sequences",
                            action="store_true", default=False)
     subparser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
-    subparser.add_argument("--build_tree", action="store_true", default=False)
-    subparser.add_argument("--config", default=None)
-    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+")
-    subparser.add_argument("--clade", "-c", dest="group", nargs="+")
-    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2)
-    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2)
-    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2)
-    subparser.add_argument("--flag", "-f", dest="flag", nargs="+")
-    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2)
+    subparser.add_argument("--build_tree", action="store_true", default=False, help="build a tree")
+    subparser.add_argument("--config", default=None, help="path to configuration file")
+    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
+    subparser.add_argument("--clade", "-c", dest="group", nargs="+", help="optional filter")
+    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
+    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
     subparser.set_defaults(func=full_pipeline)
 
     # pasre args

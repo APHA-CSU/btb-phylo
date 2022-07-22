@@ -67,7 +67,7 @@ The full pipeline consists of four main stages:
 3. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.
 4. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
 
-## Common usage patterns
+## Using the software
 
 Stages 1-4 in [pipeline detials](#pipe-dets) can be run in isolation or combination.
 
@@ -90,12 +90,18 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 
-**To run the full pipeline:**
+### To run the full pipeline
 ```
 python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
 ```
-Optional arguments:
-
+Common option arguments are:
+- `--config`: specifying a path to the [configuration file](#config-file) for filtering
+- `--download_only`: optional switch to only download consensus sequences without doing phylogeny
+- `-j`: the number of threads to use with `snp-dists`; default is 1.
+**Get full list optional arguemnts:**
+```
+python btb_phylo.py full_pipeline -h
+```
 ## Production - serving ViewBovine app
 
 `btb-phylo` provides a snp-matrix for ViewBovine APHA. 
