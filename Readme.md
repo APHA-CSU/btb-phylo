@@ -16,10 +16,10 @@ The full pipeline can be run with [Docker](https://www.docker.com/) and needs on
 
 This will download the latest docker image from [DockerHub](https://hub.docker.com/r/aphacsubot/btb-phylo) and run the full btb-phylo software. Consensus files are downloaded from `s3-csu-003` and a snp-matrix is built using a single thread. 
 
-- `path/to/results/directory` is a path to the local directory to where the results should be stored; 
-- `path/to/consensus/directory` is the path to a local director to where consensus sequences should be downloaded; 
-- `path/to/config/json` is a path to the configuration `.json` file specifying filtering criteria which describes which samples to be included in phylogeny;
-- `-j` is an optional argument which sets the number of threads to use for building snp matricies, if omitted this will default to the number of available CPU cores.
+- `path/to/results/directory` is an output path to the local directory for storing results; 
+- `path/to/consensus/directory` is an output path to a local director where consensus sequences are downloaded; 
+- `path/to/config/json` is a path to the configuration `.json` file specifying filtering criteria describing which samples to be included in phylogeny;
+- `-j` is an optional argument setting the number of threads to use for building snp matricies. If omitted it defaults to the number of available CPU cores.
 
 By default the results directory will contain:
 - `filtered_samples.csv`: a summary csv file containing metadata for all samples included in the results;
@@ -27,7 +27,9 @@ By default the results directory will contain:
 - `snps.fas`: a fasta file containing consensus sequences for all samples included results where only snp sites are retained;
 - `snp_matrix.tab`: a snp-matrix
 
-The config file specifies what filtering criteria should be used to choose samples. It is a json file with the following format:
+###<a name="config-file"></a> Configuration file
+
+The config file specifies which filtering criteria should be used to choose samples. It is a `.json` file with the following format:
 
 ```
 {
