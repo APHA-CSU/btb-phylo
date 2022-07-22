@@ -59,13 +59,22 @@ This script installs the following dependencies:
 - [`snp-dists`](https://github.com/tseemann/snp-dists) (installed from source to `~/biotools`, with symlink in `/usr/local/bin`)
 - [`megacc`](https://megasoftware.net/) (installed with `apt` from `.deb` file) 
 
-## Pipeline details
+## <a name="pipe-dets"></a> Pipeline details
 
 The full pipeline consists of four main stages:
 1. Updating a local `.csv` that contains metadata for every processed APHA bovine-TB sample. The default path of this file is `./all_samples.csv`. When new samples are available in `s3-csu-003` this file is updated with new samples.
-2. Filtering the samples by a set of criteria define in either the [configuration file](#config-file) or a set of command line arguments. The metadata file for filtered samples is saved in the results directory. 
-3. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consisten directory is used for storing consensus sequences, then only new samples will be downloaded.
+2. Filtering the samples by a set of criteria defined in either the [configuration file](#config-file) or a set of command line arguments. The metadata file for filtered samples is saved in the results directory. 
+3. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.
 4. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
+
+## Common usage patterns
+
+Stages 1-4 in [pipeline detials](#pipe-dets) can be run in isolation or combination.
+
+**To run the full pipeline:**
+```
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
+```
 
 ## Production - serving ViewBovine app
 
