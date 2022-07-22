@@ -34,7 +34,8 @@ By default the results directory will contain:
 - `snp_matrix.tab`
 
 ## Local installation
-1. You must have [`python3`](https://www.python.org/) and `python3-pip` installed:
+
+1. You must have [`python3`](https://www.python.org/) and `python3-pip` installed. Using a virtual environment with either [`venv`](https://docs.python.org/3/library/venv.html) or [`virtualenv`](https://virtualenv.pypa.io/en/stable/installation.html) is recommended:
 ```
 sudo apt install python3
 sudo apt install python3-pip
@@ -43,7 +44,7 @@ sudo apt install python3-pip
 ```
 git clone https://github.com/APHA-CSU/btb-phylo.git
 ```
-3. Install required python packages (using a virtual environment with either [`venv`](https://docs.python.org/3/library/venv.html) or [`virtualenv`](https://virtualenv.pypa.io/en/stable/installation.html) is recommended ):
+3. Install required python packages :
 ```
 cd btb-phylo
 pip install -r requirements.txt
@@ -57,6 +58,14 @@ This script installs the following dependencies:
 - [`snp-sites`](https://github.com/sanger-pathogens/snp-sites) (installed with `apt`)
 - [`snp-dists`](https://github.com/tseemann/snp-dists) (installed from source to `~/biotools`, with symlink in `/usr/local/bin`)
 - [`megacc`](https://megasoftware.net/) (installed with `apt` from `.deb` file) 
+
+## Pipeline details
+
+The full pipeline consists of four main stages:
+1. Updating a local `.csv` that contains metadata for every processed APHA bovine-TB sample. The default path of this file is `./all_samples.csv`. When new samples are available in `s3-csu-003` this file is updated with new samples.
+2. Filtering the samples by a set of criteria define in either the [configuration file](#config-file) or a set of command line arguments. The metadata file for filtered samples is saved in the results directory. 
+3. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consisten directory is used for storing consensus sequences, then only new samples will be downloaded.
+4. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
 
 ## Production - serving ViewBovine app
 
