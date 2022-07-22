@@ -63,17 +63,6 @@ Each `parameter` key should be one of the following:
 
 For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a maxium and minimum number. For categorical variables, e.g. `Sample`, `group` (clade) or `flag` the criteria should be a list of strings. 
 
-For example:
-
-```
-{
-    "Sample":["AF-12-01663-21", "AF-61-00725-15", "AFT-61-00846-22", "AF-12-02550-18", "16-3828-08-a"],
-    "pcMapped":[95, 100],
-    "group":["B6-11"],
-    "flag":["BritishbTB", "nonBritishbTB"],
-    "Ncount":[0, 5500]
-}
-```
-will only include samples `AF-12-01663-21`, `AF-61-00725-15`, `AFT-61-00846-22`, `AF-12-02550-18` and `16-3828-08-a`, if, they have `pcMapped` > 95%; are in the B6-11 clade; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 5500.
+See example, [example_config.json](https://github.com/APHA-CSU/btb-phylo/blob/dockerize/example_config.json), which includes a selection of 5 samples if; they have `pcMapped` > 95%; are in the B6-11 clade; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 5500.
 
 To perform phylogeny without any filters, i.e. on all pass samples, simply omit the `-c` option.
