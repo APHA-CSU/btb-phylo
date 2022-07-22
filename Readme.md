@@ -27,7 +27,8 @@ By default the results directory will contain:
 - `snps.fas`: a fasta file containing consensus sequences for all samples included results where only snp sites are retained;
 - `snp_matrix.tab`: a snp-matrix
 
-###<a name="config-file"></a> Configuration file
+### <a name="config-file"></a> Configuration file
+
 
 The config file specifies which filtering criteria should be used to choose samples. It is a `.json` file with the following format:
 
