@@ -18,7 +18,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 
 - `path/to/results/directory` is an output path to the local directory for storing results; 
 - `path/to/consensus/directory` is an output path to a local director where consensus sequences are downloaded; 
-- `path/to/config/json` is a path to the configuration `.json` file specifying filtering criteria describing which samples to be included in phylogeny;
+- `path/to/config/json` is a path to the [configuration `.json` file](#config-file) specifying filtering criteria describing which samples to be included in phylogeny;
 - `-j` is an optional argument setting the number of threads to use for building snp matricies. If omitted it defaults to the number of available CPU cores.
 
 By default the results directory will contain:
@@ -29,8 +29,7 @@ By default the results directory will contain:
 
 ### <a name="config-file"></a> Configuration file
 
-
-The config file specifies which filtering criteria should be used to choose samples. It is a `.json` file with the following format:
+The configuration file specifies which filtering criteria should be used to choose samples. It is a `.json` file with the following format:
 
 ```
 {
