@@ -71,10 +71,30 @@ The full pipeline consists of four main stages:
 
 Stages 1-4 in [pipeline detials](#pipe-dets) can be run in isolation or combination.
 
+### `python btb_phylo.py -h` (help)
+
+```
+usage: btb-phylo [-h] {update_samples,filter,phylo,update_and_filter,filter_and_phylo,full_pipeline} ...
+
+positional arguments:
+  {update_samples,filter,phylo,update_and_filter,filter_and_phylo,full_pipeline}
+                        sub-command help
+    update_samples      updates a local copy of all sample metadata .csv file
+    filter              filters sample metadata .csv file
+    phylo               performs phylogeny
+    update_and_filter   updates a metadata .csv file and filters samples
+    filter_and_phylo    filters samples and performs phylogeny
+    full_pipeline       runs the full phylogeny pipeline: updates full samples summary, filters samples and performs phylogeny
+
+optional arguments:
+  -h, --help            show this help message and exit
+```
+
 **To run the full pipeline:**
 ```
 python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
 ```
+Optional arguments:
 
 ## Production - serving ViewBovine app
 
