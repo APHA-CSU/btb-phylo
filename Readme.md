@@ -32,10 +32,10 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 **By default the results directory will contain:**
 - `filtered_samples.csv`: a summary csv file containing metadata for all samples included in the results;
 - `multi_fasta.fas`: a fasta file containing consensus sequences for all samples included in the results;
-- `snps.fas`: a fasta file containing consensus sequences for all samples included results where only snp sites are retained;
+- `snps.fas`: a fasta file containing consensus sequences for all samples included in the results, where only snp sites are retained;
 - `snp_matrix.tab`
 
-**Test with an example configuration file**
+### Test with an example configuration file
 ```
 ./btb-phylo ~/results ~/consensus -c $PWD/example_config.json -j 1 with-docker 
 ```
@@ -74,7 +74,7 @@ This ./install/install.bash will install the following dependencies:
 - [`snp-dists`](https://github.com/tseemann/snp-dists) (installed from source to `~/biotools`, with symlink in `/usr/local/bin`)
 - [`megacc`](https://megasoftware.net/) (installed with `apt` from `.deb` file) 
 
-**Test with an example configuration file**
+### Test with an example configuration file
 ```
 ./btb-phylo ~/results ~/consensus -c $PWD/example_config.json -j 1
 ```
@@ -158,7 +158,7 @@ Other common optional arguments are:
 
 Updating the snp-matrix is triggered manually and should be run either weekly or on arrival of new processed WGS data.
 
-**To update the snp-matrix:**
+### Updating the snp-matrix
 
 1. Mount FSx drive, `fsx-ranch-017`;
 2. Run the following command; 
@@ -167,7 +167,7 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 ```
 This will use predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
 
-## <a name="config-file"></a> Configuration file
+### <a name="config-file"></a> Configuration file
 
 The configuration file specifies which filtering criteria should be used to choose samples. It is a `.json` file with the following format:
 
@@ -192,37 +192,3 @@ For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a m
 See example, [example_config.json](https://github.com/APHA-CSU/btb-phylo/blob/dockerize/example_config.json), which includes a selection of 5 samples if; they have `pcMapped` > 95%; are in the B6-11 clade; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 5500.
 
 To perform phylogeny without any filters, i.e. on all pass samples, simply omit the `-c` option.
-
-**To run the full pipeline**
-
-This will perform all stages 1-4 in [pipeline details](#pipe-dets)
-```
-python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
-```
-- `path/to/results/directory` is an output path to the local directory for storing results; 
-- `path/to/consensus/directory` is an output path to a local director where consensus sequences are downloaded; 
-Common optional arguments are:
-- `--config`: specifying a path to the [configuration file](#config-file) for filtering
-- `--download_only`: optional switch to download consensus sequences without doing phylogeny
-- `-j`: the number of threads to use with `snp-dists`; default is 1
-
-**To only update the local summary file, `./all_samples.csv`**
-
-```
-python btb_phylo.py update_samples
-```
-
-**To only filter the local summary file**
-
-```
-python btb_phylo.py filter path/to/filtered/csv
-```
-- `path/to/filtered/csv/` is an output path to the metadata csv file for filtered samples. When running with phylogeny this defaults to `path/to/results/directory/filtered_samples.csv`; 
-Common optional arguments are:
-- `--config`: specifying a path to the [configuration file](#config-file) for filtering
-
-**To only run phylogeny**
-
-```
-python btb_phylo.py phylo path/to/results/directory path/to/consensus/directory path/to/filtered/csv
-```
