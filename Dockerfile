@@ -18,7 +18,7 @@ COPY ./ ./
 RUN apt-get -y update
 
 # Biotools
-RUN bash ./install/install.bash
+RUN bash ./install/docker_install.bash
 
 # Make executable
 RUN chmod +x btb-phylo

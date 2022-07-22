@@ -41,8 +41,6 @@ git clone https://github.com/APHA-CSU/btb-phylo.git
 2. Install software dependencies:
 ```
 sudo apt update
-```
-```
 bash ./install/install.bash
 ```
 This script installs the following dependencies:
