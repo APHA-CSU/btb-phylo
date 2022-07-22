@@ -8,7 +8,13 @@ The software can run on any linux EC2 instance within DEFRA's scientific computi
 
 ## Running `btb-phylo` - quick start
 
-The full pipeline can be run with [Docker](https://www.docker.com/) and needs only Docker to be installed. It can be run with the following command:
+The full pipeline can be run with [Docker](https://www.docker.com/) and needs only Docker to be installed. 
+
+1. Clone this github repository:
+```
+git clone https://github.com/APHA-CSU/btb-phylo.git
+```
+2. Run the following command from inside the cloned repository to run the pipeline inside a docker container:
 
 ```
 ./btb-phylo path/to/results/directory path/to/consensus/directory with-docker -c path/to/config/json -j 1  
@@ -25,7 +31,20 @@ By default the results directory will contain:
 - `filtered_samples.csv`: a summary csv file containing metadata for all samples included in the results;
 - `multi_fasta.fas`: a fasta file containing consensus sequences for all samples included in the results;
 - `snps.fas`: a fasta file containing consensus sequences for all samples included results where only snp sites are retained;
-- `snp_matrix.tab`: a snp-matrix
+- `snp_matrix.tab`
+
+## Local installation
+1. Clone this github repository:
+```
+git clone https://github.com/APHA-CSU/btb-phylo.git
+```
+2. Install software dependencies
+```
+sudo apt update
+```
+```
+bash ./install/install.bash
+```
 
 ## Production - serving ViewBovine app
 
@@ -34,6 +53,7 @@ By default the results directory will contain:
 Updating the snp-matrix is triggered manually and should be run either weekly or on arrival of new processed WGS data.
 
 To update the snp-matrix:
+
 1. Mount FSx drive, `fsx-ranch-017`;
 2. Run the following command; 
 ```
