@@ -90,18 +90,46 @@ optional arguments:
   -h, --help            show this help message and exit
 ```
 
-### To run the full pipeline
+**To run the full pipeline**
+
+This will perform all stages 1-4 in [pipeline details](#pipe-dets)
 ```
 python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
 ```
-Common option arguments are:
+- `path/to/results/directory` is an output path to the local directory for storing results; 
+- `path/to/consensus/directory` is an output path to a local director where consensus sequences are downloaded; 
+Common optional arguments are:
 - `--config`: specifying a path to the [configuration file](#config-file) for filtering
-- `--download_only`: optional switch to only download consensus sequences without doing phylogeny
-- `-j`: the number of threads to use with `snp-dists`; default is 1.
-**Get full list optional arguemnts:**
+- `--download_only`: optional switch to download consensus sequences without doing phylogeny
+- `-j`: the number of threads to use with `snp-dists`; default is 1
+
+**To only update the local summary file, `./all_samples.csv`**
+
 ```
-python btb_phylo.py full_pipeline -h
+python btb_phylo.py update_samples
 ```
+
+**To only filter the local summary file**
+
+```
+python btb_phylo.py filter path/to/filtered/csv
+```
+- `path/to/filtered/csv/` is an output path to the metadata csv file for filtered samples. When running with phylogeny this defaults to `path/to/results/directory/filtered_samples.csv`; 
+Common optional arguments are:
+- `--config`: specifying a path to the [configuration file](#config-file) for filtering
+
+**To only run phylogeny**
+
+```
+python btb_phylo.py phylo path/to/results/directory path/to/consensus/directory path/to/filtered/csv
+```
+
+**Get full list of optional arguments for any sub-command:**
+```
+python btb_phylo.py sub-command -h
+```
+- `sub-command` is one of `update_samples`, `filter`, `phylo`, `update_and_filter`, `filter_and_phylo`, `full_pipeline`.
+
 ## Production - serving ViewBovine app
 
 `btb-phylo` provides a snp-matrix for ViewBovine APHA. 
