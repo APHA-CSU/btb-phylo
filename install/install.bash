@@ -12,13 +12,12 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git \
     gcc \
     make \
+    wget \
+    awscli \
     python3 \
     python3-pip \
-    wget \
-    awscli
 
 pip3 install -r requirements.txt
-ln -s /usr/bin/python3 /usr/bin/python
 
 ################## BIOTOOLS ######################
 

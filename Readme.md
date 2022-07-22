@@ -38,13 +38,18 @@ By default the results directory will contain:
 ```
 git clone https://github.com/APHA-CSU/btb-phylo.git
 ```
-2. Install software dependencies
+2. Install software dependencies:
 ```
 sudo apt update
 ```
 ```
 bash ./install/install.bash
 ```
+This script installs the following dependencies:
+- `python3` (insatlled with `apt`)
+- `snp-sites` (installed with `apt`)
+- `snp-dists` (installed from source to `~/biotools`, with symlink in `/usr/local/bin`)
+- `megacc` (installed with `apt` from `.deb` file)
 
 ## Production - serving ViewBovine app
 
