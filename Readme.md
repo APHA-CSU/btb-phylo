@@ -29,15 +29,17 @@ By default the results directory will contain:
 
 ## Production - serving ViewBovine app
 
-`btb-phylo` provides a snp-matrix for ViewBovine APHA. Updating the snp-matrix is triggered manually and should be run either weekly or on arrival of new processed WGS data.
+`btb-phylo` provides a snp-matrix for ViewBovine APHA. 
 
-To update the snp-matrix serving ViewBovine:
+Updating the snp-matrix is triggered manually and should be run either weekly or on arrival of new processed WGS data.
+
+To update the snp-matrix:
 1. Mount FSx drive, `fsx-ranch-017`;
 2. Run the following command; 
 ```
 ./btb-phylo path/to/fsx-017 path/to/fsx-017 with-docker -c $PWD/vb_configuration.json
 ```
-This will uses predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
+This will use predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
 
 ### <a name="config-file"></a> Configuration file
 
