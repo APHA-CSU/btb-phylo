@@ -167,7 +167,7 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 ```
 This will use predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
 
-### <a name="config-file"></a> Configuration file
+## <a name="config-file"></a> Configuration file
 
 The configuration file specifies which filtering criteria should be used to choose samples. It is a `.json` file with the following format:
 
