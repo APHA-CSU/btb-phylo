@@ -4,7 +4,9 @@
 
 `btb-phylo` is APHA software that provides tools for performing phylogeny on processed bovine TB WGS data.
 
-The software can run on any linux EC2 instance within DEFRA's scientific computing environment (SCE), with read access to `s3-csu-003`. It downloads consensus files from `s3` from which it builds SNP matricies and phylogenetic trees.
+The software can run on any linux EC2 instance within DEFRA's scientific computing environment (SCE), with read access to `s3-csu-003`. 
+
+It downloads consensus files from `s3` from which it builds SNP matricies and phylogenetic trees.
 
 ## Running `btb-phylo` - quick start
 
