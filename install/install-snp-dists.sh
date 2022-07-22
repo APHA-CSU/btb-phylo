@@ -12,7 +12,7 @@ make
 if [ $ENV == "native" ]; then
     echo "foo"
     sudo ln -s $PWD/snp-dists /usr/local/bin/snp-dists
-else
+elif [ $ENV == "docker" ]; then
     echo "bar"
     ln -s $PWD/snp-dists /usr/local/bin/snp-dists
 fi

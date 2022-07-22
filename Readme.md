@@ -34,20 +34,29 @@ By default the results directory will contain:
 - `snp_matrix.tab`
 
 ## Local installation
-1. Clone this github repository:
+1. You must have [`python3`](https://www.python.org/) and `python3-pip` installed:
+```
+sudo apt install python3
+sudo apt install python3-pip
+```
+2. Clone this github repository:
 ```
 git clone https://github.com/APHA-CSU/btb-phylo.git
 ```
-2. Install software dependencies:
+3. Install required python packages (using a virtual environment with either [`venv`](https://docs.python.org/3/library/venv.html) or [`virtualenv`](https://virtualenv.pypa.io/en/stable/installation.html) is recommended ):
+```
+cd btb-phylo
+pip install -r requirements.txt
+```
+4. Install software dependencies:
 ```
 sudo apt update
 bash ./install/install.bash
 ```
 This script installs the following dependencies:
-- `python3` (insatlled with `apt`)
-- `snp-sites` (installed with `apt`)
-- `snp-dists` (installed from source to `~/biotools`, with symlink in `/usr/local/bin`)
-- `megacc` (installed with `apt` from `.deb` file) 
+- [`snp-sites`](https://github.com/sanger-pathogens/snp-sites) (installed with `apt`)
+- [`snp-dists`](https://github.com/tseemann/snp-dists) (installed from source to `~/biotools`, with symlink in `/usr/local/bin`)
+- [`megacc`](https://megasoftware.net/) (installed with `apt` from `.deb` file) 
 
 ## Production - serving ViewBovine app
 

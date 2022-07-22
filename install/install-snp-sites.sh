@@ -2,10 +2,10 @@
 
 set -e
 
-ENV=${1:-native}
+ENV=${1:-local}
 
-if [ $ENV == "native" ]; then
+if [ $ENV == "local" ]; then
     sudo apt-get install -y snp-sites
-else
+elif [ $ENV == "docker" ]; then
     apt-get install -y snp-sites
 fi
