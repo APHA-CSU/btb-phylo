@@ -324,6 +324,8 @@ class TestUpdateSummary(unittest.TestCase):
                       "12-3456-89",
                       "12345678",
                       "ABCDEFGH",
+                      "ABcDeFgh",
+                      "1BcD2Fgh",
                       ""]
         test_output = ["12-34567-89",
                        "12-34567-89",
@@ -353,6 +355,8 @@ class TestUpdateSummary(unittest.TestCase):
                        "12-3456-89", 
                        "12345678", 
                        "ABCDEFGH", 
+                       "ABCDEFGH",
+                       "1BCD2FGH",
                        ""] 
         fail = False 
         i = 0

@@ -67,12 +67,13 @@ def new_final_out_keys(df_summary):
 
 def extract_submission_no(sample_name):
     """ 
-        Extracts submision number from sample name using regex 
+        Extracts submision number from sample name using regex. 
+        Converts all lower case to upper case letters. 
     """
     pattern = r'\d{2,2}-\d{4,5}-\d{2,2}'
     matches = re.findall(pattern, sample_name)
     submission_no = matches[0] if matches else sample_name
-    return submission_no
+    return submission_no.upper()
 
 def add_submission_col(df):
     """
