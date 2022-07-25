@@ -43,8 +43,7 @@ parse_args() {
 
     RESULTS=$1
     CONSENSUS=$2
-    shift
-    shift
+    shift 2
 
     nargs=$#
     for ((i=0; i<nargs; ++i)); do
