@@ -1,12 +1,12 @@
 import tempfile
 import re
-import os
+from os import path
 
 import pandas as pd
 
-import utils
+import btbphylo.utils as utils
 
-#TODO: unit test
+
 def get_finalout_s3_keys(bucket="s3-csu-003", prefix="v3-2"):
     """
         Returns a list of s3 keys for all FinalOut.csv files stored under the 
@@ -29,19 +29,19 @@ def finalout_csv_to_df(s3_key, s3_bucket="s3-csu-003"):
         Downloads FinalOut.csv files and writes to pandas dataframe
     """
     with tempfile.TemporaryDirectory() as temp_dirname:
-        finalout_path = os.path.join(temp_dirname, "FinalOut.csv") 
+        finalout_path = path.join(temp_dirname, "FinalOut.csv") 
         utils.s3_download_file_cli(s3_bucket, s3_key, finalout_path)
         return pd.read_csv(finalout_path, comment="#")
 
-def get_df_summary(bucket="s3-csu-003", key="v3-2/btb_wgs_samples.csv"):
+def get_df_summary(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
-        Reads btb_wgs_samples.csv into pandas dataframe. Creates new empty dataframe
-        if btb_wgs_samples.csv does not exist.
+        Reads summary csv into pandas dataframe. Creates new empty dataframe
+        if local copy of summary csv does not exist.
     """
-    try:
-        return utils.summary_csv_to_df(bucket, key)
+    if path.exists(summary_filepath):
+        return utils.summary_csv_to_df(summary_filepath)
     # if running for the first time (i.e. no btb_wgs_samples.csv), create new empty dataframe
-    except utils.NoS3ObjectError:
+    else:
         column_names = ["Sample", "GenomeCov", "MeanDepth", "NumRawReads", "pcMapped", 
                         "Outcome", "flag", "group", "CSSTested", "matches","mismatches", 
                         "noCoverage", "anomalous", "Ncount", "ResultLoc", "ID", 
@@ -99,28 +99,14 @@ def append_df_summary(df_summary, new_keys, itteration=0):
             metadata added
     """
     # if not yet on last itteration (last new_key element)
-    if itteration < len(new_keys):
+    num_batches = len(new_keys)
+    if itteration < num_batches:
+        print(f"downloading batch summary: {itteration+1} / {num_batches}", end="\r")
         # read FinalOut.csv for current key
         finalout_df = finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
         # append to df_summary
         df_summary = append_df_summary(pd.concat([df_summary, finalout_df]), 
                                        new_keys, itteration+1)
+    else:
+        print(f"downloaded batch summaries: {num_batches} / {num_batches} \n")
     return df_summary
-
-def df_to_s3(df_summary, bucket="s3-csu-003", key="v3-2/btb_wgs_samples.csv"):
-    """
-        Upload df_summary to s3
-    """
-    with tempfile.TemporaryDirectory() as temp_dirname:
-        summary_path = os.path.join(temp_dirname, "btb_wgs_samples.csv") 
-        df_summary.to_csv(summary_path, index=False)
-        utils.s3_upload_file(summary_path, bucket, key)
-
-if __name__ == "__main__":
-    print("getting list of s3 keys ... ")
-    #df_summary = get_df_summary("s3-csu-003", "v3-2/btb_wgs_samples.csv")
-    df_summary = get_df_summary("s3-staging-area", "nickpestell/btb_wgs_samples.csv")
-    new_keys = new_final_out_keys(df_summary)
-    print("appending new metadata to df_summary ... ")
-    updated_df_summary = append_df_summary(df_summary, new_keys)
-    df_to_s3(updated_df_summary, "s3-staging-area", "nickpestell/btb_wgs_samples.csv")
