@@ -2,10 +2,10 @@ import argparse
 import json
 from os import path
 
-import utils
-import update_summary
-import filter_samples
-import phylogeny
+import btbphylo.utils as utils
+import btbphylo.update_summary as update_summary
+import btbphylo.filter_samples as filter_samples
+import btbphylo.phylogeny as phylogeny
 
 def update_samples(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """

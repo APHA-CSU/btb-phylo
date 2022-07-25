@@ -11,9 +11,9 @@ import btbphylo.update_summary as update_summary
 
 
 class TestPhylogeny(unittest.TestCase):
-    @mock.patch("phylogeny.utils.s3_download_file_cli")
-    @mock.patch("phylogeny.extract_s3_bucket")
-    @mock.patch("phylogeny.extract_s3_key")
+    @mock.patch("btbphylo.phylogeny.utils.s3_download_file_cli")
+    @mock.patch("btbphylo.phylogeny.extract_s3_bucket")
+    @mock.patch("btbphylo.phylogeny.extract_s3_key")
     def test_build_multi_fasta(self, _, mock_extract_s3_bucket, mock_extract_s3_key):
         mock_extract_s3_bucket.return_value = "foo_bucket"
         mock_extract_s3_key.return_value = "foo_key"
@@ -367,14 +367,14 @@ class TestUpdateSummary(unittest.TestCase):
             print(f"{i} test failures")
             raise AssertionError
 
-    @mock.patch("update_summary.finalout_csv_to_df")
+    @mock.patch("btbphylo.update_summary.finalout_csv_to_df")
     def test_append_df_summary(self, mock_finalout_csv_to_df):
         mock_finalout_csv_to_df.return_value = pd.DataFrame()
         # simulate 7 new keys
         test_new_keys = [0, 1, 2, 3, 4, 5, 6]
         # start with empty df_summary
         test_df_summary = pd.DataFrame({"foo":[], "bar":[], "baz":[]})
-        with mock.patch("update_summary.add_submission_col") as mock_add_submission_col:
+        with mock.patch("btbphylo.update_summary.add_submission_col") as mock_add_submission_col:
             # mock sequential return values of calls to update_summary.add_submission_col, 
             # this effectively mocks the return value of finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
             mock_add_submission_col.side_effect = [pd.DataFrame({"foo":["a"], "bar":["a"], "baz":["a"]}),
@@ -397,7 +397,7 @@ class TestUpdateSummary(unittest.TestCase):
 
     def test_get_finalout_s3_keys(self):
         # mock AWS s3 CLI command for getting s3 metadata
-        with mock.patch("update_summary.utils.run") as mock_run:
+        with mock.patch("btbphylo.update_summary.utils.run") as mock_run:
             mock_run.return_value = "2022-06-28 06:38:51      45876 v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv\n \
                                      2022-06-28 06:38:51 45876 v3-2/Results_10032_27Jun22/bar\n \
                                      a b c foo" 
