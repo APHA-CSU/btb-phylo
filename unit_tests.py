@@ -5,9 +5,9 @@ import argparse
 import pandas as pd
 import numpy.testing as nptesting
 
-import phylogeny 
-import filter_samples
-import update_summary
+import btbphylo.phylogeny as phylogeny 
+import btbphylo.filter_samples as filter_samples
+import btbphylo.update_summary as update_summary
 
 
 class TestPhylogeny(unittest.TestCase):
