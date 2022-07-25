@@ -118,7 +118,10 @@ def filter_df(df, **kwargs):
     """
     # add "Pass" only samples and pcmap_theshold to the filtering 
     # criteria by default
-    categorical_kwargs = {"Outcome": ["Pass"]}
+    if "Outcome" not in kwargs:
+        categorical_kwargs = {"Outcome": ["Pass"]}
+    else:
+        categorical_kwargs = {}
     numerical_kwargs = {}
     for key in kwargs.keys():
         if key not in df.columns:
@@ -135,12 +138,9 @@ def filter_df(df, **kwargs):
     # calls filter_columns_catergorical() with **categorical_kwargs on df, pipes 
     # the output into filter_columns_numeric() with **numerical_kwargs and assigns
     # the output to a new df_filtered
-    if numerical_kwargs:
-        df_filtered = df.pipe(filter_columns_categorical, 
+    df_filtered = df.pipe(filter_columns_categorical, 
                             **categorical_kwargs).pipe(filter_columns_numeric, 
                                                         **numerical_kwargs)
-    else:
-        df_filtered = df.pipe(filter_columns_categorical, **categorical_kwargs)
     if len(df_filtered) < 2:
         raise Exception("1 or fewer samples meet specified criteria")
     return df_filtered
@@ -152,22 +152,25 @@ def filter_columns_numeric(df, **kwargs):
         of length 2 with min and max thresholds in elements 0 and 1. 
         The data in column name must me of dtype int or float. 
     """ 
-    for column_name, value in kwargs.items():
-        # ensures that column_names are of numeric type
-        if not pd.api.types.is_numeric_dtype(df[column_name]):
-            raise InvalidDtype(dtype="float or int", column_name=column_name)
-        # ensures that values are of length 2 (min & max) and numeric
-        if (not isinstance(value, list) and not isinstance(value,tuple)) or len(value) != 2 \
-            or (not isinstance(value[0], float) and not isinstance(value[0], int)) \
-            or (not isinstance(value[1], float) and not isinstance(value[1], int)) \
-            or value[0] >= value[1]:
-            raise ValueError(f"Invalid kwarg '{column_name}': must be list or tuple of 2" 
-                              " numbers where the 2nd element is larger than the 1st")
-    # constructs a query string on which to query df; e.g. 'pcMapped >= 90 and 
-    # pcMapped <= 100 and GenomeCov >= 80 and GenomveCov <= 100'
-    query = ' and '.join(f'{col} >= {vals[0]} and {col} <= {vals[1]}' \
-        for col, vals in kwargs.items())
-    return df.query(query)
+    if kwargs:
+        for column_name, value in kwargs.items():
+            # ensures that column_names are of numeric type
+            if not pd.api.types.is_numeric_dtype(df[column_name]):
+                raise InvalidDtype(dtype="float or int", column_name=column_name)
+            # ensures that values are of length 2 (min & max) and numeric
+            if (not isinstance(value, list) and not isinstance(value,tuple)) or len(value) != 2 \
+                or (not isinstance(value[0], float) and not isinstance(value[0], int)) \
+                or (not isinstance(value[1], float) and not isinstance(value[1], int)) \
+                or value[0] >= value[1]:
+                raise ValueError(f"Invalid kwarg '{column_name}': must be list or tuple of 2" 
+                                " numbers where the 2nd element is larger than the 1st")
+        # constructs a query string on which to query df; e.g. 'pcMapped >= 90 and 
+        # pcMapped <= 100 and GenomeCov >= 80 and GenomveCov <= 100'
+        query = ' and '.join(f'{col} >= {vals[0]} and {col} <= {vals[1]}' \
+            for col, vals in kwargs.items())
+        return df.query(query)
+    else:
+        return df
 
 def filter_columns_categorical(df, **kwargs):
     """ 
@@ -187,7 +190,7 @@ def filter_columns_categorical(df, **kwargs):
         missing_values = [item for item in value if item not in list(df[column_name])]
         if missing_values:
             warnings.warn(f"Column '{column_name}' does not contain the values "
-                          f"'{', '.join(missing_values)}'")
+                        f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] and 
     # sample_name in ["AFT-61-03769-21", "20-0620719"]. 
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
