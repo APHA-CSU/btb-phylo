@@ -37,7 +37,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 
 ### Test with an example configuration file
 ```
-./btb-phylo ~/results ~/consensus -c $PWD/example_config.json -j 1 with-docker 
+./btb-phylo ~/results ~/consensus -c $PWD/config/example_config.json -j 1 with-docker 
 ```
 This will run the full pipeline inside a docker container with 3 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
 
@@ -76,7 +76,7 @@ This ./install/install.bash will install the following dependencies:
 
 ### Test with an example configuration file
 ```
-./btb-phylo ~/results ~/consensus -c $PWD/example_config.json -j 1
+./btb-phylo ~/results ~/consensus -c $PWD/config/example_config.json -j 1
 ```
 This will run the full pipeline locally with 3 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
 
@@ -163,7 +163,7 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 1. Mount FSx drive, `fsx-ranch-017`;
 2. Run the following command; 
 ```
-./btb-phylo path/to/fsx-017 path/to/fsx-017 -c $PWD/vb_config.json with-docker
+./btb-phylo path/to/fsx-017 path/to/fsx-017 -c $PWD/config/vb_config.json with-docker
 ```
 This will use predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
 
