@@ -1,8 +1,6 @@
 import re
 from os import path
 
-import pandas as pd
-
 import btbphylo.utils as utils
 
 
