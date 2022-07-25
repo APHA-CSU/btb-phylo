@@ -5,6 +5,8 @@
 
 SCRIPT="${0##*/}"
 
+# parses named optional input args
+# Thanks: https://stackoverflow.com/questions/71349910/optional-arguments-in-bash-script
 parse_args() {
     THREADS=$(nproc)
     DOCKER=0
