@@ -17,11 +17,10 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     wget \
     awscli
 
-export SETUPTOOLS_USE_DISTUTILS=stdlib
 ln -s /usr/bin/python3 /usr/bin/python
 python setup.py install
 
-################## BIOTOOLS ######################
+################## BIOTOOLS ##########################
 
 mkdir -p $BIOTOOLS_PATH
 cp ./install/install*.*sh $BIOTOOLS_PATH
