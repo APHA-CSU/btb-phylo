@@ -37,7 +37,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 
 ### Test with an example configuration file
 ```
-./btb-phylo ~/results ~/consensus -c $PWD/config/example_config.json -j 1 with-docker 
+./btb-phylo.sh ~/results ~/consensus -c $PWD/config/example_config.json -j 1 with-docker 
 ```
 This will run the full pipeline inside a docker container with 3 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
 
@@ -76,7 +76,7 @@ This ./install/install.bash will install the following dependencies:
 
 ### Test with an example configuration file
 ```
-./btb-phylo ~/results ~/consensus -c $PWD/config/example_config.json -j 1
+./btb-phylo.sh ~/results ~/consensus -c $PWD/config/example_config.json -j 1
 ```
 This will run the full pipeline locally with 3 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
 
