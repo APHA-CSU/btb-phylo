@@ -21,7 +21,7 @@ RUN apt-get -y update
 RUN bash ./install/docker-install.bash
 
 # Make executable
-RUN chmod +x btb-phylo
+RUN chmod +x btb-phylo.sh
 
 ################## ENTRY ######################
 
