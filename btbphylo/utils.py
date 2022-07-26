@@ -6,7 +6,8 @@ import botocore
 import pandas as pd
 
 
-DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.abspath(__file__)), "all_samples.csv")
+DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.dirname(path.abspath(__file__))), 
+                                     "all_samples.csv")
 
 
 class NoS3ObjectError(Exception):
