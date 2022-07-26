@@ -421,7 +421,7 @@ class TestUpdateSummary(unittest.TestCase):
             self.assertEqual(update_summary.get_finalout_s3_keys(), test_output)
 
     def test_extract_s3_key(self):
-        #test cases
+        # test case
         test_input = ["2022-06-28 06:38:51      45876 v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv",
                       "2022-06-28 06:38:51 45876 v3-2/Results_10032_27Jun22/bar",
                       "a b c foo"]
@@ -437,6 +437,29 @@ class TestUpdateSummary(unittest.TestCase):
                 print(e)
         if fail:
             raise AssertionError
+
+    def test_new_final_out_keys(self):
+        # test case
+        test_df = pd.DataFrame({"ResultLoc": ["s3://s3-csu-003/v3-2/A/", 
+                                              "s3://s3-csu-003/v3-2/A/", 
+                                              "s3://s3-csu-003/v3-2/A/", 
+                                              "s3://s3-csu-003/v3-2/B/",
+                                              "s3://s3-csu-003/v3-2/B/",
+                                              "s3://s3-csu-003/v3-2/C/",
+                                              "s3://s3-csu-003/v3-2/D/",
+                                              "s3://s3-csu-003/v3-2/D/",
+                                              "s3://s3-csu-003/v3-2/E/"]})
+        # mock get_finalout_s3_keys
+        with mock.patch("btbphylo.update_summary.get_finalout_s3_keys") as mock_get_finalout_s3_keys:
+            mock_get_finalout_s3_keys.return_value = ["v3-2/A/FinalOut.csv",
+                                                      "v3-2/B/FinalOut.csv",
+                                                      "v3-2/C/FinalOut.csv",
+                                                      "v3-2/D/FinalOut.csv",
+                                                      "v3-2/E/FinalOut.csv",
+                                                      "v3-2/F/FinalOut.csv",
+                                                      "v3-2/G/FinalOut.csv"]
+            self.assertEqual(update_summary.new_final_out_keys(test_df), ["v3-2/F/FinalOut.csv",
+                                                                          "v3-2/G/FinalOut.csv"])
 
                                                     
 def test_suit(test_objs):                           

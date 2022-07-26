@@ -56,11 +56,12 @@ def new_final_out_keys(df_summary):
     # get list of all FinalOut.csv s3 keys
     s3_keys = get_finalout_s3_keys()
     new_keys = []
+    old_result_loc = set(df_summary["ResultLoc"])
     for key in s3_keys:
         prefix = "/".join(key.split("/")[:-1])
         result_loc = f"s3://s3-csu-003/{prefix}/"
         # if data not already summarised in df_summary, i.e. new data
-        if result_loc not in list(df_summary["ResultLoc"]):
+        if result_loc not in old_result_loc:
             # add the s3 key to new_keys
             new_keys.append(key)
     return new_keys
