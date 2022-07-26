@@ -17,8 +17,8 @@ apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     wget \
     awscli
 
-pip3 install -r requirements.txt
 ln -s /usr/bin/python3 /usr/bin/python
+python setup.py install
 
 ################## BIOTOOLS ######################
 

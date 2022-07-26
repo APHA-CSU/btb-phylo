@@ -62,7 +62,7 @@ git clone https://github.com/APHA-CSU/btb-phylo.git
 3. Install required python packages :
 ```
 cd btb-phylo
-pip install -r requirements.txt
+python setup.py install
 ```
 4. Install software dependencies:
 ```
