@@ -19,7 +19,7 @@ git clone https://github.com/APHA-CSU/btb-phylo.git
 2. Run the following command from inside the cloned repository to run the pipeline inside a docker container:
 
 ```
-./btb-phylo path/to/results/directory path/to/consensus/directory -c path/to/config/json -j 1 with-docker 
+./btb-phylo.sh path/to/results/directory path/to/consensus/directory -c path/to/config/json -j 1 with-docker 
 ```
 
 This will download the latest docker image from [DockerHub](https://hub.docker.com/r/aphacsubot/btb-phylo) and run the full `btb-phylo` pipeline. Consensus files are downloaded from `s3-csu-003` and a snp-matrix is built using a single thread. 
@@ -163,7 +163,7 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 1. Mount FSx drive, `fsx-ranch-017`;
 2. Run the following command; 
 ```
-./btb-phylo path/to/fsx-017 path/to/fsx-017 -c $PWD/config/vb_config.json with-docker
+./btb-phylo.sh path/to/fsx-017 path/to/fsx-017 -c $PWD/config/vb_config.json with-docker
 ```
 This will use predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
 
