@@ -77,7 +77,7 @@ if [ $DOCKER == 1 ]; then
     fi
     ALL_SAMPLES=$(realpath all_samples.csv)
     docker pull aphacsubot/btb-phylo:dockerize
-    docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:dockerize /results /consensus -c /config.json -j $THREADS
+    docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:master /results /consensus -c /config.json -j $THREADS
 else
     python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG 
 fi
