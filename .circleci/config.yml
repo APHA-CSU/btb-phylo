@@ -9,7 +9,8 @@ commands:
 
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker:
+          version: 20.10.14 
       - run: |
           TAG=<< parameters.tag >>
           docker build -t aphacsubot/btb-phylo:$TAG .
@@ -41,7 +42,7 @@ jobs:
     steps:
       - run: |
           cd /btb-phylo/
-          python unit_tests.py
+          python tests/unit_tests.py
 
 executors:
   phylo-pipeline:
