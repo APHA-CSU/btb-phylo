@@ -23,6 +23,6 @@ RUN bash ./install/docker-install.bash
 # Make executable
 RUN chmod +x btb-phylo.sh
 
-################## ENTRY ######################
+################## ENTRY ############################
 
 ENTRYPOINT ["./btb-phylo.sh"]

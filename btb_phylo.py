@@ -1,10 +1,13 @@
 import argparse
 import json
-from os import path
+import os
+
+import pandas as pd
 
 import btbphylo.utils as utils
 import btbphylo.update_summary as update_summary
 import btbphylo.filter_samples as filter_samples
+import btbphylo.consistify as consistify
 import btbphylo.phylogeny as phylogeny
 
 def update_samples(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
@@ -61,8 +64,20 @@ def sample_filter(filtered_filepath, summary_filepath=utils.DEFAULT_SUMMARY_FILE
     df_filtered = filter_samples.get_samples_df(summary_filepath, **filter_args)
     print("Saving filtered samples csv ... \n")
     # save filtered_df to csv
+    if not os.path.exists(os.path.split(filtered_filepath)[0]):
+        os.makedirs(os.path.split(filtered_filepath)[0])
     utils.df_to_csv(df_filtered, filtered_filepath)
     return df_filtered
+
+def consistify_samples(filtered_filepath, cattle_path, movement_path, results_path):
+    if not os.path.exists(results_path):
+        os.makedirs(results_path)
+    consistified_wgs = os.path.join(results_path, "consistified_wgs.csv")
+    consistified_catte = os.path.join(results_path, "consistified_cattle.csv")
+    consistified_movement = os.path.join(results_path, "consistified_movement.csv")
+    missing_samples_dir = os.path.join(results_path, "missing_samples")
+    consistify.consistify_csvs(filtered_filepath, cattle_path, movement_path, consistified_wgs, 
+                               consistified_catte, consistified_movement, missing_samples_dir)
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
           build_tree=False, filtered_filepath=None, df_filtered=None):
@@ -96,11 +111,13 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     else:
         raise ValueError("An argument must be provided for either filtered_filepath "
                          "or filtered_df")
+    if not os.path.exists(results_path):
+        os.makedirs(results_path)
     # output paths
-    multi_fasta_path = path.join(results_path, "multi_fasta.fas")
-    snp_sites_outpath = path.join(results_path, "snps.fas")
-    snp_dists_outpath = path.join(results_path, "snp_matrix.tab")
-    tree_path = path.join(results_path, "mega")
+    multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
+    snp_sites_outpath = os.path.join(results_path, "snps.fas")
+    snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
+    tree_path = os.path.join(results_path, "mega")
     print("\nphylogeny\n")
     # concatonate fasta files
     phylogeny.build_multi_fasta(multi_fasta_path, df_filtered, consensus_path) 
@@ -133,7 +150,7 @@ def filter_and_phylo(results_path, consensus_path, summary_filepath=utils.DEFAUL
         Filters samples and runs phylogeny 
     """
     # filter samples
-    filtered_filepath = path.join(results_path, "filtered_samples.csv")
+    filtered_filepath = os.path.join(results_path, "filtered_samples.csv")
     df_filtered = sample_filter(summary_filepath, filtered_filepath, **kwargs)
     # run phylogeny
     phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
@@ -141,17 +158,32 @@ def filter_and_phylo(results_path, consensus_path, summary_filepath=utils.DEFAUL
 
 def full_pipeline(results_path, consensus_path, 
                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, n_threads=1,
-                  build_tree=False, download_only=False, **kwargs):
+                  build_tree=False, download_only=False, viewbovine=False,
+                  cattle_filepath=None, movement_filepath=None, **kwargs):
     """
         Updates local copy of summary csv file, filters samples and
         runs phylogeny 
     """
-    filtered_filepath = path.join(results_path, "filtered_samples.csv")
+    filtered_filepath = os.path.join(results_path, "filtered_samples.csv")
     # update full sample summary and filter samples
     df_filtered = update_and_filter(filtered_filepath, summary_filepath, **kwargs)
-    # run phylogeny
-    phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
-          df_filtered=df_filtered)
+    # if running in ViewBovine must consistify datasets
+    if viewbovine:
+        if not cattle_filepath or not movement_filepath:
+            raise TypeError("Must provide keyword arguments; cattle_filepath and \
+                             movement_filepath if viewbovine=True")
+        # load cattle and movement data
+        df_cattle = pd.read_csv(cattle_filepath) 
+        df_movement = pd.read_csv(movement_filepath) 
+        # consistify datasets for ViewBovine
+        df_consistified = consistify.consistify(df_filtered, df_cattle, df_movement)
+        # run phylogeny
+        phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
+              df_filtered=df_consistified)
+    else:
+        # run phylogeny
+        phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
+              df_filtered=df_filtered)
 
 def main():
     parser = argparse.ArgumentParser(prog="btb-phylo")
@@ -179,6 +211,15 @@ def main():
     subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
     subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
     subparser.set_defaults(func=sample_filter)
+
+    # consistify
+    subparser = subparsers.add_parser('consistify', help='removes wgs samples that are missing from \
+                                      cattle and movement data (metadata warehouse)')
+    subparser.add_argument("filtered_filepath", help="path to filtered sample metadata .csv file")
+    subparser.add_argument("cattle_path", help="path to cattle csv")
+    subparser.add_argument("movement_path", help="path to movements csv")
+    subparser.add_argument("results_path", help="path to results directory")
+    subparser.set_defaults(func=consistify_samples)
 
     # run phylogeny
     subparser = subparsers.add_parser('phylo', help='performs phylogeny')
@@ -250,6 +291,10 @@ def main():
     subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
     subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
     subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
+    subparser.add_argument("--viewbovine", "-vb", action="store_true", default=False, 
+                           help="if running for ViewBovine production")
+    subparser.add_argument("--cattle_filepath", help="path to cattle data .csv file") 
+    subparser.add_argument("--movement_filepath", help="path to movement data .csv file") 
     subparser.set_defaults(func=full_pipeline)
 
     # pasre args
