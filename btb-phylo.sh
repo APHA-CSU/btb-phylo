@@ -9,8 +9,9 @@ SCRIPT="${0##*/}"
 # Thanks: https://stackoverflow.com/questions/71349910/optional-arguments-in-bash-script
 parse_args() {
     THREADS=$(nproc)
-    DOCKER=0
     CONFIG=0
+    DOCKER=0
+    VIEWBOVINE=0
     SOPTS="j:c:"
 
     TMP=$(getopt -o "$SOPTS" -n "$SCRIPT" -- "$@") || exit 1
@@ -52,10 +53,13 @@ parse_args() {
         if [ $1 == "with-docker" ]
         then
         DOCKER=1
+        elif [ $1 = "viewbovine" ]
+        then 
+        VIEWBOVINE=1
         else
         printf "Unrecognised argument: '%s'. Please include positional arguments for " "$1"
         printf "paths to: results folder and consensus folder. Additional optional arguments "
-        printf "include 'with-docker', '-j' and '-c' (see Readme)\n"
+        printf "include 'with-docker', 'viewbovine', '-j' and '-c' (see Readme)\n"
         exit 1
         fi
         shift
@@ -77,7 +81,15 @@ if [ $DOCKER == 1 ]; then
     fi
     ALL_SAMPLES=$(realpath all_samples.csv)
     docker pull aphacsubot/btb-phylo:dockerize
-    docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:dockerize /results /consensus -c /config.json -j $THREADS
+    if [ $VIEWBOVINE == 1 ]; then
+        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:dockerize /results /consensus -c /config.json -j $THREADS -viewbovine
+    else
+        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:dockerize /results /consensus -c /config.json -j $THREADS
+    fi
 else
-    python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG 
+    if [ $VIEWBOVINE == 1 ]; then
+        python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG --viewbovine
+    else
+        python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG
+    fi
 fi
