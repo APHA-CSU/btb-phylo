@@ -159,7 +159,7 @@ def filter_and_phylo(results_path, consensus_path, summary_filepath=utils.DEFAUL
 def full_pipeline(results_path, consensus_path, 
                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, n_threads=1,
                   build_tree=False, download_only=False, viewbovine=False,
-                  cattle_filepath=None, movement_filepath=None, **kwargs):
+                  meta_path=None, **kwargs):
     """
         Updates local copy of summary csv file, filters samples and
         runs phylogeny 
@@ -169,14 +169,23 @@ def full_pipeline(results_path, consensus_path,
     df_filtered = update_and_filter(filtered_filepath, summary_filepath, **kwargs)
     # if running in ViewBovine must consistify datasets
     if viewbovine:
-        if not cattle_filepath or not movement_filepath:
+        if not meta_path:
             raise TypeError("Must provide keyword arguments; cattle_filepath and \
                              movement_filepath if viewbovine=True")
+        # cattle and movements csv filepaths
+        cattle_filepath = f"{meta_path}/cattle.csv" 
+        movements_filepath = f"{meta_path}/movements.csv" 
+        # validate paths
+        if not os.path.exists(cattle_filepath):
+            raise FileNotFoundError(f"Cannot find cattle.csv in {meta_path}")
+        if not os.path.exists(movements_filepath):
+            raise FileNotFoundError(f"Cannot find movements.csv in {meta_path}")
         # load cattle and movement data
         df_cattle = pd.read_csv(cattle_filepath) 
-        df_movement = pd.read_csv(movement_filepath) 
+        df_movement = pd.read_csv(movements_filepath) 
         # consistify datasets for ViewBovine
-        df_consistified = consistify.consistify(df_filtered, df_cattle, df_movement)
+        df_consistified, *_ = consistify.consistify(df_filtered, df_cattle, 
+                                                    df_movement)
         # run phylogeny
         phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
               df_filtered=df_consistified)
@@ -271,9 +280,8 @@ def main():
     subparser.set_defaults(func=filter_and_phylo)
 
     # full pipeline
-    subparser = subparsers.add_parser('full_pipeline', 
-                                      help="runs the full phylogeny pipeline: updates full \
-                                            samples summary, filters samples and performs phylogeny")
+    subparser = subparsers.add_parser('full_pipeline', help="runs the full phylogeny pipeline: updates full \
+                                      samples summary, filters samples and performs phylogeny")
     subparser.add_argument("results_path", help="path to results directory")
     subparser.add_argument("consensus_path", help = "path to where consensus files will be held")
     subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
@@ -293,8 +301,8 @@ def main():
     subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
     subparser.add_argument("--viewbovine", "-vb", action="store_true", default=False, 
                            help="if running for ViewBovine production")
-    subparser.add_argument("--cattle_filepath", help="path to cattle data .csv file") 
-    subparser.add_argument("--movement_filepath", help="path to movement data .csv file") 
+    subparser.add_argument("--meta_path", help="path to folder container cattle and movement data \
+                           .csv files") 
     subparser.set_defaults(func=full_pipeline)
 
     # pasre args
