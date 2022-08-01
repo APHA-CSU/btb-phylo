@@ -58,6 +58,7 @@ parse_args() {
     done
 }
 
+# parse arguments
 parse_args "$@"
 
 if [ $CONFIG == 0 ]; then
