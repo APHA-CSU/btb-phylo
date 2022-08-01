@@ -1,3 +1,4 @@
+from importlib.metadata import metadata
 import warnings
 
 import pandas as pd
@@ -208,4 +209,5 @@ def get_samples_df(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
     df = utils.summary_csv_to_df(summary_filepath).pipe(filter_df,
                                                         **kwargs).pipe(remove_duplicates, 
                                                                        pcMapped="max", Ncount="min")
-    return df
+    metadata = {"number_of_filtered_samples": len(df)}
+    return df, metadata

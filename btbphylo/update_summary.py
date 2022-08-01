@@ -112,4 +112,5 @@ def append_df_summary(df_summary, new_keys, itteration=0):
                                        new_keys, itteration+1)
     else:
         print(f"\t\tdownloaded batch summaries: {num_batches} / {num_batches} \n")
-    return df_summary
+    metadata = {"total_number_of_wgs_samples": len(df_summary)}
+    return df_summary, metadata

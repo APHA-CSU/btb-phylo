@@ -41,10 +41,6 @@ def consistify(wgs, cattle, movements):
             missing movement (pandas DataFrame object): movement samples
             which are not common to both wgs and cattle
     """
-    # original lengths
-    original_wgs_length = len(wgs)
-    original_cattle_length = len(cattle)
-    original_movements_length = len(movements)
     # sets of sample names for the different datasets
     wgs_samples = set(wgs.Submission)
     cattle_samples = set(cattle.CVLRef)
@@ -60,21 +56,15 @@ def consistify(wgs, cattle, movements):
     wgs_consist = wgs.loc[wgs["Submission"].isin(consist_samples)]
     cattle_consist = cattle[cattle.CVLRef.isin(consist_samples)]
     movements_consist = movements[movements.SampleName.isin(consist_samples)]
-    # count length of datasets
-    consistified_snp_length = len(wgs_consist)
-    consistified_cattle_records = len(cattle_consist)
-    consistified_movements_length = len(movements_consist)
-    # summary
-    print(f"""
-        Original number of wgs records: {original_wgs_length}
-        Original number of cattle records: {original_cattle_length}
-        Original number of movement records: {original_movements_length}
-        Consistified number of wgs records: {consistified_snp_length}
-        Consistified number of cattle records: {consistified_cattle_records}
-        Consistified number of movement records: {consistified_movements_length}
-    """)
+    # metadata
+    metadata = {"original_number_of_wgs_records": len(wgs),
+                "original_number_of_cattle_records": len(cattle),
+                "original_number_of_movement_records": len(movements),
+                "consistified_number_of_wgs_records": len(wgs_consist),
+                "consistified_number_of_cattle_records": len(cattle_consist),
+                "consistified_number_of_movement_records": len(movements_consist)}
     return wgs_consist, cattle_consist, movements_consist,\
-        missing_wgs, missing_cattle, missing_movement
+        missing_wgs, missing_cattle, metadata, missing_movement
 
 def consistify_csvs(filtered_samples_path, cattle_path, movement_path, 
                     consistified_wgs_path, consistified_cattle_path, 
@@ -84,17 +74,19 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
         Runs consistify().
         Saves consistified outputs to CSV
     """
-    ## load
+    # load
     wgs = utils.summary_csv_to_df(filtered_samples_path)
     cattle = pd.read_csv(cattle_path)
     movements = pd.read_csv(movement_path)
     # consistify
     (wgs_consist, cattle_consist, movements_consist, missing_wgs, \
-        missing_cattle, missing_movement) = consistify(wgs, cattle, movements)
-    ## output consistified csvs and missing sample lists
+        missing_cattle, metadata, missing_movement) = consistify(wgs, cattle, movements)
+    # save consistified csvs
     utils.df_to_csv(wgs_consist, consistified_wgs_path)
     cattle_consist.to_csv(consistified_cattle_path)
     movements_consist.to_csv(consisitified_movements_path)
+    # save missing samples csvs
     (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv")
     (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv")
     (pd.DataFrame(missing_movement)).to_csv(missing_samples_path + "/missing_movement.csv")
+    return metadata

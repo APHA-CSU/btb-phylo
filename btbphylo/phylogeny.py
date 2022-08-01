@@ -110,6 +110,13 @@ def snp_sites(snp_sites_outpath, multi_fasta_path):
     # run snp sites 
     cmd = f'snp-sites {multi_fasta_path} -c -o {snp_sites_outpath}'
     utils.run(cmd, shell=True)
+    # read the number of snps for metadata
+    with open(snp_sites_outpath, "r") as f:
+        next(f)
+        for line in f:
+            metadata = {"number_of_snps": len(line)-1}
+            break
+    return metadata
 
 def build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads=1):
     """

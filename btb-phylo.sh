@@ -13,47 +13,35 @@ parse_args() {
     DOCKER=0
     VIEWBOVINE=0
     SOPTS="j:c:m:"
-    LOPTS="threads:,config:,meta_path:"
+    LOPTS="with-docker,threads:,config:,meta_path:"
 
     TMP=$(getopt -o "$SOPTS" -l "$LOPTS" -n "$SCRIPT" -- "$@") || exit 1
 
     eval set -- "$TMP"
     unset TMP
 
+    echo $@
+
     while true; do
         case "$1" in
             -j | --threads ) THREADS=$2; shift;;
             -c | --config )  CONFIG=$2; shift;;
             -m | --meta_path ) VIEWBOVINE=1; CATTLE_AND_MOVEMENT=$2; shift;;
-            --) shift; break;;
+            --with-docker ) DOCKER=1;;
+            -- ) shift; break;;
         esac
         shift
     done
 
+    # required positional arguemnts
     if (( $#<2 ))
     then
         printf "Must include positional arguments of paths to: results folder "
         printf "and consensus folder\n"
         exit 1
     fi
-
     RESULTS=$1
     CONSENSUS=$2
-    shift 2
-
-    nargs=$#
-    for ((i=0; i<nargs; ++i)); do
-        if [ $1 == "with-docker" ]
-        then
-        DOCKER=1
-        else
-        printf "Unrecognised argument: '%s'. Please include positional arguments for " "$1"
-        printf "paths to: results folder and consensus folder. Additional optional arguments "
-        printf "include 'with-docker', '-vb', '-j' and '-c' (see Readme)\n"
-        exit 1
-        fi
-        shift
-    done
 }
 
 # parse arguments
@@ -73,7 +61,7 @@ if [ $DOCKER == 1 ]; then
     ALL_SAMPLES=$(realpath all_samples.csv)
     docker pull aphacsubot/btb-phylo:consistify
     if [ $VIEWBOVINE == 1 ]; then
-        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:consistify /results /consensus -c /config.json -j $THREADS -m $CATTLE_AND_MOVEMENT 
+        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv --mount type=bind,source=$CATTLE_AND_MOVEMENT,target=/btb-phylo/cattle_and_movement aphacsubot/btb-phylo:consistify /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
     else
         docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:consistify /results /consensus -c /config.json -j $THREADS
     fi
