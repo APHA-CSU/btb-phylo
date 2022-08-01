@@ -13,7 +13,7 @@ parse_args() {
     DOCKER=0
     VIEWBOVINE=0
     SOPTS="j:c:m"
-    LOPTS="threads:,config:,meta_path:"
+    LOPTS="with-docker,threads:,config:,meta_path:"
 
     TMP=$(getopt -o "$SOPTS" -l "$LOPTS" -n "$SCRIPT" -- "$@") || exit 1
 
