@@ -25,4 +25,4 @@ RUN chmod +x btb-phylo.sh
 
 ################## ENTRY ############################
 
-ENTRYPOINT ["cat btb-phylo.sh"]
+ENTRYPOINT ["./btb-phylo.sh"]

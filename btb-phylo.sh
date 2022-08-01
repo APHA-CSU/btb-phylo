@@ -20,8 +20,6 @@ parse_args() {
     eval set -- "$TMP"
     unset TMP
 
-    echo $@
-
     while true; do
         case "$1" in
             -j | --threads ) THREADS=$2; shift;;
@@ -75,9 +73,9 @@ if [ $DOCKER == 1 ]; then
     ALL_SAMPLES=$(realpath all_samples.csv)
     docker pull aphacsubot/btb-phylo:consistify
     if [ $VIEWBOVINE == 1 ]; then
-        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:dockerize /results /consensus -c /config.json -j $THREADS -m $CATTLE_AND_MOVEMENT 
+        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:consistify /results /consensus -c /config.json -j $THREADS -m $CATTLE_AND_MOVEMENT 
     else
-        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:dockerize /results /consensus -c /config.json -j $THREADS
+        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:consistify /results /consensus -c /config.json -j $THREADS
     fi
 else
     if [ $VIEWBOVINE == 1 ]; then
