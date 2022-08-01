@@ -104,35 +104,12 @@ def append_df_summary(df_summary, new_keys, itteration=0):
     # if not yet on last itteration (last new_key element)
     num_batches = len(new_keys)
     if itteration < num_batches:
-        print(f"downloading batch summary: {itteration+1} / {num_batches}", end="\r")
+        print(f"\t\tdownloading batch summary: {itteration+1} / {num_batches}", end="\r")
         # read FinalOut.csv for current key
         finalout_df = finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
         # append to df_summary
         df_summary = append_df_summary(pd.concat([df_summary, finalout_df]), 
                                        new_keys, itteration+1)
     else:
-        print(f"downloaded batch summaries: {num_batches} / {num_batches} \n")
+        print(f"\t\tdownloaded batch summaries: {num_batches} / {num_batches} \n")
     return df_summary
-
-def update(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
-    """
-        Updates the local copy of the sample summary csv file containing metadata 
-        for all samples file or builds a new one from scratch if it does not 
-        already exist. Downloads all FinalOut.csv files from s3-csu-003 and appends 
-        them to the a pandas DataFrame and saves the data to csv.
-
-        Parameters:
-            summary_filepath (str): path to location of summary csv  
-    """
-    print("Loading summary csv file ... \n")
-    # download sample summary csv
-    df_summary = get_df_summary(summary_filepath)
-    print("Getting s3 keys for batch summary files ... \n")
-    # get s3 keys of FinalOut.csv for new batches of samples
-    new_keys = new_final_out_keys(df_summary)
-    print("Appending new metadata to df_summary ... ")
-    # update the summary dataframe
-    updated_df_summary = append_df_summary(df_summary, new_keys)
-    print("Saving summary csv file ... \n")
-    # save summary to csv 
-    utils.df_to_csv(updated_df_summary, summary_filepath)

@@ -13,9 +13,26 @@ import btbphylo.phylogeny as phylogeny
 def update_samples(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
         Updates the local copy of the sample summary csv file containing metadata 
-        already exist.
+        for all samples file or builds a new one from scratch if it does not 
+        already exist. Downloads all FinalOut.csv files from s3-csu-003 and appends 
+        them to the a pandas DataFrame and saves the data to csv.
+
+        Parameters:
+            summary_filepath (str): path to location of summary csv  
     """
     print("\nupdate_summary\n")
+    print("\tLoading summary csv file ... \n")
+    # download sample summary csv
+    df_summary = update_summary.get_df_summary(summary_filepath)
+    print("\tGetting s3 keys for batch summary files ... \n")
+    # get s3 keys of FinalOut.csv for new batches of samples
+    new_keys = update_summary.new_final_out_keys(df_summary)
+    print("\tAppending new metadata to df_summary ... ")
+    # update the summary dataframe
+    updated_df_summary = update_summary.append_df_summary(df_summary, new_keys)
+    print("\tSaving summary csv file ... \n")
+    # save summary to csv 
+    utils.df_to_csv(updated_df_summary, summary_filepath)
     update_summary.update(summary_filepath)
 
 def sample_filter(filtered_filepath, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, 
@@ -59,10 +76,10 @@ def sample_filter(filtered_filepath, summary_filepath=utils.DEFAULT_SUMMARY_FILE
         # remove unused filtering args
         filter_args = {k: v for k, v in kwargs.items() if v is not None}
     print("\nfilter_samples\n")
-    print("Filtering samples ... \n")
+    print("\tFiltering samples ... \n")
     # filter samples
     df_filtered = filter_samples.get_samples_df(summary_filepath, **filter_args)
-    print("Saving filtered samples csv ... \n")
+    print("\tSaving filtered samples csv ... \n")
     # save filtered_df to csv
     if not os.path.exists(os.path.split(filtered_filepath)[0]):
         os.makedirs(os.path.split(filtered_filepath)[0])
@@ -123,14 +140,14 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     phylogeny.build_multi_fasta(multi_fasta_path, df_filtered, consensus_path) 
     if not download_only:
         # run snp-sites
-        print("Running snp_sites ... \n")
+        print("\tRunning snp_sites ... \n")
         phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path)
         # run snp-dists
-        print("Running snp_dists ... ")
+        print("\tRunning snp_dists ... ")
         phylogeny.build_snp_matrix(snp_dists_outpath, snp_sites_outpath, n_threads)
         if build_tree:
             # build tree
-            print("\nRunning mega ... ")
+            print("\n\tRunning mega ... ")
             phylogeny.build_tree(tree_path, snp_sites_outpath)
 
 def update_and_filter(filtered_filepath, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, 
