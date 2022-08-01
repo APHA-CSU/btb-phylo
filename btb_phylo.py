@@ -33,7 +33,6 @@ def update_samples(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     print("\tSaving summary csv file ... \n")
     # save summary to csv 
     utils.df_to_csv(updated_df_summary, summary_filepath)
-    update_summary.update(summary_filepath)
 
 def sample_filter(filtered_filepath, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, 
                   config=False, **kwargs):
