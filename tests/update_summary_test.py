@@ -104,7 +104,7 @@ class TestUpdateSummary(unittest.TestCase):
                                                    pd.DataFrame({"foo":["g"], "bar":["g"], "baz":["g"]})]
             test_output = update_summary.append_df_summary(test_df_summary, test_new_keys)
             # assert correct output
-            nptesting.assert_array_equal(test_output,
+            nptesting.assert_array_equal(test_output.values,
                                          pd.DataFrame({"foo":["a", "b", "c", "d", "e", "f", "g"], 
                                                        "bar":["a", "b", "c", "d", "e", "f", "g"], 
                                                        "baz":["a", "b", "c", "d", "e", "f", "g"]}).values)
