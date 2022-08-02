@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import subprocess
 from datetime import datetime
 
 import btbphylo.utils as utils
@@ -365,6 +366,7 @@ def main():
     func = kwargs.pop("func")
     # run
     metadata = {"datetime": str(datetime.now())}
+    metadata["git_commit"] = subprocess.check_output(["git", "rev-parse", "HEAD"])
     meta_update, *_ = func(**kwargs)
     # save metadata
     metadata.update(meta_update)
