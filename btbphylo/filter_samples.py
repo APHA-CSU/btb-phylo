@@ -1,9 +1,11 @@
-from importlib.metadata import metadata
 import warnings
 
 import pandas as pd
 
 import btbphylo.utils as utils
+
+
+warnings.formatwarning = utils.format_warning
 
 
 class InvalidDtype(Exception):
@@ -191,7 +193,7 @@ def filter_columns_categorical(df, **kwargs):
         missing_values = [item for item in value if item not in list(df[column_name])]
         if missing_values:
             warnings.warn(f"Column '{column_name}' does not contain the values "
-                        f"'{', '.join(missing_values)}'")
+                          f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] and 
     # sample_name in ["AFT-61-03769-21", "20-0620719"]. 
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())

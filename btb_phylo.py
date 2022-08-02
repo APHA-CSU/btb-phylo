@@ -5,8 +5,8 @@ from datetime import datetime
 
 import btbphylo.utils as utils
 import btbphylo.update_summary as update_summary
-import btbphylo.filter_samples as filter_samples
 import btbphylo.consistify as consistify
+import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
 
 def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
@@ -88,7 +88,7 @@ def sample_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
 
 def consistify_samples(results_path, cattle_path, movement_path):
     print("\nConsistify\n")
-    filtered_filepath = os.path.join(results_path, "filter_samples.csv")
+    filtered_filepath = os.path.join(results_path, "filtered_samples.csv")
     if not os.path.exists(results_path):
         os.makedirs(results_path)
     # make consistified folder
@@ -100,15 +100,15 @@ def consistify_samples(results_path, cattle_path, movement_path):
     if not os.path.exists(missing_samples_outpath):
         os.makedirs(missing_samples_outpath)
     # consistified file outpaths
-    consistified_wgs = os.path.join(consistified_outpath, "consistified_wgs.csv")
-    consistified_catte = os.path.join(consistified_outpath, "consistified_cattle.csv")
-    consistified_movement = os.path.join(consistified_outpath, "consistified_movement.csv")
+    consistified_wgs_filepath = os.path.join(consistified_outpath, "consistified_wgs.csv")
+    consistified_catte_filepath = os.path.join(consistified_outpath, "consistified_cattle.csv")
+    consistified_movement_filepath = os.path.join(consistified_outpath, "consistified_movement.csv")
     missing_samples_dir = os.path.join(consistified_outpath, "missing_samples")
     # run consistify and save metadata in results root
-    metadata = consistify.consistify_csvs(filtered_filepath, cattle_path, movement_path,
-                                          consistified_wgs,  consistified_catte, 
-                                          consistified_movement, missing_samples_dir)
-    return (metadata,)
+    (metadata, wgs_consist) = consistify.consistify_csvs(filtered_filepath, cattle_path, movement_path,
+                                                         consistified_wgs_filepath,  consistified_catte_filepath, 
+                                                         consistified_movement_filepath, missing_samples_dir)
+    return metadata, wgs_consist
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
           build_tree=False, df_filtered=None):
@@ -152,6 +152,8 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
     tree_path = os.path.join(results_path, "mega")
+    if not os.path.exists(tree_path):
+        os.makedirs(tree_path)        
     print("\nPhylogeny\n")
     # concatonate fasta files
     phylogeny.build_multi_fasta(multi_fasta_path, df_filtered, consensus_path) 
@@ -165,7 +167,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
                                                       n_threads)
         if build_tree:
             # build tree
-            print("\tRunning mega ... \n")
+            print("\n\tRunning mega ... \n")
             phylogeny.build_tree(tree_path, snp_sites_outpath)
         return (metadata,)
 
@@ -210,7 +212,6 @@ def full_pipeline(results_path, consensus_path,
         Updates local copy of summary csv file, filters samples and
         runs phylogeny 
     """
-    filtered_filepath = os.path.join(results_path, "filtered_samples.csv")
     if not os.path.exists(results_path):
         os.makedirs(results_path)
     # update full sample summary and filter samples
@@ -219,22 +220,21 @@ def full_pipeline(results_path, consensus_path,
     # if running in ViewBovine must consistify datasets
     if viewbovine:
         if not meta_path:
-            raise TypeError("Must provide keyword argument; meta_path if \
-                             viewbovine=True")
+            raise TypeError("Must provide keyword argument 'meta_path' if viewbovine=True")
         # cattle and movements csv filepaths
         cattle_filepath = f"{meta_path}/cattle.csv" 
         movements_filepath = f"{meta_path}/movements.csv" 
         # validate paths
         if not os.path.exists(cattle_filepath):
-            raise FileNotFoundError(f"Cannot find cattle.csv in {meta_path}")
+            raise FileNotFoundError(f"Can't find cattle.csv in {meta_path}")
         if not os.path.exists(movements_filepath):
-            raise FileNotFoundError(f"Cannot find movements.csv in {meta_path}")
+            raise FileNotFoundError(f"Can't find movements.csv in {meta_path}")
         # consistify datasets for ViewBovine
-        metadata_consist, *_ = consistify_samples(results_path, cattle_filepath, 
-                                                  movements_filepath)
+        metadata_consist, df_consistified = consistify_samples(results_path, cattle_filepath, 
+                                                               movements_filepath)
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
-                                   build_tree)
+                                   build_tree, df_filtered=df_consistified)
     else:
         # run phylogeny
         metadata_phylo = phylo(results_path, consensus_path, download_only, n_threads, build_tree, 

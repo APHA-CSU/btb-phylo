@@ -145,7 +145,7 @@ python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/di
 
 - building a pyhlogentic tree and filtering with a configuration file
 ```
-python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --config path/to/config/file --tree
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --config path/to/config/file --build_tree
 ```
 
 Other common optional arguments are:

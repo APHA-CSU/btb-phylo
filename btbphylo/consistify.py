@@ -63,8 +63,8 @@ def consistify(wgs, cattle, movements):
                 "consistified_number_of_wgs_records": len(wgs_consist),
                 "consistified_number_of_cattle_records": len(cattle_consist),
                 "consistified_number_of_movement_records": len(movements_consist)}
-    return wgs_consist, cattle_consist, movements_consist,\
-        missing_wgs, missing_cattle, metadata, missing_movement
+    return metadata, wgs_consist, cattle_consist, movements_consist,\
+        missing_wgs, missing_cattle, missing_movement
 
 def consistify_csvs(filtered_samples_path, cattle_path, movement_path, 
                     consistified_wgs_path, consistified_cattle_path, 
@@ -79,8 +79,8 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     cattle = pd.read_csv(cattle_path)
     movements = pd.read_csv(movement_path)
     # consistify
-    (wgs_consist, cattle_consist, movements_consist, missing_wgs, \
-        missing_cattle, metadata, missing_movement) = consistify(wgs, cattle, movements)
+    (metadata, wgs_consist, cattle_consist, movements_consist, missing_wgs, \
+        missing_cattle, missing_movement) = consistify(wgs, cattle, movements)
     # save consistified csvs
     utils.df_to_csv(wgs_consist, consistified_wgs_path)
     cattle_consist.to_csv(consistified_cattle_path)
@@ -89,4 +89,4 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv")
     (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv")
     (pd.DataFrame(missing_movement)).to_csv(missing_samples_path + "/missing_movement.csv")
-    return metadata
+    return metadata, wgs_consist

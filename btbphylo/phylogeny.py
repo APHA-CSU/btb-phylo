@@ -1,7 +1,11 @@
 import re
+import warnings
 from os import path
 
 import btbphylo.utils as utils
+
+
+warnings.formatwarning = utils.format_warning
 
 
 class BadS3UriError(Exception):
@@ -130,5 +134,14 @@ def build_tree(tree_path, snp_sites_outpath):
     """
         Run mega
     """
-    cmd = f'megacc -a infer_MP.mao -d {snp_sites_outpath} -o {tree_path}'
-    utils.run(cmd, shell=True)
+    # count number of taxa 
+    with open(snp_sites_outpath, "r") as f:
+        for n_lines, _ in enumerate(f):
+            if n_lines == 7:
+                # if more than 3 samples run mega
+                cmd = f'megacc -a infer_MP.mao -d {snp_sites_outpath} -o {tree_path}'
+                utils.run(cmd, shell=True)
+                break
+    if n_lines < 7:
+        warnings.warn("Unable to build tree! Need at least 4 taxa for tree building")
+
