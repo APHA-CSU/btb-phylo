@@ -87,11 +87,12 @@ Read 4 sequences of length 831
 ```
 ## <a name="pipe-dets"></a> Pipeline details
 
-The full pipeline consists of four main stages:
+The full pipeline consists of five main stages:
 1. Updating a local `.csv` that contains metadata for every processed APHA bovine-TB sample. The default path of this file is `./all_samples.csv`. When new samples are available in `s3-csu-003` this file is updated with new samples only.
 2. Filtering the samples by a set of criteria defined in either the [configuration file](#config-file) or a set of command line arguments. The metadata file for filtered samples is saved in the results directory. 
-3. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.
-4. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
+3. "Consistifying" the samples with cattle and movement data. Designed for use with ViewBovine, this removes samples from WGS, cattle and movement datasets that are not common to all three datasets.
+4. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.
+5. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
 
 ## Using the software
 
@@ -169,7 +170,7 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 ```
 ./btb-phylo.sh path/to/fsx-017 path/to/fsx-017 -c $PWD/config/vb_config.json --meta_path path/to/fsx-017/ViewBovine/app/raw --with-docker
 ```
-This will use predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
+This will use predefined filtering criteria to download new samples to `fsx-017`, consistify the samples with cattle and movement data and update the snp-matrix on `fsx-017`. 
 
 ## <a name="config-file"></a> Configuration file
 
