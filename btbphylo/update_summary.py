@@ -108,8 +108,8 @@ def append_df_summary(df_summary, new_keys, itteration=0):
         # read FinalOut.csv for current key
         finalout_df = finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
         # append to df_summary
-        df_summary = append_df_summary(pd.concat([df_summary, finalout_df]), 
-                                       new_keys, itteration+1)
+        df_summary, _ = append_df_summary(pd.concat([df_summary, finalout_df]), 
+                                          new_keys, itteration+1)
     else:
         print(f"\t\tdownloaded batch summaries: {num_batches} / {num_batches} \n")
     metadata = {"total_number_of_wgs_samples": len(df_summary)}
