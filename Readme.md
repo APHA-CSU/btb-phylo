@@ -37,16 +37,15 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 
 ### Test with an example configuration file
 ```
-./btb-phylo.sh ~/results ~/consensus -c $PWD/config/example_config.json -j 1 with-docker 
+./btb-phylo.sh ~/results ~/consensus -c $PWD/config/example_config.json -j 1 --with-docker 
 ```
-This will run the full pipeline inside a docker container with 3 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
+This will run the full pipeline inside a docker container with 4 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
 
 The final output should be:
 ```
-Running snp_dists ... 
 This is snp-dists 0.8.2
-Will use 1 threads.
-Read 3 sequences of length 614
+Will use 4 threads.
+Read 4 sequences of length 831
 ```
 ## Local installation
 
@@ -69,7 +68,7 @@ python setup.py install
 sudo apt update
 bash ./install/install.bash
 ```
-This ./install/install.bash will install the following dependencies:
+`./install/install.bash` will install the following dependencies:
 - [`snp-sites`](https://github.com/sanger-pathogens/snp-sites) (installed with `apt`)
 - [`snp-dists`](https://github.com/tseemann/snp-dists) (installed from source to `~/biotools`, with symlink in `/usr/local/bin`)
 - [`megacc`](https://megasoftware.net/) (installed with `apt` from `.deb` file) 
@@ -78,14 +77,13 @@ This ./install/install.bash will install the following dependencies:
 ```
 ./btb-phylo.sh ~/results ~/consensus -c $PWD/config/example_config.json -j 1
 ```
-This will run the full pipeline locally with 3 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
+This will run the full pipeline locally with 4 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
 
 The final output should be:
 ```
-Running snp_dists ... 
 This is snp-dists 0.8.2
-Will use 1 threads.
-Read 3 sequences of length 614
+Will use 4 threads.
+Read 4 sequences of length 831
 ```
 ## <a name="pipe-dets"></a> Pipeline details
 
@@ -102,13 +100,14 @@ Stages 1-4 in [pipeline detials](#pipe-dets) can be run in isolation or combinat
 ### `python btb_phylo.py -h` (help)
 
 ```
-usage: btb-phylo [-h] {update_samples,filter,phylo,update_and_filter,filter_and_phylo,full_pipeline} ...
+usage: btb-phylo [-h] {update_samples,filter,consistify,phylo,update_and_filter,filter_and_phylo,full_pipeline} ...
 
 positional arguments:
-  {update_samples,filter,phylo,update_and_filter,filter_and_phylo,full_pipeline}
+  {update_samples,filter,consistify,phylo,update_and_filter,filter_and_phylo,full_pipeline}
                         sub-command help
     update_samples      updates a local copy of all sample metadata .csv file
     filter              filters sample metadata .csv file
+    consistify          removes wgs samples that are missing from cattle and movement data (metadata warehouse)
     phylo               performs phylogeny
     update_and_filter   updates a metadata .csv file and filters samples
     filter_and_phylo    filters samples and performs phylogeny
@@ -122,7 +121,7 @@ optional arguments:
 ```
 python btb_phylo.py sub-command -h
 ```
-- `sub-command` is one of `update_samples`, `filter`, `phylo`, `update_and_filter`, `filter_and_phylo`, `full_pipeline`.
+- `sub-command` is one of `update_samples`, `filter`, `consistify`, `phylo`, `update_and_filter`, `filter_and_phylo`, `full_pipeline`.
 
 ### Common usage patterns
 
@@ -131,6 +130,11 @@ python btb_phylo.py sub-command -h
 - on all pass samples
 ```
 python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
+```
+
+- on all pass samples, "consistified" with cattle and movement data
+```
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --viewbovine --meta_path path/to/folder/with/cattle/and/movement/csvs
 ```
 
 - filtering with a [configuration file](#config-file)
@@ -163,7 +167,7 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 1. Mount FSx drive, `fsx-ranch-017`;
 2. Run the following command; 
 ```
-./btb-phylo.sh path/to/fsx-017 path/to/fsx-017 -c $PWD/config/vb_config.json with-docker
+./btb-phylo.sh path/to/fsx-017 path/to/fsx-017 -c $PWD/config/vb_config.json --meta_path path/to/fsx-017/ViewBovine/app/raw --with-docker
 ```
 This will use predefined filtering criteria to download new samples to `fsx-017`, and update the snp-matrix on `fsx-017`. 
 
@@ -189,6 +193,6 @@ Each `parameter` key should be one of the following:
 
 For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a maxium and minimum number. For categorical variables, e.g. `Sample`, `group` (clade) or `flag` the criteria should be a list of strings. 
 
-See example, [example_config.json](https://github.com/APHA-CSU/btb-phylo/blob/dockerize/example_config.json), which includes a selection of 5 samples if; they have `pcMapped` > 95%; are in the B6-11 clade; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 5500.
+See example, [example_config.json](https://github.com/APHA-CSU/btb-phylo/blob/dockerize/example_config.json), which includes a selection of 6 samples if; they have `pcMapped` > 95%; are in the B6-84, B1-11, B6-11, or B3-11 clades; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 56000.
 
 To perform phylogeny without any filters, i.e. on all pass samples, simply omit the `-c` option.
