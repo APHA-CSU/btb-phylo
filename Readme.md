@@ -96,7 +96,7 @@ The full pipeline consists of five main stages:
 
 ## Using the software
 
-Stages 1-4 in [pipeline detials](#pipe-dets) can be run in isolation or combination via a set of sub-commands.
+Stages 1-5 in [pipeline detials](#pipe-dets) can be run in isolation or combination via a set of sub-commands.
 
 ### `python btb_phylo.py -h` (help)
 
