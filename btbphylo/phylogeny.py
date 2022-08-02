@@ -60,7 +60,7 @@ def build_multi_fasta(multi_fasta_path, df, consensus_path):
         num_samples = len(df)
         for index, sample in df.iterrows():
             count += 1
-            print(f"\tadding sample: {count} / {num_samples}", end="\r")
+            print(f"\t\tadding sample: {count} / {num_samples}", end="\r")
             try:
                 # extract the bucket and key of consensus file from s3 uri
                 s3_bucket = extract_s3_bucket(sample["ResultLoc"])
@@ -72,7 +72,7 @@ def build_multi_fasta(multi_fasta_path, df, consensus_path):
                 print(e.message)
                 print(f"\tCheck results objects in row {index} of btb_wgs_sample.csv")
                 raise e
-        print(f"\tadded samples: {count} / {num_samples} \n")
+        print(f"\t\tadded samples: {count} / {num_samples} \n")
 
 def extract_s3_bucket(s3_uri):
     """

@@ -19,17 +19,17 @@ def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH
         Parameters:
             summary_filepath (str): path to location of summary csv  
     """
-    print("\nUpdate summary\n")
-    print("\tLoading summary csv file ... \n")
+    print("\n## Update summary ##\n")
+    print("\tloading summary csv file ... \n")
     # download sample summary csv
     df_summary = update_summary.get_df_summary(summary_filepath)
-    print("\tGetting s3 keys for batch summary files ... \n")
+    print("\tgetting s3 keys for batch summary files ... \n")
     # get s3 keys of FinalOut.csv for new batches of samples
     new_keys = update_summary.new_final_out_keys(df_summary)
-    print("\tAppending new metadata to df_summary ... \n")
+    print("\tappending new metadata to df_summary ... \n")
     # update the summary dataframe
     updated_df_summary, metadata = update_summary.append_df_summary(df_summary, new_keys)
-    print("\tSaving summary csv file ... \n")
+    print("\tsaving summary csv file ... \n")
     # save summary to csv 
     utils.df_to_csv(updated_df_summary, summary_filepath)
     return (metadata,)
@@ -77,17 +77,18 @@ def sample_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
     else:
         # remove unused filtering args
         filter_args = {k: v for k, v in kwargs.items() if v is not None}
-    print("\nFilter samples\n")
-    print("\tFiltering samples ... \n")
+    print("\n## Filter Samples ##\n")
+    print("\tfiltering samples ... \n")
     # filter samples
     df_filtered, metadata = filter_samples.get_samples_df(summary_filepath, **filter_args)
-    print("\tSaving filtered samples csv ... \n")
+    print("\tsaving filtered samples csv ... \n")
     # save filtered_df to csv
     utils.df_to_csv(df_filtered, filtered_filepath)
     return metadata, df_filtered
 
 def consistify_samples(results_path, cattle_path, movement_path):
-    print("\nConsistify\n")
+    print("\n## Consistify ##\n")
+    print("\tconsistifying samples ... \n")
     filtered_filepath = os.path.join(results_path, "filtered_samples.csv")
     if not os.path.exists(results_path):
         os.makedirs(results_path)
@@ -152,22 +153,22 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
     tree_path = os.path.join(results_path, "mega")
-    if not os.path.exists(tree_path):
-        os.makedirs(tree_path)        
-    print("\nPhylogeny\n")
+    print("\n## Phylogeny ##\n")
     # concatonate fasta files
     phylogeny.build_multi_fasta(multi_fasta_path, df_filtered, consensus_path) 
     if not download_only:
         # run snp-sites
-        print("\tRunning snp_sites ... \n")
+        print("\trunning snp_sites ... \n")
         metadata = phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path)
         # run snp-dists
-        print("\tRunning snp_dists ... \n")
+        print("\trunning snp_dists ... \n")
         phylogeny.build_snp_matrix(snp_dists_outpath, snp_sites_outpath, 
                                                       n_threads)
         if build_tree:
+            if not os.path.exists(tree_path):
+                os.makedirs(tree_path)        
             # build tree
-            print("\n\tRunning mega ... \n")
+            print("\n\trunning mega ... \n")
             phylogeny.build_tree(tree_path, snp_sites_outpath)
         return (metadata,)
 
@@ -217,6 +218,7 @@ def full_pipeline(results_path, consensus_path,
     # update full sample summary and filter samples
     metadata_up_and_filt, df_filtered = update_and_filter(results_path, summary_filepath, 
                                                           **kwargs)
+    metadata = metadata_up_and_filt
     # if running in ViewBovine must consistify datasets
     if viewbovine:
         if not meta_path:
@@ -232,6 +234,8 @@ def full_pipeline(results_path, consensus_path,
         # consistify datasets for ViewBovine
         metadata_consist, df_consistified = consistify_samples(results_path, cattle_filepath, 
                                                                movements_filepath)
+        # update metadata
+        metadata.update(metadata_consist)
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
                                    build_tree, df_filtered=df_consistified)
@@ -239,8 +243,6 @@ def full_pipeline(results_path, consensus_path,
         # run phylogeny
         metadata_phylo = phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
                                df_filtered=df_filtered)
-    metadata = metadata_up_and_filt
-    metadata.update(metadata_consist)
     metadata.update(metadata_phylo)
     return (metadata,) 
 
