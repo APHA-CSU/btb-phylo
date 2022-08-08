@@ -94,10 +94,11 @@ def sample_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
         json.dump(filter_args, f, indent=2)
     return metadata, df_filtered
 
-def consistify_samples(results_path, wgs_path, cattle_path, movement_path):
+def consistify_samples(results_path, cattle_path, movement_path):
     print("\n## Consistify ##\n")
     print("\tconsistifying samples ... \n")
     metadata_path = os.path.join(results_path, "metadata")
+    filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
     # make consistified folder
     consistified_outpath = os.path.join(metadata_path, "consistified")
     if not os.path.exists(consistified_outpath):
@@ -112,7 +113,7 @@ def consistify_samples(results_path, wgs_path, cattle_path, movement_path):
     consistified_movement_filepath = os.path.join(consistified_outpath, "consistified_movement.csv")
     missing_samples_dir = os.path.join(consistified_outpath, "missing_samples")
     # run consistify and save metadata in results root
-    metadata, wgs_consist = consistify.consistify_csvs(wgs_path, cattle_path, movement_path,
+    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_path, movement_path,
                                                        consistified_wgs_filepath,  consistified_catte_filepath, 
                                                        consistified_movement_filepath, missing_samples_dir)
     return metadata, wgs_consist
@@ -214,6 +215,10 @@ def full_pipeline(results_path, consensus_path,
         Updates local copy of summary csv file, filters samples and
         runs phylogeny 
     """
+    # update full sample summary and filter samples
+    metadata_up_and_filt, df_filtered = update_and_filter(results_path, summary_filepath, 
+                                                        **kwargs)
+    metadata = metadata_up_and_filt
     # if running in ViewBovine must consistify datasets
     if consistify:
         if not meta_path:
@@ -227,24 +232,14 @@ def full_pipeline(results_path, consensus_path,
         if not os.path.exists(movements_filepath):
             raise FileNotFoundError(f"Can't find movements.csv in {meta_path}")
         # consistify datasets for ViewBovine
-        metadata_consist, df_consistified = consistify_samples(results_path, summary_filepath, 
-                                                               cattle_filepath, movements_filepath)
+        metadata_consist, df_consistified = consistify_samples(results_path, cattle_filepath, 
+                                                               movements_filepath)
         # update metadata
-        metadata = metadata_consist
+        metadata.update(metadata_consist)
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
                                    build_tree, df_filtered=df_consistified)
-        # update full sample summary and filter samples
-        metadata_up_and_filt, df_filtered = update_and_filter(results_path, 
-                                                              summary_filepath=os.path.join(results_path, 
-                                                                                            "metadata", 
-                                                                                            "consistified_wgs.csv") 
-                                                              **kwargs)
-        metadata.update(metadata_up_and_filt)
     else:
-        # update full sample summary and filter samples
-        metadata, df_filtered = update_and_filter(results_path, summary_filepath, 
-                                                              **kwargs)
         # run phylogeny
         metadata_phylo = phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
                                df_filtered=df_filtered)
