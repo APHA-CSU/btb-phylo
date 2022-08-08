@@ -98,7 +98,7 @@ def extract_s3_key(s3_uri, sample_name):
 
 def match_s3_uri(s3_uri):
     """
-        Returns a substring s3 uri substring with the s3 key stripped away. 
+        Returns an s3 uri substring with the s3 key stripped away. 
         Raises BadS3UriError if the pattern is not found within the s3 uri.
     """
     pattern=r'^s3://s3-csu-\d{3,3}/+'
