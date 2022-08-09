@@ -1,3 +1,4 @@
+import string
 import pandas as pd
 
 import btbphylo.utils as utils
@@ -76,8 +77,19 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     """
     # load
     wgs = utils.summary_csv_to_df(filtered_samples_path)
-    cattle = pd.read_csv(cattle_path)
-    movements = pd.read_csv(movement_path)
+    cattle = pd.read_csv(cattle_path, dtype = {"Cphh":int, "TestDate":string, "CVLRef":string, 
+                                               "RefYr":int, "MapX":int, "MapY":int, "RawEartag2":string}) 
+    movements = pd.read_csv(movement_path, dtype = {"AnimalId":int, "BirthCPH":string, "StandardEartag":string, 
+                                                    "ImportDate":string, "DeathDate":string, "SampleName":string, 
+                                                    "Cphh":int, "Cult":string, "BreakId":string, "CPH":string,
+                                                    "TestDate":string, "Birth":int, "Death":int, 
+                                                    "MovementDate":string, "MovementId":int, 
+                                                    "OffLocation":int, "OnLocation":int, "Stay_Length": int, 
+                                                    "offLocationKey":int, "offMapRef":string, 
+                                                    "offPostCode":string, "offX":int, "offY":int,
+                                                    "onLocationKey":int, "onMapRef":string, "onPostCode":string,
+                                                    "onX":int, "onY":int, "vLocationID":int, 
+                                                    "LocationName":string, "LocationId":string}) 
     # consistify
     (metadata, wgs_consist, cattle_consist, movements_consist, missing_wgs, \
         missing_cattle, missing_movement) = consistify(wgs, cattle, movements)
@@ -86,7 +98,7 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     cattle_consist.to_csv(consistified_cattle_path)
     movements_consist.to_csv(consisitified_movements_path)
     # save missing samples csvs
-    (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv")
-    (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv")
-    (pd.DataFrame(missing_movement)).to_csv(missing_samples_path + "/missing_movement.csv")
+    (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv", index=False)
+    (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv", index=False)
+    (pd.DataFrame(missing_movement)).to_csv(missing_samples_path + "/missing_movement.csv", index=False)
     return metadata, wgs_consist
