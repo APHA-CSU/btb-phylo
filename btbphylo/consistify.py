@@ -1,4 +1,3 @@
-import string
 import pandas as pd
 
 import btbphylo.utils as utils
@@ -77,19 +76,19 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     """
     # load
     wgs = utils.summary_csv_to_df(filtered_samples_path)
-    cattle = pd.read_csv(cattle_path, dtype = {"Cphh":int, "TestDate":string, "CVLRef":string, 
-                                               "RefYr":int, "MapX":int, "MapY":int, "RawEartag2":string}) 
-    movements = pd.read_csv(movement_path, dtype = {"AnimalId":int, "BirthCPH":string, "StandardEartag":string, 
-                                                    "ImportDate":string, "DeathDate":string, "SampleName":string, 
-                                                    "Cphh":int, "Cult":string, "BreakId":string, "CPH":string,
-                                                    "TestDate":string, "Birth":int, "Death":int, 
-                                                    "MovementDate":string, "MovementId":int, 
+    cattle = pd.read_csv(cattle_path, dtype = {"Cphh":int, "TestDate":object, "CVLRef":object, 
+                                               "RefYr":int, "MapX":int, "MapY":int, "RawEartag2":object}) 
+    movements = pd.read_csv(movement_path, dtype = {"AnimalId":int, "BirthCPH":object, "StandardEartag":object, 
+                                                    "ImportDate":object, "DeathDate":object, "SampleName":object, 
+                                                    "Cphh":int, "Cult":object, "BreakId":object, "CPH":object,
+                                                    "TestDate":object, "Birth":int, "Death":int, 
+                                                    "MovementDate":object, "MovementId":int, 
                                                     "OffLocation":int, "OnLocation":int, "Stay_Length": int, 
-                                                    "offLocationKey":int, "offMapRef":string, 
-                                                    "offPostCode":string, "offX":int, "offY":int,
-                                                    "onLocationKey":int, "onMapRef":string, "onPostCode":string,
+                                                    "offLocationKey":int, "offMapRef":object, 
+                                                    "offPostCode":object, "offX":int, "offY":int,
+                                                    "onLocationKey":int, "onMapRef":object, "onPostCode":object,
                                                     "onX":int, "onY":int, "vLocationID":int, 
-                                                    "LocationName":string, "LocationId":string}) 
+                                                    "LocationName":object, "LocationId":object}) 
     # consistify
     (metadata, wgs_consist, cattle_consist, movements_consist, missing_wgs, \
         missing_cattle, missing_movement) = consistify(wgs, cattle, movements)
