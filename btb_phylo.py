@@ -144,13 +144,13 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
-    # if filtered_samples.csv in results folder: load csv
-    filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
-    if os.path.exists(filtered_filepath):
-        df_filtered = utils.summary_csv_to_df(filtered_filepath)
-    # otherwise should be a pandas DataFrame
-    elif df_filtered is not None:
+    # if df_filtered DataFrame provided
+    if df_filtered is not None:
         pass
+    # otherwise if filtered_samples.csv in results folder: load csv
+    elif os.path.exists(filtered_filepath):
+        filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
+        df_filtered = utils.summary_csv_to_df(filtered_filepath)
     else:
         raise ValueError("If filtered_samples.csv does not exist in results_path ensure "
                          "that the filtered_df argument is provided")
@@ -169,8 +169,8 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
         print("\trunning snp_sites ... \n")
         metadata = phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path)
         # run snp-dists
-        #print("\trunning snp_dists ... \n")
-        #phylogeny.build_snp_matrix(snp_dists_outpath, snp_sites_outpath, n_threads)
+        print("\trunning snp_dists ... \n")
+        phylogeny.build_snp_matrix(snp_dists_outpath, snp_sites_outpath, n_threads)
         if build_tree:
             if not os.path.exists(tree_path):
                 os.makedirs(tree_path)        
@@ -241,7 +241,7 @@ def full_pipeline(results_path, consensus_path,
                                    build_tree, df_filtered=df_consistified)
     else:
         # run phylogeny
-        metadata_phylo = phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
+        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
                                df_filtered=df_filtered)
     metadata.update(metadata_phylo)
     return (metadata,)
