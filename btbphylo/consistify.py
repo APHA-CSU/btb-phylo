@@ -76,26 +76,26 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     """
     # load
     wgs = utils.summary_csv_to_df(filtered_samples_path)
-    cattle = pd.read_csv(cattle_path, dtype = {"Cphh":int, "TestDate":object, "CVLRef":object, 
-                                               "RefYr":int, "MapX":int, "MapY":int, "RawEartag2":object}) 
-    movements = pd.read_csv(movement_path, dtype = {"AnimalId":int, "BirthCPH":object, "StandardEartag":object, 
-                                                    "ImportDate":object, "DeathDate":object, "SampleName":object, 
-                                                    "Cphh":int, "Cult":object, "BreakId":object, "CPH":object,
-                                                    "TestDate":object, "Birth":int, "Death":int, 
-                                                    "MovementDate":object, "MovementId":int, 
-                                                    "OffLocation":int, "OnLocation":int, "Stay_Length": int, 
-                                                    "offLocationKey":int, "offMapRef":object, 
-                                                    "offPostCode":object, "offX":int, "offY":int,
-                                                    "onLocationKey":int, "onMapRef":object, "onPostCode":object,
-                                                    "onX":int, "onY":int, "vLocationID":int, 
-                                                    "LocationName":object, "LocationId":object}) 
+    cattle = pd.read_csv(cattle_path, dtype={"Cphh":"Int64", "TestDate":object, "CVLRef":object, 
+                                             "RefYr":"Int64", "MapX":"Int64", "MapY":"Int64", "RawEartag2":object}) 
+    movements = pd.read_csv(movement_path, dtype={"AnimalId":"Int64", "BirthCPH":object, "StandardEartag":object, 
+                                                  "ImportDate":object, "DeathDate":object, "SampleName":object, 
+                                                  "Cphh":"Int64", "Cult":object, "BreakId":object, "CPH":object,
+                                                  "TestDate":object, "Birth":"Int64", "Death":"Int64", 
+                                                  "MovementDate":object, "MovementId":"Int64", 
+                                                  "OffLocation":"Int64", "OnLocation":"Int64", "Stay_Length": "Int64", 
+                                                  "offLocationKey":"Int64", "offMapRef":object, 
+                                                  "offPostCode":object, "offX":"Int64", "offY":"Int64",
+                                                  "onLocationKey":"Int64", "onMapRef":object, "onPostCode":object,
+                                                  "onX":"Int64", "onY":"Int64", "vLocationID":"Int64", 
+                                                  "LocationName":object, "LocationId":object}) 
     # consistify
     (metadata, wgs_consist, cattle_consist, movements_consist, missing_wgs, \
         missing_cattle, missing_movement) = consistify(wgs, cattle, movements)
     # save consistified csvs
     utils.df_to_csv(wgs_consist, consistified_wgs_path)
-    cattle_consist.to_csv(consistified_cattle_path)
-    movements_consist.to_csv(consisitified_movements_path)
+    cattle_consist.to_csv(consistified_cattle_path, index=False)
+    movements_consist.to_csv(consisitified_movements_path, index=False)
     # save missing samples csvs
     (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv", index=False)
     (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv", index=False)
