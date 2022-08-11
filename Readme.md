@@ -19,21 +19,35 @@ git clone https://github.com/APHA-CSU/btb-phylo.git
 2. Run the following command from inside the cloned repository to run the pipeline inside a docker container:
 
 ```
-./btb-phylo.sh path/to/results/directory path/to/consensus/directory -c path/to/config/json -j 1 with-docker 
+./btb-phylo.sh path/to/results/directory path/to/consensus/directory -c path/to/config/json -j 1 --with-docker 
 ```
 
 This will download the latest docker image from [DockerHub](https://hub.docker.com/r/aphacsubot/btb-phylo) and run the full `btb-phylo` pipeline. Consensus files are downloaded from `s3-csu-003` and a snp-matrix is built using a single thread. 
 
-- `path/to/results/directory` is an output path to the local directory for storing results; 
-- `path/to/consensus/directory` is an output path to a local directory where consensus sequences are downloaded; 
-- `path/to/config/json` is a path to the [configuration file](#config-file), in `.json` format, that specifies filtering criteria for including samples;
+- `path/to/results/directory` is an absolute output path to the local directory for storing results; 
+- `path/to/consensus/directory` is an absolute output path to a local directory where consensus sequences are downloaded; 
+- `path/to/config/json` is an absolute path to the [configuration file](#config-file), in `.json` format, that specifies filtering criteria for including samples;
 - `-j` is an optional argument setting the number of threads to use for building snp matricies. If omitted it defaults to the number of available CPU cores.
 
 **By default the results directory will contain:**
+```
+.
+├── metadata
+│   ├── all_samples.csv
+│   ├── filtered_samples.csv
+│   ├── filters.json
+│   └── metadata.json
+├── multi_fasta.fas
+├── snp_matrix.csv
+└── snps.fas
+```
+- `all_samples.csv`: a summary csv file containing metadata for all samples in `s3-csu-003`;
 - `filtered_samples.csv`: a summary csv file containing metadata for all samples included in the results;
+- `filters.json`: a `.json` file describing the filters used for choosing samples;
+- `metadata.json`: a `.json` containing metadata for a `btb-phylo` run;
 - `multi_fasta.fas`: a fasta file containing consensus sequences for all samples included in the results;
 - `snps.fas`: a fasta file containing consensus sequences for all samples included in the results, where only snp sites are retained;
-- `snp_matrix.tab`
+- `snp_matrix.csv`: a snp matrix
 
 ### Test with an example configuration file
 ```
@@ -101,17 +115,13 @@ Stages 1-5 in [pipeline detials](#pipe-dets) can be run in isolation or combinat
 ### `python btb_phylo.py -h` (help)
 
 ```
-usage: btb-phylo [-h] {update_samples,filter,consistify,phylo,update_and_filter,filter_and_phylo,full_pipeline} ...
-
 positional arguments:
-  {update_samples,filter,consistify,phylo,update_and_filter,filter_and_phylo,full_pipeline}
+  {update_samples,filter,consistify,phylo,full_pipeline}
                         sub-command help
     update_samples      updates a local copy of all sample metadata .csv file
     filter              filters sample metadata .csv file
     consistify          removes wgs samples that are missing from cattle and movement data (metadata warehouse)
     phylo               performs phylogeny
-    update_and_filter   updates a metadata .csv file and filters samples
-    filter_and_phylo    filters samples and performs phylogeny
     full_pipeline       runs the full phylogeny pipeline: updates full samples summary, filters samples and performs phylogeny
 
 optional arguments:
@@ -122,7 +132,7 @@ optional arguments:
 ```
 python btb_phylo.py sub-command -h
 ```
-- `sub-command` is one of `update_samples`, `filter`, `consistify`, `phylo`, `update_and_filter`, `filter_and_phylo`, `full_pipeline`.
+- `sub-command` is one of `update_samples`, `filter`, `consistify`, `phylo`, `full_pipeline`.
 
 ### Common usage patterns
 
@@ -135,7 +145,7 @@ python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/di
 
 - on all pass samples, "consistified" with cattle and movement data
 ```
-python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --viewbovine --meta_path path/to/folder/with/cattle/and/movement/csvs
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --cat_mov_path path/to/folder/with/cattle/and/movement/csvs
 ```
 
 - filtering with a [configuration file](#config-file)
