@@ -4,16 +4,21 @@
 #================================================================
 #%
 #% DESCRIPTION
-#%    Runs the full btb-phylo pipeline with a set of optional input arguments
+#%    Runs the full btb-phylo pipeline with a set of optional 
+#%    input arguments
 #%
 #% INPUTS
 #%  positional:
 #%      results             path to results folder
-#%      consensus           path to download folder for consensus files
+#%      consensus           path to download folder for consensus 
+#%                          files
 #%  optional:
-#%      --threads | -j      the number of threads to use for building snp-matrix
-#%      --config | -c       path to a configuration file for filtering samples
-#%      --meta_path | -m    path to folder containing cattle and movement csv files
+#%      --threads | -j      the number of threads to use for 
+#%                          building snp-matrix
+#%      --config | -c       path to a configuration file for 
+#%                          filtering samples
+#%      --meta_path | -m    path to folder containing cattle and 
+#%                          movement csv files
 #%      --with-docker       run inside docker container                 
 
 
