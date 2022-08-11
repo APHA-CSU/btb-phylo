@@ -175,7 +175,7 @@ class TestFilterSamples(unittest.TestCase):
                                                    "column_C":[0.2, 0.4], "column_D":[2, 4]}).values)
         # test filter on multiple series
         nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, column_B=["B", "D"],
-                                                                                  column_A=["a", "b"]).values,
+                                                                               column_A=["a", "b"]).values,
                                      pd.DataFrame({"column_A":["b"], "column_B":["B"], 
                                                    "column_C":[0.2], "column_D":[2]}).values)
         nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, **{"column_B": ["B", "D"],
@@ -184,7 +184,7 @@ class TestFilterSamples(unittest.TestCase):
                                                    "column_C":[0.4], "column_D":[4]}).values)
         # test empty output
         self.assertTrue(filter_samples.filter_columns_categorical(test_df, column_A=["a", "b"], 
-                                                                    column_B=["C", "D"]).empty)
+                                                                  column_B=["C", "D"]).empty)
         # test warning
         # kwarg value is missing in column
         with self.assertWarns(Warning):
