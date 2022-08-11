@@ -1,11 +1,14 @@
 import tempfile
-import re
 from os import path
 
 import pandas as pd
 
 import btbphylo.utils as utils
 
+"""
+    Updates the a local csv file containing metadata for all wgs samples 
+    in s3-csu-001
+"""
 
 def get_finalout_s3_keys(bucket="s3-csu-003", prefix="v3-2"):
     """
@@ -66,22 +69,11 @@ def new_final_out_keys(df_summary):
             new_keys.append(key)
     return new_keys
 
-def extract_submission_no(sample_name):
-    """ 
-        Extracts submision number from sample name using regex. 
-        Prepends 'AF-' to submission number.
-        Converts all lower case to upper case letters. 
-    """
-    pattern = r'\d{2,2}-\d{4,5}-\d{2,2}'
-    matches = re.findall(pattern, sample_name)
-    submission_no = f"AF-{matches[0]}" if matches else sample_name
-    return submission_no.upper()
-
 def add_submission_col(df):
     """
         Appends a 'Submission' number column to df
     """
-    df["Submission"] = df["Sample"].map(extract_submission_no)
+    df["Submission"] = df["Sample"].map(utils.extract_submission_no)
     return df
 
 def append_df_summary(df_summary, new_keys, itteration=0):

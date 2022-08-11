@@ -2,8 +2,15 @@ import re
 import warnings
 from os import path
 
+import pandas as pd
+
+import btbphylo.update_summary as update_summary
 import btbphylo.utils as utils
 
+"""
+    Performs phylogeny on specified samples: downloads samples, builds multi-fasta 
+    and then runs snp-sites > snp-dists > megacc
+"""
 
 warnings.formatwarning = utils.format_warning
 
@@ -127,7 +134,7 @@ def build_snp_matrix(snp_dists_outpath, snp_sites_outpath, threads=1):
         Run snp-dists
     """
     # run snp-dists
-    cmd = f'snp-dists -j {threads} {snp_sites_outpath} > {snp_dists_outpath}'
+    cmd = f'snp-dists -c -j {threads} {snp_sites_outpath} > {snp_dists_outpath}'
     utils.run(cmd, shell=True)
 
 def build_tree(tree_path, snp_sites_outpath):
@@ -145,3 +152,44 @@ def build_tree(tree_path, snp_sites_outpath):
     if n_lines < 7:
         warnings.warn("Unable to build tree! Need at least 4 taxa for tree building")
 
+def post_process_snps_csv(snp_dists_outpath):
+    """
+        An I/O layer for post_process_snps_df. Changes the sample names in the 
+        snp matrix at snp_dists_outpath to be consistent with cattle and movement 
+        datasets. This is necessary for serving ViewBovine:
+        Parses snp_matrix.csv.
+        Runs post_process_snps_df().
+        Saves post processed snp matrix to the same location as the input snp_matrix.csv
+    """
+    # load snp_matrix.csv
+    snp_matrix = pd.read_csv(snp_dists_outpath, index_col=0)
+    # process sample names
+    processed_snp_matrix = post_process_snps_df(snp_matrix)
+    # overwrite input snp_matrix.csv with processed snp_matrix
+    processed_snp_matrix.to_csv(snp_dists_outpath)
+
+def post_process_snps_df(snp_matrix):
+    """
+        Changes the sample names in the snp_matrix dataframe to be consistent with 
+        cattle and movement datasets
+    """
+    # create copy of input dataframe
+    processed_snp_matrix = snp_matrix.copy(deep=True)
+    # extracts sample names and maps to new sample names
+    new_sample_names = snp_matrix.index.map(process_sample_name)
+    # updates the output dataframe with new sample names
+    processed_snp_matrix.index = new_sample_names
+    processed_snp_matrix.columns = new_sample_names
+    return processed_snp_matrix
+
+def process_sample_name(sample_name):
+    """
+        Changes the sample_name to be consistent with those in cattle and movement
+        datasets. Strips the '_consensus' suffix and extracts submissions numbers
+        from the sample names
+    """
+    # remove '_consensus' suffix
+    submission_no = sample_name[:-10] if sample_name.endswith('_consensus') \
+        else sample_name
+    # extract submission number
+    return utils.extract_submission_no(submission_no)

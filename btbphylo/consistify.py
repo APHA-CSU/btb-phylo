@@ -49,9 +49,9 @@ def consistify(wgs, cattle, movements):
     consist_samples = wgs_samples.intersection(cattle_samples)\
         .intersection(movement_samples)
     # extract samples from dataset not common to all three
-    missing_wgs = pd.DataFrame(wgs_samples - consist_samples)
-    missing_cattle = pd.DataFrame(cattle_samples - consist_samples)
-    missing_movement = pd.DataFrame(movement_samples - consist_samples)
+    missing_wgs = pd.DataFrame({"Submission": list(wgs_samples - consist_samples)})
+    missing_cattle = pd.DataFrame({"CVLRef": list(cattle_samples - consist_samples)})
+    missing_movement = pd.DataFrame({"SampleName": list(movement_samples - consist_samples)})
     # subsample full datasets by common names
     wgs_consist = wgs.loc[wgs["Submission"].isin(consist_samples)]
     cattle_consist = cattle[cattle.CVLRef.isin(consist_samples)]

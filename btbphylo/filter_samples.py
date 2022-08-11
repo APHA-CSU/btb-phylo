@@ -4,6 +4,10 @@ import pandas as pd
 
 import btbphylo.utils as utils
 
+"""
+    Filters the samples according to criteria based on the fields in
+    summary csv file
+"""
 
 warnings.formatwarning = utils.format_warning
 
