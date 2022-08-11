@@ -69,7 +69,7 @@ if [ $DOCKER == 1 ]; then
     fi
 else
     if [ $VIEWBOVINE == 1 ]; then
-        python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG --viewbovine --meta_path $CATTLE_AND_MOVEMENT
+        python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG --cat_mov_path $CATTLE_AND_MOVEMENT
     else
         python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG
     fi

@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import shutil
+import sys
 from datetime import datetime
 
 import btbphylo.utils as utils
@@ -11,7 +12,7 @@ import btbphylo.consistify as consistify
 import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
 
-def update_samples(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
+def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
         Updates the local copy of the sample summary csv file containing metadata 
         for all samples file or builds a new one from scratch if it does not 
@@ -20,8 +21,15 @@ def update_samples(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
 
         Parameters:
             summary_filepath (str): path to location of summary csv  
+
+        Returns:
+            metadata (dict): metadata relating to the complete (unfiltered) dataset
     """
     print("\n## Update Summary ##\n")
+    # create metadata path
+    metadata_path = os.path.join(results_path, "metadata")
+    if not os.path.exists(metadata_path):
+        os.makedirs(metadata_path)
     print("\tloading summary csv file ... \n")
     # download sample summary csv
     df_summary = update_summary.get_df_summary(summary_filepath)
@@ -34,6 +42,8 @@ def update_samples(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     print("\tsaving summary csv file ... \n")
     # save summary to csv 
     utils.df_to_csv(updated_df_summary, summary_filepath)
+    # copy all_samples.csv to metadata
+    shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
     return (metadata,)
 
 def sample_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, 
@@ -60,15 +70,16 @@ def sample_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
             min and max value for that column. 
 
         Returns:
+            metadata (dict): filtering related metadata
+
             df_filtered (pandas DataFrame object): a dataframe of 'Pass'
             only samples filtered according to criteria set out in 
             arguments.
     """
+    # create metadatapath
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
-    # copy all_samples.csv to metadata
-    shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
     filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
     if config:
         error_keys = [key for key, val in kwargs.items() if val]
@@ -92,30 +103,48 @@ def sample_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
     # save filters to metadata output folder
     with open(os.path.join(metadata_path, "filters.json"), "w") as f:
         json.dump(filter_args, f, indent=2)
+    # copy all_samples.csv to metadata
+    shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
     return metadata, df_filtered
 
-def consistify_samples(results_path, cattle_path, movement_path):
+def consistify_samples(results_path, cat_mov_path):
+    """
+        'Consistifies' wgs samples with cattle and movement samples; removes
+        samples from each dataset that aren't present in all three datasets.
+        Saves output .csvs to results_path.
+
+        Parameters:
+            results_path (str): output path to results directory
+
+            cat_mov_path (str): path to folder containing cattle and movement
+            .csv files 
+
+        Returns:
+            metadata (dict): metadata related to consitify
+
+            wgs_consist (pandas DataFrame object): consistified wgs samples; contains
+            the same fields as the summary csv 
+    """
     print("\n## Consistify ##\n")
-    print("\tconsistifying samples ... \n")
+    # cattle and movements csv filepaths
+    cattle_filepath = f"{cat_mov_path}/cattle.csv" 
+    movements_filepath = f"{cat_mov_path}/movements.csv" 
+    # validate paths
+    if not os.path.exists(cattle_filepath):
+        raise FileNotFoundError(f"Can't find cattle.csv in {cat_mov_path}")
+    if not os.path.exists(movements_filepath):
+        raise FileNotFoundError(f"Can't find movements.csv in {cat_mov_path}")
     metadata_path = os.path.join(results_path, "metadata")
     filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
-    # make consistified folder
-    consistified_outpath = os.path.join(metadata_path, "consistified")
-    if not os.path.exists(consistified_outpath):
-        os.makedirs(consistified_outpath)
-    # make missing samples folder
-    missing_samples_outpath = os.path.join(consistified_outpath, "missing_samples")
-    if not os.path.exists(missing_samples_outpath):
-        os.makedirs(missing_samples_outpath)
     # consistified file outpaths
-    consistified_wgs_filepath = os.path.join(consistified_outpath, "consistified_wgs.csv")
-    consistified_catte_filepath = os.path.join(consistified_outpath, "consistified_cattle.csv")
-    consistified_movement_filepath = os.path.join(consistified_outpath, "consistified_movement.csv")
-    missing_samples_dir = os.path.join(consistified_outpath, "missing_samples")
+    consistified_wgs_filepath = os.path.join(metadata_path, "consistified_wgs.csv")
+    consistified_catte_filepath = os.path.join(results_path, "cattle.csv")
+    consistified_movement_filepath = os.path.join(results_path, "movement.csv")
     # run consistify and save metadata in results root
-    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_path, movement_path,
+    print("\tconsistifying samples ... \n")
+    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_filepath, movements_filepath,
                                                        consistified_wgs_filepath,  consistified_catte_filepath, 
-                                                       consistified_movement_filepath, missing_samples_dir)
+                                                       consistified_movement_filepath, metadata_path)
     return metadata, wgs_consist
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
@@ -140,6 +169,9 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
 
             filtered_df (pandas DataFrame object): optional dataframe containing 
             metadata for filtered samples
+        
+        Returns:
+            metadata (dict): phylogeny related metadata
     """
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
@@ -147,10 +179,12 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     # if df_filtered DataFrame provided
     if df_filtered is not None:
         pass
-    # otherwise if filtered_samples.csv in results folder: load csv
-    elif os.path.exists(filtered_filepath):
-        filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
-        df_filtered = utils.summary_csv_to_df(filtered_filepath)
+    # otherwise if consistified_wgs.csv in metadata folder: load csv
+    elif os.path.exists(os.path.join(metadata_path, "consistified_wgs.csv")):
+        df_filtered = utils.summary_csv_to_df(os.path.join(metadata_path, "consistified_wgs.csv"))
+    # otherwise if filtered_samples.csv in metadata folder: load csv
+    elif os.path.exists(os.path.join(metadata_path, "filtered_samples.csv")):
+        df_filtered = utils.summary_csv_to_df(os.path.join(metadata_path, "filtered_samples.csv"))
     else:
         raise ValueError("If filtered_samples.csv does not exist in results_path ensure "
                          "that the filtered_df argument is provided")
@@ -159,7 +193,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     # output paths
     multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
     snp_sites_outpath = os.path.join(results_path, "snps.fas")
-    snp_dists_outpath = os.path.join(results_path, "snp_matrix.tab")
+    snp_dists_outpath = os.path.join(results_path, "snp_matrix.csv")
     tree_path = os.path.join(results_path, "mega")
     print("\n## Phylogeny ##\n")
     # concatonate fasta files
@@ -179,80 +213,48 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
             phylogeny.build_tree(tree_path, snp_sites_outpath)
         return (metadata,)
 
-def update_and_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, 
-                      **kwargs):
-    """
-        Updates local copy of sample summary csv, filters samples
-        and saved the output filtered csv
-    """
-    # update full sample summary
-    metadata_update, *_ = update_samples(summary_filepath)
-    # filter samples
-    metadata_filter, df_filtered = sample_filter(results_path, summary_filepath, **kwargs)
-    metadata = metadata_update
-    metadata.update(metadata_filter)
-    return metadata, df_filtered
-
-def filter_and_phylo(results_path, consensus_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, 
-                     n_threads=1, build_tree=False, download_only=False, **kwargs):
-    """
-        Filters samples and runs phylogeny 
-    """
-    # filter samples
-    metadata_filter, df_filtered = sample_filter(results_path, summary_filepath, **kwargs)
-    # run phylogeny
-    metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
-                               df_filtered=df_filtered)
-    metadata = metadata_filter
-    metadata.update(metadata_phylo)
-    return (metadata,)
-
 def full_pipeline(results_path, consensus_path, 
                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, n_threads=1,
-                  build_tree=False, download_only=False, consistify=False,
-                  meta_path=None, **kwargs):
+                  build_tree=False, download_only=False, cat_mov_path=None, **kwargs):
     """
         Updates local copy of summary csv file, filters samples and
         runs phylogeny 
     """
-    # update full sample summary and filter samples
-    metadata_up_and_filt, df_filtered = update_and_filter(results_path, summary_filepath, 
-                                                        **kwargs)
-    metadata = metadata_up_and_filt
+    # update full sample summary
+    metadata_update, *_ = update_samples(results_path, summary_filepath)
+    metadata = metadata_update
+    # filter samples
+    metadata_filt, df_filtered = sample_filter(results_path, summary_filepath, **kwargs)
+    metadata.update(metadata_filt)
     # if running in ViewBovine must consistify datasets
-    if consistify:
-        if not meta_path:
-            raise TypeError("Must provide keyword argument 'meta_path' if consistify=True")
-        # cattle and movements csv filepaths
-        cattle_filepath = f"{meta_path}/cattle.csv" 
-        movements_filepath = f"{meta_path}/movements.csv" 
-        # validate paths
-        if not os.path.exists(cattle_filepath):
-            raise FileNotFoundError(f"Can't find cattle.csv in {meta_path}")
-        if not os.path.exists(movements_filepath):
-            raise FileNotFoundError(f"Can't find movements.csv in {meta_path}")
+    if cat_mov_path:
         # consistify datasets for ViewBovine
-        metadata_consist, df_consistified = consistify_samples(results_path, cattle_filepath, 
-                                                               movements_filepath)
+        metadata_consist, df_consistified = consistify_samples(results_path, cat_mov_path)
         # update metadata
         metadata.update(metadata_consist)
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
                                    build_tree, df_filtered=df_consistified)
+        # process sample names in snp_matrix to be consistent with cattle and movement data
+        phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
     else:
         # run phylogeny
-        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, build_tree, 
-                               df_filtered=df_filtered)
+        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
+                                   build_tree, df_filtered=df_filtered)
     metadata.update(metadata_phylo)
     return (metadata,)
 
-def main():
+def parse_args():
+    """
+        Parse command line arguments for use with each function
+    """
     parser = argparse.ArgumentParser(prog="btb-phylo")
     subparsers = parser.add_subparsers(help='sub-command help')
 
     # update complete summary csv
     subparser = subparsers.add_parser('update_samples', 
                                       help='updates a local copy of all sample metadata .csv file')
+    subparser.add_argument("results_path", help="path to results directory")
     subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
                            default=utils.DEFAULT_SUMMARY_FILEPATH)
     subparser.set_defaults(func=update_samples)
@@ -277,8 +279,8 @@ def main():
     subparser = subparsers.add_parser('consistify', help='removes wgs samples that are missing from \
                                       cattle and movement data (metadata warehouse)')
     subparser.add_argument("results_path", help="path to results directory")
-    subparser.add_argument("cattle_path", help="path to cattle csv")
-    subparser.add_argument("movement_path", help="path to movements csv")
+    subparser.add_argument("cat_mov_path", help="if running for \
+                           ViewBovine production provide a path to the folder containing cattle and movement .csv files")
     subparser.set_defaults(func=consistify_samples)
 
     # run phylogeny
@@ -290,44 +292,6 @@ def main():
     subparser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
     subparser.add_argument("--build_tree", action="store_true", default=False, help="build a tree")
     subparser.set_defaults(func=phylo)
-
-    # update and filter
-    subparser = subparsers.add_parser('update_and_filter', 
-                                      help='updates a metadata .csv file and filters samples')
-    subparser.add_argument("results_path", help="path to results directory")
-    subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
-                           default=utils.DEFAULT_SUMMARY_FILEPATH)
-    subparser.add_argument("--config", default=None, help="path to configuration file")
-    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
-    subparser.add_argument("--clade", "-c", dest="group", nargs="+", help="optional filter")
-    subparser.add_argument("--outcome", dest="Outcome", nargs="+", help="optional filter")
-    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter")
-    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2, help="optional filter")
-    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
-    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
-    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
-    subparser.set_defaults(func=update_and_filter)
-
-    # filter and phylo
-    subparser = subparsers.add_parser('filter_and_phylo', help='filters samples and performs phylogeny')
-    subparser.add_argument("results_path", help="path to results directory")
-    subparser.add_argument("consensus_path", help="path to where consensus files will be held")
-    subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
-                           default=utils.DEFAULT_SUMMARY_FILEPATH)
-    subparser.add_argument("--download_only", help="if only dowloading connsensus sequences",
-                           action="store_true", default=False)
-    subparser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
-    subparser.add_argument("--build_tree", action="store_true", default=False, help="build a tree")
-    subparser.add_argument("--config", default=None, help="path to configuration file")
-    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
-    subparser.add_argument("--clade", "-c", dest="group", nargs="+", help="optional filter")
-    subparser.add_argument("--outcome", dest="Outcome", nargs="+", help="optional filter")
-    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter")
-    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2, help="optional filter")
-    subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
-    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
-    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
-    subparser.set_defaults(func=filter_and_phylo)
 
     # full pipeline
     subparser = subparsers.add_parser('full_pipeline', help="runs the full phylogeny pipeline: updates full \
@@ -349,17 +313,18 @@ def main():
     subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
     subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
     subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
-    subparser.add_argument("--consistify", "-cfy", action="store_true", default=False, 
-                           help="if running for ViewBovine production")
-    subparser.add_argument("--meta_path", help="path to folder containing cattle and movement data \
-                           .csv files") 
+    subparser.add_argument("--cat_mov_path", "-cmp", default=None, help="if running for \
+                           ViewBovine production provide a path to the folder containing cattle and movement .csv files")
     subparser.set_defaults(func=full_pipeline)
 
     # pasre args
     kwargs = vars(parser.parse_args())
     if not kwargs:
        parser.print_help()
-       return
+       sys.exit(0)
+    return kwargs
+
+def run(**kwargs):
     # metadata
     metadata = {"datetime": str(datetime.now())}
     btb_phylo_git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"])
@@ -383,4 +348,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    # parse command line arguments
+    kwargs = parse_args()
+    # run btb-phylo with arguments
+    run(**kwargs)
