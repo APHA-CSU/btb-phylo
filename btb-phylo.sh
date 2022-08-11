@@ -2,6 +2,20 @@
 #================================================================
 # btb-phylo
 #================================================================
+#%
+#% DESCRIPTION
+#%    Runs the full btb-phylo pipeline with a set of optional input arguments
+#%
+#% INPUTS
+#%  positional:
+#%      results             path to results folder
+#%      consensus           path to download folder for consensus files
+#%  optional:
+#%      --threads | -j      the number of threads to use for building snp-matrix
+#%      --config | -c       path to a configuration file for filtering samples
+#%      --meta_path | -m    path to folder containing cattle and movement csv files
+#%      --with-docker       run inside docker container                 
+
 
 SCRIPT="${0##*/}"
 
@@ -50,6 +64,7 @@ if [ $CONFIG == 0 ]; then
     CONFIG=$(realpath filter.json)
 fi
 
+# if running with docker 
 if [ $DOCKER == 1 ]; then
     printf "\nRunning btb-phylo with docker\n\n"
     if [ ! -f all_samples.csv ]
@@ -61,13 +76,17 @@ if [ $DOCKER == 1 ]; then
     then
         mkdir $RESULTS
     fi
+    # pull the latest version from DockerHub
     docker pull aphacsubot/btb-phylo:consistify
+    # run docker container - this runs this script (btb-phylo.sh) inside the container (without --with-docker)
     if [ $VIEWBOVINE == 1 ]; then
         docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv --mount type=bind,source=$CATTLE_AND_MOVEMENT,target=/btb-phylo/cattle_and_movement aphacsubot/btb-phylo:consistify /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
     else
         docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:consistify /results /consensus -c /config.json -j $THREADS
     fi
+# if not running with docker (or running inside the docker container)
 else
+    # run the pipeline
     if [ $VIEWBOVINE == 1 ]; then
         python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG --cat_mov_path $CATTLE_AND_MOVEMENT
     else
