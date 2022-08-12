@@ -4,6 +4,13 @@ import pandas as pd
 
 import btbphylo.utils as utils
 
+"""
+    Filters the samples according to criteria based on the fields in
+    summary csv file
+"""
+
+warnings.formatwarning = utils.format_warning
+
 
 class InvalidDtype(Exception):
     def __init__(self, message="Invalid series name. Series must be of correct type", 
@@ -190,7 +197,7 @@ def filter_columns_categorical(df, **kwargs):
         missing_values = [item for item in value if item not in list(df[column_name])]
         if missing_values:
             warnings.warn(f"Column '{column_name}' does not contain the values "
-                        f"'{', '.join(missing_values)}'")
+                          f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] and 
     # sample_name in ["AFT-61-03769-21", "20-0620719"]. 
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
@@ -208,4 +215,5 @@ def get_samples_df(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
     df = utils.summary_csv_to_df(summary_filepath).pipe(filter_df,
                                                         **kwargs).pipe(remove_duplicates, 
                                                                        pcMapped="max", Ncount="min")
-    return df
+    metadata = {"number_of_filtered_samples": len(df)}
+    return df, metadata

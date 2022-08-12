@@ -1,10 +1,15 @@
 import subprocess
 from os import path
+import re
 
 import boto3
 import botocore
 import pandas as pd
 
+
+"""
+    Utility functions
+"""
 
 DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.dirname(path.abspath(__file__))), 
                                      "all_samples.csv")
@@ -35,6 +40,16 @@ def summary_csv_to_df(summary_filepath):
                      "Abundance":float, "Submission": object})
     return df
 
+def extract_submission_no(sample_name):
+    """ 
+        Extracts submision number from sample name using regex. 
+        Prepends 'AF-' to submission number.
+        Converts all lower case to upper case letters. 
+    """
+    pattern = r'\d{2,2}-\d{4,5}-\d{2,2}'
+    matches = re.findall(pattern, sample_name)
+    submission_no = f"AF-{matches[0]}" if matches else sample_name
+    return submission_no.upper()
 
 # TODO: remove if unused
 def s3_folder_exists(bucket, path):
