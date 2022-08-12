@@ -168,7 +168,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
 
             filtered_filepath (str): optional input path to filtered samples csv
 
-            filtered_df (pandas dataframe object): optional dataframe containing 
+            filtered_df (pandas DataFrame object): optional dataframe containing 
             metadata for filtered samples
         
             light_mode (bool): If set to true multi_fasta.fas and snps.fas are
