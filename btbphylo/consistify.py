@@ -76,19 +76,8 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     """
     # load
     wgs = utils.summary_csv_to_df(filtered_samples_path)
-    cattle = pd.read_csv(cattle_path, dtype={"Cphh":"Int64", "TestDate":object, "CVLRef":object, 
-                                             "RefYr":"Int64", "MapX":"Int64", "MapY":"Int64", "RawEartag2":object}) 
-    movements = pd.read_csv(movement_path, dtype={"AnimalId":"Int64", "BirthCPH":object, "StandardEartag":object, 
-                                                  "ImportDate":object, "DeathDate":object, "SampleName":object, 
-                                                  "Cphh":"Int64", "Cult":object, "BreakId":object, "CPH":object,
-                                                  "TestDate":object, "Birth":"Int64", "Death":"Int64", 
-                                                  "MovementDate":object, "MovementId":"Int64", 
-                                                  "OffLocation":"Int64", "OnLocation":"Int64", "Stay_Length": "Int64", 
-                                                  "offLocationKey":"Int64", "offMapRef":object, 
-                                                  "offPostCode":object, "offX":"Int64", "offY":"Int64",
-                                                  "onLocationKey":"Int64", "onMapRef":object, "onPostCode":object,
-                                                  "onX":"Int64", "onY":"Int64", "vLocationID":"Int64", 
-                                                  "LocationName":object, "LocationId":object}) 
+    cattle = pd.read_csv(cattle_path, dtype=object)
+    movements = pd.read_csv(movement_path, dtype=object)
     # consistify
     (metadata, wgs_consist, cattle_consist, movements_consist, missing_wgs, \
         missing_cattle, missing_movement) = consistify(wgs, cattle, movements)
