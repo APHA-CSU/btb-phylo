@@ -13,6 +13,8 @@ import btbphylo.consistify as consistify
 import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
 
+# TODO: warning if setting consnesus directory to local path or using light_mode that there will need to be x amount of storage on the machine
+
 def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
         Updates the local copy of the sample summary csv file containing metadata 
