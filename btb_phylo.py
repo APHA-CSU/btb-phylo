@@ -158,7 +158,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
         Pramaters:
             results_path (str):  output path to results directory
 
-            consenus_path (str):  output path to directory for saving consensus files
+            consenus_path (str): output path to directory for saving consensus files
 
             download_only (bool): only download consensus (do not run phylogeny)
 
@@ -180,6 +180,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
+    metadata = {}
     # if df_filtered DataFrame provided
     if df_filtered is not None:
         pass
@@ -211,7 +212,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     if not download_only:
         # run snp-sites
         print("\trunning snp_sites ... \n")
-        metadata = phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path)
+        metadata.update(phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path))
         # run snp-dists
         print("\trunning snp_dists ... \n")
         phylogeny.build_snp_matrix(snp_dists_outpath, snp_sites_outpath, n_threads)
@@ -247,8 +248,9 @@ def full_pipeline(results_path, consensus_path,
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
                                    build_tree, df_filtered=df_consistified, light_mode=True)
-        # process sample names in snp_matrix to be consistent with cattle and movement data
-        phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
+        if not download_only:
+            # process sample names in snp_matrix to be consistent with cattle and movement data
+            phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
     else:
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
