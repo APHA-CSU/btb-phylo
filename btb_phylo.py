@@ -4,6 +4,7 @@ import os
 import subprocess
 import shutil
 import sys
+import tempfile
 from datetime import datetime
 
 import btbphylo.utils as utils
@@ -11,6 +12,8 @@ import btbphylo.update_summary as update_summary
 import btbphylo.consistify as consistify
 import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
+
+# TODO: warning if setting consnesus directory to local path or using light_mode that there will need to be x amount of storage on the machine
 
 def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
@@ -148,7 +151,7 @@ def consistify_samples(results_path, cat_mov_path):
     return metadata, wgs_consist
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
-          build_tree=False, df_filtered=None):
+          build_tree=False, df_filtered=None, light_mode=False):
     """
         Runs phylogeny on filtered samples: Downloads consensus files, 
         concatonates into 1 large fasta file, runs snp-sites, runs snp-dists
@@ -157,7 +160,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
         Pramaters:
             results_path (str):  output path to results directory
 
-            consenus_path (str):  output path to directory for saving consensus files
+            consenus_path (str): output path to directory for saving consensus files
 
             download_only (bool): only download consensus (do not run phylogeny)
 
@@ -170,12 +173,16 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
             filtered_df (pandas DataFrame object): optional dataframe containing 
             metadata for filtered samples
         
+            light_mode (bool): If set to true multi_fasta.fas and snps.fas are
+            saved to a temporary directory which is subsequently deleted 
+
         Returns:
             metadata (dict): phylogeny related metadata
     """
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
+    metadata = {}
     # if df_filtered DataFrame provided
     if df_filtered is not None:
         pass
@@ -190,9 +197,15 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
                          "that the filtered_df argument is provided")
     if not os.path.exists(results_path):
         os.makedirs(results_path)
+    # if light_mode: use temporary directory for fasta files
+    if light_mode:
+        fasta_path = tempfile.mkdtemp()
+    # outherwise: save fastas to results directory
+    else:
+        fasta_path = results_path
     # output paths
-    multi_fasta_path = os.path.join(results_path, "multi_fasta.fas")
-    snp_sites_outpath = os.path.join(results_path, "snps.fas")
+    multi_fasta_path = os.path.join(fasta_path, "multi_fasta.fas")
+    snp_sites_outpath = os.path.join(fasta_path, "snps.fas")
     snp_dists_outpath = os.path.join(results_path, "snp_matrix.csv")
     tree_path = os.path.join(results_path, "mega")
     print("\n## Phylogeny ##\n")
@@ -201,7 +214,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     if not download_only:
         # run snp-sites
         print("\trunning snp_sites ... \n")
-        metadata = phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path)
+        metadata.update(phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path))
         # run snp-dists
         print("\trunning snp_dists ... \n")
         phylogeny.build_snp_matrix(snp_dists_outpath, snp_sites_outpath, n_threads)
@@ -211,7 +224,9 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
             # build tree
             print("\n\trunning mega ... \n")
             phylogeny.build_tree(tree_path, snp_sites_outpath)
-        return (metadata,)
+    if light_mode:
+        shutil.rmtree(fasta_path)
+    return (metadata,)
 
 def full_pipeline(results_path, consensus_path, 
                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, n_threads=1,
@@ -234,9 +249,10 @@ def full_pipeline(results_path, consensus_path,
         metadata.update(metadata_consist)
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
-                                   build_tree, df_filtered=df_consistified)
-        # process sample names in snp_matrix to be consistent with cattle and movement data
-        phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
+                                   build_tree, df_filtered=df_consistified, light_mode=True)
+        if not download_only:
+            # process sample names in snp_matrix to be consistent with cattle and movement data
+            phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
     else:
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
@@ -291,6 +307,8 @@ def parse_args():
                            action="store_true", default=False)
     subparser.add_argument("--n_threads", "-j", default=1, help="number of threads for snp-dists")
     subparser.add_argument("--build_tree", action="store_true", default=False, help="build a tree")
+    subparser.add_argument("--light_mode", action="store_true", default=False, help="save fastas to \
+                           temporary directory")
     subparser.set_defaults(func=phylo)
 
     # full pipeline
