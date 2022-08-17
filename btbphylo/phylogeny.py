@@ -4,7 +4,6 @@ from os import path
 
 import pandas as pd
 
-import btbphylo.update_summary as update_summary
 import btbphylo.utils as utils
 
 """

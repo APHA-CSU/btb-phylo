@@ -7,11 +7,16 @@ import sys
 import tempfile
 from datetime import datetime
 
+import pandas as pd
+
 import btbphylo.utils as utils
 import btbphylo.update_summary as update_summary
 import btbphylo.consistify as consistify
 import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
+
+DEFAULT_CLADE_INFO_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                       "CladeInfo.csv")
 
 # TODO: warning if setting consnesus directory to local path or using light_mode that there will need to be x amount of storage on the machine
 
@@ -150,7 +155,7 @@ def consistify_samples(results_path, cat_mov_path):
                                                        consistified_movement_filepath, metadata_path)
     return metadata, wgs_consist
 
-def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
+def phylo(results_path, consensus_path, dash_c, download_only=False, n_threads=1, 
           build_tree=False, df_filtered=None, light_mode=False):
     """
         Runs phylogeny on filtered samples: Downloads consensus files, 
@@ -175,6 +180,8 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
         
             light_mode (bool): If set to true multi_fasta.fas and snps.fas are
             saved to a temporary directory which is subsequently deleted 
+
+            dash_c (bool): whether to run snp-sites with '-c'
 
         Returns:
             metadata (dict): phylogeny related metadata
@@ -214,7 +221,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     if not download_only:
         # run snp-sites
         print("\trunning snp_sites ... \n")
-        metadata.update(phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path))
+        metadata.update(phylogeny.snp_sites(snp_sites_outpath, multi_fasta_path, dash_c))
         # run snp-dists
         print("\trunning snp_dists ... \n")
         phylogeny.build_snp_matrix(snp_dists_outpath, snp_sites_outpath, n_threads)
@@ -255,8 +262,54 @@ def full_pipeline(results_path, consensus_path,
             phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
     else:
         # run phylogeny
-        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
-                                   build_tree, df_filtered=df_filtered)
+        metadata_phylo, *_ = phylo(results_path, consensus_path, True, download_only, 
+                                   n_threads, build_tree, df_filtered=df_filtered)
+    metadata.update(metadata_phylo)
+    return (metadata,)
+
+def view_bovine(results_path, consensus_path, cat_mov_path,  
+                clade_info_path=DEFAULT_CLADE_INFO_PATH, 
+                summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
+    """
+        Phylogeny for plugging into ViewBovine: filters samples with different 
+        Ncount thresholds for each clade, consistifies samples with cattle and
+        movement data, and runs phylogeny
+    """
+    # load CladeInfo.csv
+    clade_info_df = pd.read_csv(clade_info_path, index_col="clade")
+    # update full sample summary
+    metadata_update, *_ = update_samples(results_path, summary_filepath)
+    metadata = metadata_update
+    i = 1
+    num_filtered_samples = 0
+    df_filtered = pd.DataFrame()
+    # loop through clades in CladeInfo.csv
+    for clade, row in clade_info_df.iterrows():
+        print(f"\t filtering samples for clade {i} / {len(clade_info_df)}")
+        # downloads files for each clade to consensus_path folder and filters clade
+        # according to Ncount in CladeInfo.csv
+        metadata_filt, df_clade = sample_filter(results_path, consensus_path, 
+                                                cat_mov_path=cat_mov_path,
+                                                download_only=True, 
+                                                flag=["BritishbTB"], group=[clade],
+                                                pcMapped=(90,100), Ncount=(0, row["maxN"]))
+        # sum the number of filtered samples
+        num_filtered_samples += metadata_filt["number_of_filtered_samples"]
+        # update df_filtered with cladewise filtering
+        df_filtered.update(df_clade)
+        i += 1
+    # update metadata
+    metadata.update(metadata_filt)
+    metadata["number_of_filtered_samples"] = num_filtered_samples
+    # consistify datasets for ViewBovine
+    metadata_consist, df_consistified = consistify_samples(results_path, cat_mov_path)
+    # update metadata
+    metadata.update(metadata_consist)
+    # run phylogeny
+    metadata_phylo, *_ = phylo(results_path, consensus_path, n_threads=4, 
+                               df_filtered=df_consistified, light_mode=True)
+    # process sample names in snp_matrix to be consistent with cattle and movement data
+    phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
     metadata.update(metadata_phylo)
     return (metadata,)
 
@@ -282,7 +335,7 @@ def parse_args():
                            default=utils.DEFAULT_SUMMARY_FILEPATH)
     subparser.add_argument("--config", default=None, help="path to configuration file")
     subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
-    subparser.add_argument("--clade", "-c", dest="group", nargs="+", help="optional filter")
+    subparser.add_argument("--clade", "-g", dest="group", nargs="+", help="optional filter")
     subparser.add_argument("--outcome", dest="Outcome", nargs="+", help="optional filter")
     subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter")
     subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2, help="optional filter")
@@ -309,6 +362,8 @@ def parse_args():
     subparser.add_argument("--build_tree", action="store_true", default=False, help="build a tree")
     subparser.add_argument("--light_mode", action="store_true", default=False, help="save fastas to \
                            temporary directory")
+    subparser.add_argument("-c", action="store_true", default=False, dest="dash_c", 
+                           help="use '-c' with snp-sites")
     subparser.set_defaults(func=phylo)
 
     # full pipeline
@@ -324,7 +379,7 @@ def parse_args():
     subparser.add_argument("--build_tree", action="store_true", default=False, help="build a tree")
     subparser.add_argument("--config", default=None, help="path to configuration file")
     subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
-    subparser.add_argument("--clade", "-c", dest="group", nargs="+", help="optional filter")
+    subparser.add_argument("--clade", "-g", dest="group", nargs="+", help="optional filter")
     subparser.add_argument("--outcome", dest="Outcome", nargs="+", help="optional filter")
     subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter")
     subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", type=float, nargs=2, help="optional filter")
@@ -334,6 +389,18 @@ def parse_args():
     subparser.add_argument("--cat_mov_path", "-cmp", default=None, help="if running for \
                            ViewBovine production provide a path to the folder containing cattle and movement .csv files")
     subparser.set_defaults(func=full_pipeline)
+
+    # full pipeline
+    subparser = subparsers.add_parser('view_bovine', help="runs phylogeny with default settings for ViewBovine")
+    subparser.add_argument("results_path", help="path to results directory")
+    subparser.add_argument("consensus_path", help = "path to where consensus files will be held")
+    subparser.add_argument("cat_mov_path", help="if running for ViewBovine production provide a path to the \
+                           folder containing cattle and movement .csv files")
+    subparser.add_argument("--clade_info_path", help="path to CladeInfo csv file", 
+                           default=utils.DEFAULT_SUMMARY_FILEPATH)
+    subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
+                           default=utils.DEFAULT_SUMMARY_FILEPATH)
+    subparser.set_defaults(func=view_bovine)
 
     # pasre args
     kwargs = vars(parser.parse_args())
