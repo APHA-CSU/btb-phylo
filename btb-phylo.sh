@@ -74,7 +74,9 @@ if [ $DOCKER == 1 ]; then
     printf "\nRunning btb-phylo with docker\n\n"
     if [ ! -f all_samples.csv ]
     then
-        echo -e "Sample,GenomeCov,MeanDepth,NumRawReads,pcMapped,Outcome,flag,group,CSSTested,matches,mismatches,noCoverage,anomalous,Ncount,ResultLoc,ID,TotalReads,Abundance,Submission" > all_samples.csv
+        echo -e "Sample,GenomeCov,MeanDepth,NumRawReads,pcMapped,Outcome,flag,group,CSSTested,"\
+            "matches,mismatches,noCoverage,anomalous,Ncount,ResultLoc,ID,TotalReads,Abundance,"\
+            "Submission" > all_samples.csv
     fi
     ALL_SAMPLES=$(realpath all_samples.csv)
     if [ ! -d $RESULTS ]
@@ -82,12 +84,23 @@ if [ $DOCKER == 1 ]; then
         mkdir $RESULTS
     fi
     # pull the latest version from DockerHub
-    docker pull aphacsubot/btb-phylo:clade_filters
+    docker pull aphacsubot/btb-phylo:main
     # run docker container - this runs this script (btb-phylo.sh) inside the container (without --with-docker)
     if [ $VIEWBOVINE == 1 ]; then
-        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv --mount type=bind,source=$CATTLE_AND_MOVEMENT,target=/btb-phylo/cattle_and_movement aphacsubot/btb-phylo:clade_filters /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
+        docker run --rm -it \
+            --mount type=bind,source=$RESULTS,target=/results \
+            --mount type=bind,source=$CONSENSUS,target=/consensus \
+            --mount type=bind,source=$CONFIG,target=/config.json \
+            --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv \
+            --mount type=bind,source=$CATTLE_AND_MOVEMENT,target=/btb-phylo/cattle_and_movement \
+            aphacsubot/btb-phylo:main /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
     else
-        docker run --rm -it --mount type=bind,source=$RESULTS,target=/results --mount type=bind,source=$CONSENSUS,target=/consensus --mount type=bind,source=$CONFIG,target=/config.json --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv aphacsubot/btb-phylo:main /results /consensus -c /config.json -j $THREADS
+        docker run --rm -it \
+            --mount type=bind,source=$RESULTS,target=/results \
+            --mount type=bind,source=$CONSENSUS,target=/consensus \
+            --mount type=bind,source=$CONFIG,target=/config.json \
+            --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv \
+            aphacsubot/btb-phylo:main /results /consensus -c /config.json -j $THREADS
     fi
 # if not running with docker (or running inside the docker container)
 else
