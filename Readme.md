@@ -51,7 +51,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 
 ### Test with an example configuration file
 ```
-./btb-phylo.sh ~/results ~/consensus -c $PWD/config/example_config.json -j 1 --with-docker 
+./btb-phylo.sh ~/results ~/consensus -c $PWD/example_config.json -j 1 --with-docker 
 ```
 This will run the full pipeline inside a docker container with 4 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
 
@@ -89,7 +89,7 @@ bash ./install/install.bash
 
 ### Test with an example configuration file
 ```
-./btb-phylo.sh ~/results ~/consensus -c $PWD/config/example_config.json -j 1
+./btb-phylo.sh ~/results ~/consensus -c $PWD/example_config.json -j 1
 ```
 This will run the full pipeline locally with 4 samples, downloading consensus sequences to `~/consensus` and saving the results to `~/results`.
 
@@ -176,9 +176,10 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 ### Updating the snp-matrix
 
 1. Mount FSx drive, `fsx-ranch-017`;
+2. Mount FSx drive, `fsx-042`;
 2. Run the following command; 
 ```
-./btb-phylo.sh path/to/fsx-017 path/to/fsx-017 -c $PWD/config/vb_config.json --meta_path path/to/fsx-017/ViewBovine/app/raw --with-docker
+./btb-phylo.sh path/to/fsx-017 path/to/fsx-042/share/phyloConsensus --meta_path path/to/fsx-017/ViewBovine/app/raw --with-docker
 ```
 This will use predefined filtering criteria to download new samples to `fsx-017`, consistify the samples with cattle and movement data and update the snp-matrix on `fsx-017`. 
 
@@ -204,6 +205,6 @@ Each `parameter` key should be one of the following:
 
 For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a maxium and minimum number. For categorical variables, e.g. `Sample`, `group` (clade) or `flag` the criteria should be a list of strings. 
 
-See example, [example_config.json](https://github.com/APHA-CSU/btb-phylo/blob/dockerize/example_config.json), which includes a selection of 6 samples if; they have `pcMapped` > 95%; are in the B6-84, B1-11, B6-11, or B3-11 clades; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 56000.
+See example, [example_config.json](https://github.com/APHA-CSU/btb-phylo/blob/main/example_config.json), which includes a selection of 6 samples if; they have `pcMapped` > 95%; are in the B6-84, B1-11, B6-11, or B3-11 clades; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 56000.
 
 To perform phylogeny without any filters, i.e. on all pass samples, simply omit the `-c` option.
