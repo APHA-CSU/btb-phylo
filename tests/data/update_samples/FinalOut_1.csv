@@ -1,0 +1,5 @@
+Sample,GenomeCov,MeanDepth,NumRawReads,pcMapped,Outcome,flag,group,CSSTested,matches,mismatches,noCoverage,anomalous,Ncount,ResultLoc,ID,TotalReads,Abundance
+AFH-21-06269-22,99.65,9.8,314102,99.91,InsufficientData,nonbTB,bTB,211.0,66.82,0.0,33.18,0.0,61140,s3://s3-csu-003/v3-2/Results_NB552234_0140_28Jul22/,Mycobacterium bovis,136695.0,89.8
+AFH-21-06363-22,99.08,9.03,330332,99.36,InsufficientData,nonbTB,bTB,211.0,45.5,0.0,54.5,0.0,88284,s3://s3-csu-003/v3-2/Results_NB552234_0140_28Jul22/,Mycobacterium bovis,145978.0,95.4
+# Operator: root
+# BovTB-nf commit: 0c77a8441032e41a246e8ecee5f43b1ecd452497

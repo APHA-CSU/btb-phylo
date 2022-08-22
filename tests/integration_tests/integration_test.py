@@ -2,12 +2,17 @@ import unittest
 import tempfile
 import shutil
 import os
+import sys
 from unittest import mock
 
-import numpy.testing as nptesting
 import pandas as pd
+import pandas.testing as pdtesting
 
-import btb_phylo
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from btb_phylo import *
+
+DEFAULT_TESTDATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 
 class IntegrationTestBtbPhylo(unittest.TestCase):
     def setUp(self):
@@ -16,19 +21,22 @@ class IntegrationTestBtbPhylo(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.test_dir)
     
-    @mock.patch("utils.run")
-    @mock.patch("update_summary.final_out_csv_to_df")
-    def test_update_samples(self, mock_run, mock_s3_download_file):
-        # mock utils.run() to return a string that's like what it would get from 'aws s3 ls s3://{bucket}/{prefix}/ --recursive | grep -e ".*FinalOut.*"'
-            # this will essentially mock within the call to get_final_out_keys()
-        mock_run.return_value = ""
-        mock_s3_download_file.return_value = pd.read_csv("test/data/path/FinalOut.csv")
-        test_metadata = {}
-        summary_filepath = os.path.join(self.test_dir, "all_samples.csv")
+    @mock.patch("btb_phylo.update_summary.finalout_csv_to_df")
+    @mock.patch("btb_phylo.update_summary.utils.run")
+    def test_update_samples(self, mock_run, mock_finalout_csv_to_df, 
+                            testdata_path=os.path.join(DEFAULT_TESTDATA_PATH, "update_samples")):
+        with open(os.path.join(testdata_path, "finalout_s3_data.txt")) as finalout_s3_data:
+            mock_run.return_value = finalout_s3_data.read()
+        mock_finalout_csv_to_df.side_effect = [pd.read_csv(os.path.join(testdata_path, "FinalOut_1.csv"), comment="#"),
+                                               pd.read_csv(os.path.join(testdata_path, "FinalOut_2.csv"), comment="#"),
+                                               pd.read_csv(os.path.join(testdata_path, "FinalOut_3.csv"), comment="#")]
+        test_metadata = {"total_number_of_wgs_samples": 12}
+        summary_filepath = os.path.join(self.test_dir, "all_samples_tests.csv")
         results_path = os.path.join(self.test_dir, "results")
-        shutil.copy("test/data/path/all_samples.csv", summary_filepath)
-        self.assertEquals(btb_phylo.update_samples(results_path, summary_filepath), test_metadata)
-        nptesting.assert_equal(pd.read_csv(os.path.join(results_path, "metadata/all_samples.csv")), pd.read_csv("test/data/path/all_samples.csv"))
-        nptesting.assert_equal(pd.read_csv(summary_filepath), pd.read_csv("test/data/path/all_samples_updated.csv"))
-        
-        
+        shutil.copy(os.path.join(testdata_path, "all_samples.csv"), summary_filepath)
+        self.assertEqual(update_samples(results_path, summary_filepath)[0], test_metadata)
+        pdtesting.assert_frame_equal(utils.summary_csv_to_df(summary_filepath), 
+                                     utils.summary_csv_to_df(os.path.join(testdata_path, "all_samples_updated.csv")))
+
+if __name__ == "__main__":
+    unittest.main()

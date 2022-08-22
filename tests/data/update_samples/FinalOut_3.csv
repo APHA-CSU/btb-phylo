@@ -1,0 +1,5 @@
+Sample,GenomeCov,MeanDepth,NumRawReads,pcMapped,Outcome,flag,group,CSSTested,matches,mismatches,noCoverage,anomalous,Ncount,ResultLoc,ID,TotalReads,Abundance
+2563LMR,99.88,56.77,2156134,98.88,Pass,BritishbTB,B6-51,3018.0,94.47,2.75,2.78,0.0,51197,s3://s3-csu-003/v3-2/Results_NB552234_0143_08Aug22/,Mycobacterium bovis,NA,NA
+AFH-21-05744-22,99.89,49.57,6526512,28.03,CheckRequired,BritishbTB,B6-14,3018.0,96.39,0.83,2.75,0.03,51348,s3://s3-csu-003/v3-2/Results_NB552234_0143_08Aug22/,Mycobacterium bovis,521014.0,17.52
+# Operator: root
+# BovTB-nf commit: 0c77a8441032e41a246e8ecee5f43b1ecd452497
