@@ -42,7 +42,14 @@ jobs:
     steps:
       - run: |
           cd /btb-phylo/
-          python tests/unit_tests.py
+          python tests/unit_tests/unit_tests.py
+
+  unittests:
+    executor: phylo-pipeline
+    steps:
+      - run: |
+          cd /btb-phylo/
+          python tests/integration_tests/integration_tests.py
 
 executors:
   phylo-pipeline:
@@ -58,6 +65,11 @@ workflows:
       - unittests:
           requires:
             - build
+
+      - integration:
+          requires:
+            - build
+            - unittests
 
       - deploy:
           requires:
