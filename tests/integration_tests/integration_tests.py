@@ -3,6 +3,7 @@ import tempfile
 import shutil
 import os
 import sys
+import json
 from unittest import mock
 
 import pandas as pd
@@ -38,5 +39,18 @@ class IntegrationTestBtbPhylo(unittest.TestCase):
         pdtesting.assert_frame_equal(utils.summary_csv_to_df(summary_filepath), 
                                      utils.summary_csv_to_df(os.path.join(testdata_path, "all_samples_updated.csv")))
 
+    def test_sample_filter(self, testdata_path=os.path.join(DEFAULT_TESTDATA_PATH, "filter_samples")):
+        summary_filepath = os.path.join(testdata_path, "all_samples_test.csv")
+        test_filtered_summary_filepath = os.path.join(testdata_path, "filtered_all_samples_test.csv")
+        results_path = os.path.join(self.test_dir, "results")
+        metadata_dir = os.path.join(self.test_dir, "metadata")
+        os.makedirs(os.path.join(results_path, "metadata"))
+        with open(os.path.join(metadata_dir, "metadata.json"), "w") as f:
+            json.dump({"total_number_of_wgs_samples": 12}, f, indent=2)
+        (metadata, df_filtered) = sample_filter(results_path, summary_filepath, 
+                                                config=os.path.join(testdata_path, "example_config.json"))
+        test_df_filtered = utils.summary_csv_to_df(test_filtered_summary_filepath)
+        pdtesting.assert_frame_equal(df_filtered, test_df_filtered)
+    
 if __name__ == "__main__":
     unittest.main()

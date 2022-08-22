@@ -1,0 +1,18 @@
+Sample,GenomeCov,MeanDepth,NumRawReads,pcMapped,Outcome,flag,group,CSSTested,matches,mismatches,noCoverage,anomalous,Ncount,ResultLoc,ID,TotalReads,Abundance,Submission
+A,2,2,2,2,Pass,BritishbTB,A,2,2,2,2,2,2,-,Mycobacterium bovis,2,2,A
+C,6,6,6,6,Pass,BritishbTB,B,6,6,6,6,6,6,-,Mycobacterium bovis,6,6,C
+E,10,10,10,10,Pass,BritishbTB,E,10,10,10,10,10,10,-,Mycobacterium bovis,10,10,E
+G,14,14,14,14,Pass,BritishbTB,G,14,14,14,14,14,14,-,Mycobacterium bovis,14,14,G
+I,18,18,18,18,Pass,BritishbTB,I,18,18,18,18,18,18,-,Mycobacterium bovis,18,18,I
+K,22,22,22,22,Pass,BritishbTB,K,22,22,22,22,22,22,-,Mycobacterium bovis,22,22,K
+M,26,26,26,26,Pass,BritishbTB,M,26,26,26,26,26,26,-,Mycobacterium bovis,26,26,M
+O,30,30,30,30,Pass,BritishbTB,O,30,30,30,30,30,30,-,Mycobacterium bovis,30,30,O
+Q,34,34,34,34,Pass,BritishbTB,Q,34,34,34,34,34,34,-,Mycobacterium bovis,34,34,Q
+S,38,38,38,38,Pass,BritishbTB,S,38,38,38,38,38,38,-,Mycobacterium bovis,38,38,S
+U,42,42,42,42,Pass,BritishbTB,U,42,42,42,42,42,42,-,Mycobacterium bovis,42,42,U
+W,46,46,46,46,Pass,BritishbTB,W,46,46,46,46,46,46,-,Mycobacterium bovis,46,46,W
+Y,50,50,50,50,Pass,BritishbTB,Y,50,50,50,50,50,50,-,Mycobacterium bovis,50,50,Y
+A1,54,54,54,54,Pass,BritishbTB,A1,54,54,54,54,54,54,-,Mycobacterium bovis,54,54,A1
+C1,58,58,58,58,Pass,BritishbTB,C1,58,58,58,58,58,58,-,Mycobacterium bovis,58,58,C1
+E1,62,62,62,62,Pass,BritishbTB,E1,62,62,62,62,62,62,-,Mycobacterium bovis,62,62,E1
+H1,66,66,66,68,Pass,BritishbTB,G1,66,66,66,66,66,66,-,Mycobacterium bovis,66,66,H1
