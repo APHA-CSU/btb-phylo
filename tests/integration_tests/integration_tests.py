@@ -31,9 +31,9 @@ class IntegrationTestBtbPhylo(unittest.TestCase):
                                                pd.read_csv(os.path.join(testdata_path, "FinalOut_2.csv"), comment="#"),
                                                pd.read_csv(os.path.join(testdata_path, "FinalOut_3.csv"), comment="#")]
         test_metadata = {"total_number_of_wgs_samples": 12}
-        summary_filepath = os.path.join(self.test_dir, "all_samples_tests.csv")
+        summary_filepath = os.path.join(self.test_dir, "all_samples.csv")
         results_path = os.path.join(self.test_dir, "results")
-        shutil.copy(os.path.join(testdata_path, "all_samples.csv"), summary_filepath)
+        shutil.copy(os.path.join(testdata_path, "all_samples_test.csv"), summary_filepath)
         self.assertEqual(update_samples(results_path, summary_filepath)[0], test_metadata)
         pdtesting.assert_frame_equal(utils.summary_csv_to_df(summary_filepath), 
                                      utils.summary_csv_to_df(os.path.join(testdata_path, "all_samples_updated.csv")))
