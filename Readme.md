@@ -115,14 +115,17 @@ Stages 1-5 in [pipeline detials](#pipe-dets) can be run in isolation or combinat
 ### `python btb_phylo.py -h` (help)
 
 ```
+usage: btb-phylo [-h] {update_samples,filter,consistify,phylo,full_pipeline,ViewBovine} ...
+
 positional arguments:
-  {update_samples,filter,consistify,phylo,full_pipeline}
+  {update_samples,filter,consistify,phylo,full_pipeline,ViewBovine}
                         sub-command help
     update_samples      updates a local copy of all sample metadata .csv file
     filter              filters sample metadata .csv file
     consistify          removes wgs samples that are missing from cattle and movement data (metadata warehouse)
     phylo               performs phylogeny
     full_pipeline       runs the full phylogeny pipeline: updates full samples summary, filters samples and performs phylogeny
+    ViewBovine          runs phylogeny with default settings for ViewBovine
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -179,7 +182,7 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 2. Mount FSx drive, `fsx-042`;
 2. Run the following command; 
 ```
-./btb-phylo.sh path/to/fsx-017 path/to/fsx-042/share/phyloConsensus --meta_path path/to/fsx-017/ViewBovine/app/raw --with-docker
+./btb-phylo.sh {fsx-017_path}/ViewBovine/app/prod {fsx-042_path}/share/ViewBovine_consensus --meta_path {fsx-017_path}/ViewBovine/app/raw --with-docker
 ```
 This will use predefined filtering criteria to download new samples to `fsx-017`, consistify the samples with cattle and movement data and update the snp-matrix on `fsx-017`. 
 
