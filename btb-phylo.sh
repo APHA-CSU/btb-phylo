@@ -83,10 +83,10 @@ if [ $DOCKER == 1 ]; then
     then
         mkdir $RESULTS
     fi
-    # pull the latest version from DockerHub
-    docker pull aphacsubot/btb-phylo:main
     # run docker container - this runs this script (btb-phylo.sh) inside the container (without --with-docker)
     if [ $VIEWBOVINE == 1 ]; then
+	# pull the prod branch docker image from DockerHub 
+	docker pull aphacsubot/btb-phylo:prod
         docker run --rm -it \
             --mount type=bind,source=$RESULTS,target=/results \
             --mount type=bind,source=$CONSENSUS,target=/consensus \
@@ -95,6 +95,9 @@ if [ $DOCKER == 1 ]; then
             --mount type=bind,source=$CATTLE_AND_MOVEMENT,target=/btb-phylo/cattle_and_movement \
             aphacsubot/btb-phylo:main /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
     else
+	# pull the current branch docker image from DockerHub 
+	branch=$(git rev-parse --abbrev-ref HEAD)
+	docker pull aphacsubot/btb-phylo:$branch
         docker run --rm -it \
             --mount type=bind,source=$RESULTS,target=/results \
             --mount type=bind,source=$CONSENSUS,target=/consensus \
