@@ -93,7 +93,7 @@ if [ $DOCKER == 1 ]; then
             --mount type=bind,source=$CONFIG,target=/config.json \
             --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv \
             --mount type=bind,source=$CATTLE_AND_MOVEMENT,target=/btb-phylo/cattle_and_movement \
-            aphacsubot/btb-phylo:main /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
+            aphacsubot/btb-phylo:prod /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
     else
 	# pull the current branch docker image from DockerHub 
 	branch=$(git rev-parse --abbrev-ref HEAD)
@@ -103,7 +103,7 @@ if [ $DOCKER == 1 ]; then
             --mount type=bind,source=$CONSENSUS,target=/consensus \
             --mount type=bind,source=$CONFIG,target=/config.json \
             --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv \
-            aphacsubot/btb-phylo:main /results /consensus -c /config.json -j $THREADS
+            aphacsubot/btb-phylo:$branch /results /consensus -c /config.json -j $THREADS
     fi
 # if not running with docker (or running inside the docker container)
 else
