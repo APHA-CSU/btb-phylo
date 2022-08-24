@@ -67,7 +67,7 @@ parse_args "$@"
 btb_phylo_path="$(dirname $(realpath $0))/btb_phylo.py"
 
 if [ $CONFIG == 0 ]; then
-    CONFIG = "$(dirname $(realpath $0))/filter.json" 
+    CONFIG="$(dirname $(realpath $0))/filter.json" 
     echo "{}" > $CONFIG
 fi
 
