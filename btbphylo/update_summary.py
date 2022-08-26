@@ -27,6 +27,20 @@ def extract_s3_key(final_out_s3_object):
     """
     return final_out_s3_object.split(" ")[-1]
 
+def finalout_csv_to_df(finalout_filepath):
+    """
+        Reads finalout CSV and returns the data in a pandas dataframe.
+    """
+    df = pd.read_csv(finalout_filepath, comment="#", 
+                     dtype = {"Sample":"category", "GenomeCov":float, 
+                     "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
+                     "Outcome":"category", "flag":"category", "group":"category", 
+                     "CSSTested":float, "matches":float, "mismatches":float, 
+                     "noCoverage":float, "anomalous":float, "Ncount":float, 
+                     "ResultLoc":"category", "ID":"category", "TotalReads":float, 
+                     "Abundance":float})
+    return df
+
 def finalout_csv_to_df(s3_key, s3_bucket="s3-csu-003"):
     """
         Downloads FinalOut.csv files and writes to pandas dataframe
@@ -34,8 +48,7 @@ def finalout_csv_to_df(s3_key, s3_bucket="s3-csu-003"):
     with tempfile.TemporaryDirectory() as temp_dirname:
         finalout_path = path.join(temp_dirname, "FinalOut.csv") 
         utils.s3_download_file_cli(s3_bucket, s3_key, finalout_path)
-        #print(pd.read_csv(finalout_path, comment="#"))
-        return utils.finalout_csv_to_df(finalout_path)
+        return finalout_csv_to_df(finalout_path)
 
 def get_df_summary(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
