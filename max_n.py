@@ -14,6 +14,7 @@ def run(results_path, perc):
     df_cladeinfo = pd.DataFrame(df_filtered.groupby("group")["Ncount"].quantile(perc))
     df_cladeinfo.index.names = ["clade"]
     df_cladeinfo.rename(columns = {"Ncount":"maxN"}, inplace=True)
+    df_cladeinfo.drop(["MicPin", "Microti", "Pinnipedii", "bTB", "nonbTB"], inplace=True)
     df_cladeinfo.to_csv(os.path.join(results_path, "CladeInfo.csv"))
     meta_filepath = os.path.join(results_path, "metadata/metadata.json")
     with open(meta_filepath, "w") as f:
@@ -22,7 +23,7 @@ def run(results_path, perc):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="max_n")
     parser.add_argument("results_path")
-    parser.add_argument("perc")
+    parser.add_argument("--perc", default=0.85)
     args = parser.parse_args()
     run(args.results_path, args.perc)
 

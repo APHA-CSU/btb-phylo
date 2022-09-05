@@ -41,7 +41,7 @@ def finalout_csv_to_df(finalout_filepath):
                      "Abundance":float})
     return df
 
-def finalout_csv_to_df(s3_key, s3_bucket="s3-csu-003"):
+def finalout_s3_to_df(s3_key, s3_bucket="s3-csu-003"):
     """
         Downloads FinalOut.csv files and writes to pandas dataframe
     """
@@ -112,7 +112,7 @@ def append_df_summary(df_summary, new_keys, itteration=0):
     if itteration < num_batches:
         print(f"\t\tdownloading batch summary: {itteration+1} / {num_batches}", end="\r")
         # read FinalOut.csv for current key
-        finalout_df = finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
+        finalout_df = finalout_s3_to_df(new_keys[itteration]).pipe(add_submission_col)
         # append to df_summary
         df_summary, _ = append_df_summary(pd.concat([df_summary, finalout_df]), 
                                           new_keys, itteration+1)
