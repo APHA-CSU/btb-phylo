@@ -156,15 +156,15 @@ def post_process_snps_csv(snp_dists_outpath):
         An I/O layer for post_process_snps_df. Changes the sample names in the 
         snp matrix at snp_dists_outpath to be consistent with cattle and movement 
         datasets. This is necessary for serving ViewBovine:
-        Parses snp_matrix.csv.
+        Parses snps.csv.
         Runs post_process_snps_df().
-        Saves post processed snp matrix to the same location as the input snp_matrix.csv
+        Saves post processed snp matrix to the same location as the input snps.csv
     """
-    # load snp_matrix.csv
+    # load snps.csv
     snp_matrix = pd.read_csv(snp_dists_outpath, index_col=0)
     # process sample names
     processed_snp_matrix = post_process_snps_df(snp_matrix)
-    # overwrite input snp_matrix.csv with processed snp_matrix
+    # overwrite input snps.csv with processed snp_matrix
     processed_snp_matrix.to_csv(snp_dists_outpath)
 
 def post_process_snps_df(snp_matrix):
