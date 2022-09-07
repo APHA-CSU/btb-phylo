@@ -28,7 +28,7 @@ def format_warning(message, category, filename, lineno, file=None, line=None):
 
 def summary_csv_to_df(summary_filepath):
     """
-        Downloads btb_wgs_samples.csv and returns the data in a pandas dataframe.
+        Read sample summary CSV and returns the data in a pandas dataframe.
     """
     df = pd.read_csv(summary_filepath, comment="#", 
                      dtype = {"Sample":"category", "GenomeCov":float, 
