@@ -71,16 +71,17 @@ if [ $CONFIG == 0 ]; then
     echo "{}" > $CONFIG
 fi
 
+ALL_SAMPLES="$(dirname $(realpath $0))/all_samples.csv"
+
 # if running with docker 
 if [ $DOCKER == 1 ]; then
     printf "\nRunning btb-phylo with docker\n\n"
-    if [ ! -f all_samples.csv ]
+    if [ ! -f $ALL_SAMPLES ]
     then
         echo -e "Sample,GenomeCov,MeanDepth,NumRawReads,pcMapped,Outcome,flag,group,CSSTested,"\
             "matches,mismatches,noCoverage,anomalous,Ncount,ResultLoc,ID,TotalReads,Abundance,"\
-            "Submission" > all_samples.csv
+            "Submission" > $ALL_SAMPLES
     fi
-    ALL_SAMPLES=$(realpath all_samples.csv)
     if [ ! -d $RESULTS ]
     then
         mkdir $RESULTS
