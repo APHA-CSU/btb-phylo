@@ -133,14 +133,14 @@ def consistify_samples(results_path, cat_mov_path):
             the same fields as the summary csv 
     """
     print("\n## Consistify ##\n")
-    # cattle and movements csv filepaths
+    # cattle and movement csv filepaths
     cattle_filepath = f"{cat_mov_path}/cattle.csv" 
-    movements_filepath = f"{cat_mov_path}/movements.csv" 
+    movements_filepath = f"{cat_mov_path}/movement.csv" 
     # validate paths
     if not os.path.exists(cattle_filepath):
         raise FileNotFoundError(f"Can't find cattle.csv in {cat_mov_path}")
     if not os.path.exists(movements_filepath):
-        raise FileNotFoundError(f"Can't find movements.csv in {cat_mov_path}")
+        raise FileNotFoundError(f"Can't find movement.csv in {cat_mov_path}")
     metadata_path = os.path.join(results_path, "metadata")
     filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
     # consistified file outpaths
@@ -215,7 +215,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     # output paths
     multi_fasta_path = os.path.join(fasta_path, "multi_fasta.fas")
     snp_sites_outpath = os.path.join(fasta_path, "snps.fas")
-    snp_dists_outpath = os.path.join(results_path, "snp_matrix.csv")
+    snp_dists_outpath = os.path.join(results_path, "snps.csv")
     tree_path = os.path.join(results_path, "mega")
     print("\n## Phylogeny ##\n")
     # concatonate fasta files
@@ -260,8 +260,8 @@ def full_pipeline(results_path, consensus_path,
         metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
                                    build_tree, df_filtered=df_consistified, light_mode=True)
         if not download_only:
-            # process sample names in snp_matrix to be consistent with cattle and movement data
-            phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
+            # process sample names in snps.csv to be consistent with cattle and movement data
+            phylogeny.post_process_snps_csv(os.path.join(results_path, "snps.csv"))
     else:
         # run phylogeny
         metadata_phylo, *_ = phylo(results_path, consensus_path, True, download_only, 
@@ -316,8 +316,8 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     # run phylogeny
     metadata_phylo, *_ = phylo(results_path, consensus_path, n_threads=4, 
                                df_filtered=df_consistified, light_mode=True)
-    # process sample names in snp_matrix to be consistent with cattle and movement data
-    phylogeny.post_process_snps_csv(os.path.join(results_path, "snp_matrix.csv"))
+    # process sample names in snps.csv to be consistent with cattle and movement data
+    phylogeny.post_process_snps_csv(os.path.join(results_path, "snps.csv"))
     metadata.update(metadata_phylo)
     return (metadata,)
 
