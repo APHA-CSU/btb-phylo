@@ -15,6 +15,7 @@ def run(results_path, perc):
     df_cladeinfo.index.names = ["clade"]
     df_cladeinfo.rename(columns = {"Ncount":"maxN"}, inplace=True)
     df_cladeinfo.drop(["MicPin", "Microti", "Pinnipedii", "bTB", "nonbTB"], inplace=True)
+    df_cladeinfo["maxN"] = df_cladeinfo["maxN"].round()
     df_cladeinfo.to_csv(os.path.join(results_path, "CladeInfo.csv"))
     meta_filepath = os.path.join(results_path, "metadata/metadata.json")
     with open(meta_filepath, "w") as f:
