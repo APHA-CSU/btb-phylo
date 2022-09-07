@@ -303,6 +303,9 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
         i += 1
     # overwrite filtered_samples.csv in metadata output folder with updated df_filtered
     utils.df_to_csv(df_filtered, os.path.join(results_path, "metadata/filtered_samples.csv"))
+    # copy CladeInfo.csv into results folder
+    metadata_path = os.path.join(results_path, "metadata")
+    shutil.copy(clade_info_path, os.path.join(metadata_path, "CladeInfo.csv"))
     # update metadata
     metadata.update(metadata_filt)
     metadata["number_of_filtered_samples"] = num_filtered_samples

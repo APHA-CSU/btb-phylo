@@ -8,9 +8,9 @@ from btbphylo import update_summary
 
 
 class TestUpdateSummary(unittest.TestCase):
-    @mock.patch("btbphylo.update_summary.finalout_csv_to_df")
-    def test_append_df_summary(self, mock_finalout_csv_to_df):
-        mock_finalout_csv_to_df.return_value = pd.DataFrame()
+    @mock.patch("btbphylo.update_summary.finalout_s3_to_df")
+    def test_append_df_summary(self, mock_finalout_s3_to_df):
+        mock_finalout_s3_to_df.return_value = pd.DataFrame()
         # simulate 7 new keys
         test_new_keys = [0, 1, 2, 3, 4, 5, 6]
         # start with empty df_summary
@@ -34,7 +34,7 @@ class TestUpdateSummary(unittest.TestCase):
             finalout_csv_to_df_calls = [mock.call(0), mock.call(1), mock.call(2), mock.call(3),
                                         mock.call(4), mock.call(5), mock.call(6)]
             # assert recursion was called with correct order of arguments
-            mock_finalout_csv_to_df.assert_has_calls(finalout_csv_to_df_calls)
+            mock_finalout_s3_to_df.assert_has_calls(finalout_csv_to_df_calls)
 
     def test_get_finalout_s3_keys(self):
         # mock AWS s3 CLI command for getting s3 metadata

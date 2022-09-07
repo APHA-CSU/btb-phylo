@@ -64,9 +64,11 @@ parse_args() {
 # parse arguments
 parse_args "$@"
 
+btb_phylo_path="$(dirname $(realpath $0))/btb_phylo.py"
+
 if [ $CONFIG == 0 ]; then
-    echo "{}" > filter.json
-    CONFIG=$(realpath filter.json)
+    CONFIG="$(dirname $(realpath $0))/filter.json" 
+    echo "{}" > $CONFIG
 fi
 
 # if running with docker 
@@ -83,31 +85,34 @@ if [ $DOCKER == 1 ]; then
     then
         mkdir $RESULTS
     fi
-    # pull the latest version from DockerHub
-    docker pull aphacsubot/btb-phylo:main
     # run docker container - this runs this script (btb-phylo.sh) inside the container (without --with-docker)
     if [ $VIEWBOVINE == 1 ]; then
+	# pull the prod branch docker image from DockerHub 
+	docker pull aphacsubot/btb-phylo:prod
         docker run --rm -it \
             --mount type=bind,source=$RESULTS,target=/results \
             --mount type=bind,source=$CONSENSUS,target=/consensus \
             --mount type=bind,source=$CONFIG,target=/config.json \
             --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv \
             --mount type=bind,source=$CATTLE_AND_MOVEMENT,target=/btb-phylo/cattle_and_movement \
-            aphacsubot/btb-phylo:main /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
+            aphacsubot/btb-phylo:prod /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
     else
+	# pull the current branch docker image from DockerHub 
+	branch=$(git rev-parse --abbrev-ref HEAD)
+	docker pull aphacsubot/btb-phylo:$branch
         docker run --rm -it \
             --mount type=bind,source=$RESULTS,target=/results \
             --mount type=bind,source=$CONSENSUS,target=/consensus \
             --mount type=bind,source=$CONFIG,target=/config.json \
             --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_samples.csv \
-            aphacsubot/btb-phylo:main /results /consensus -c /config.json -j $THREADS
+            aphacsubot/btb-phylo:$branch /results /consensus -c /config.json -j $THREADS
     fi
 # if not running with docker (or running inside the docker container)
 else
     # run the pipeline
     if [ $VIEWBOVINE == 1 ]; then
-        python btb_phylo.py ViewBovine $RESULTS $CONSENSUS $CATTLE_AND_MOVEMENT
+        python $btb_phylo_path ViewBovine $RESULTS $CONSENSUS $CATTLE_AND_MOVEMENT
     else
-        python btb_phylo.py full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG
+        python $btb_phylo_path full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG
     fi
 fi
