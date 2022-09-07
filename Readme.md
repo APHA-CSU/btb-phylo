@@ -38,7 +38,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 │   ├── filters.json
 │   └── metadata.json
 ├── multi_fasta.fas
-├── snp_matrix.csv
+├── snps.csv
 └── snps.fas
 ```
 - `all_samples.csv`: a summary csv file containing metadata for all samples in `s3-csu-003`;
@@ -47,7 +47,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 - `metadata.json`: a `.json` containing metadata for a `btb-phylo` run;
 - `multi_fasta.fas`: a fasta file containing consensus sequences for all samples included in the results;
 - `snps.fas`: a fasta file containing consensus sequences for all samples included in the results, where only snp sites are retained;
-- `snp_matrix.csv`: a snp matrix
+- `snps.csv`: a snp matrix
 
 ### Test with an example configuration file
 ```
