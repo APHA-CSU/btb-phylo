@@ -11,7 +11,7 @@ class TestConsistify(unittest.TestCase):
         test_wgs = pd.DataFrame({"Submission": ["A", "B", "C", "D"]})
         test_cattle = pd.DataFrame({"CVLRef": ["B", "C", "D"]})
         test_movements = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D", "E"],
-                                       "Stay_Length": [None, 0, 0, 0, 0, 0]})
+                                       "Stay_Length": [0, 0, 0, 0, 0, 0]})
         # test output
         test_metadata = {"original_number_of_wgs_records": 4,
                          "original_number_of_cattle_records": 3,
