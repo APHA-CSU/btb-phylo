@@ -10,7 +10,8 @@ class TestConsistify(unittest.TestCase):
         # test input
         test_wgs = pd.DataFrame({"Submission": ["A", "B", "C", "D"]})
         test_cattle = pd.DataFrame({"CVLRef": ["B", "C", "D"]})
-        test_movements = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D", "E"]})
+        test_movements = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D", "E"],
+                                       "Stay_Length": [None, 0, 0, 0, 0, 0]})
         # test output
         test_metadata = {"original_number_of_wgs_records": 4,
                          "original_number_of_cattle_records": 3,
@@ -20,7 +21,8 @@ class TestConsistify(unittest.TestCase):
                          "consistified_number_of_movement_records": 5}
         test_wgs_consist = pd.DataFrame({"Submission": ["C", "D"]})
         test_cattle_consist = pd.DataFrame({"CVLRef": ["C", "D"]})
-        test_movements_consist = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D"]})
+        test_movements_consist = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D"],
+                                               "Stay_Length": [0, 0, 0, 0, 0]})
         # run consistify
         (metadata, wgs_consist, cattle_consist, movements_consist, *_) = \
             consistify.consistify(test_wgs, test_cattle, test_movements)
