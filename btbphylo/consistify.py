@@ -53,9 +53,11 @@ def consistify(wgs, cattle, movements):
     missing_cattle = pd.DataFrame({"CVLRef": list(cattle_samples - consist_samples)})
     missing_movement = pd.DataFrame({"SampleName": list(movement_samples - consist_samples)})
     # subsample full datasets by common names
-    wgs_consist = wgs.loc[wgs["Submission"].isin(consist_samples)]
-    cattle_consist = cattle[cattle.CVLRef.isin(consist_samples)]
-    movements_consist = movements[movements.SampleName.isin(consist_samples)]
+    wgs_consist = wgs.loc[wgs["Submission"].isin(consist_samples)].copy()
+    cattle_consist = cattle[cattle.CVLRef.isin(consist_samples)].copy()
+    movements_consist = movements[movements.SampleName.isin(consist_samples)].copy()
+    # removes NaNs from Stay_Length column to avoid error in ViewBovine
+    movements_consist = movements_consist[movements_consist['Stay_Length'].notna()]
     # metadata
     metadata = {"original_number_of_wgs_records": len(wgs),
                 "original_number_of_cattle_records": len(cattle),
