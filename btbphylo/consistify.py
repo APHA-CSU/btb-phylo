@@ -57,7 +57,7 @@ def consistify(wgs, cattle, movements):
     cattle_consist = cattle[cattle.CVLRef.isin(consist_samples)].copy()
     movements_consist = movements[movements.SampleName.isin(consist_samples)].copy()
     # removes NaNs from Stay_Length column to avoid error in ViewBovine
-    movements_consist["Stay_Length"] = movements_consist["Stay_Length"].fillna(0)
+    movements_consist = movements_consist[movements_consist['Stay_Length'].notna()]
     # metadata
     metadata = {"original_number_of_wgs_records": len(wgs),
                 "original_number_of_cattle_records": len(cattle),
