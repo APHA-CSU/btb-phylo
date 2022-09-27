@@ -154,7 +154,7 @@ def consistify_samples(results_path, cat_mov_path):
                                                        consistified_movement_filepath, metadata_path)
     # copy cattle and movement csvs to metadata
     shutil.copy(cattle_filepath, os.path.join(metadata_path, "cattle.csv"))
-    shutil.copy(cattle_filepath, os.path.join(metadata_path, "movement.csv"))
+    shutil.copy(movements_filepath, os.path.join(metadata_path, "movement.csv"))
     return metadata, wgs_consist
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
