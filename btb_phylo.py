@@ -132,27 +132,26 @@ def consistify_samples(results_path, cat_mov_path):
     print("\n## Consistify ##\n")
     # cattle and movement csv filepaths
     cattle_filepath = f"{cat_mov_path}/cattle.csv" 
-    movements_filepath = f"{cat_mov_path}/movement.csv" 
+    movement_filepath = f"{cat_mov_path}/movement.csv" 
     # validate paths
     if not os.path.exists(cattle_filepath):
         raise FileNotFoundError(f"Can't find cattle.csv in {cat_mov_path}")
-    if not os.path.exists(movements_filepath):
+    if not os.path.exists(movement_filepath):
         raise FileNotFoundError(f"Can't find movement.csv in {cat_mov_path}")
     metadata_path = os.path.join(results_path, "metadata")
     filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
     # consistified file outpaths
     consistified_wgs_filepath = os.path.join(metadata_path, "consistified_wgs.csv")
-    consistified_catte_filepath = os.path.join(results_path, "cattle.csv")
+    consistified_cattle_filepath = os.path.join(results_path, "cattle.csv")
     consistified_movement_filepath = os.path.join(results_path, "movement.csv")
     # run consistify and save metadata in results root
     print("\tconsistifying samples ... \n")
-    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_filepath, 
-                                                       movements_filepath, consistified_wgs_filepath, 
-                                                       consistified_catte_filepath, 
+    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_filepath, movement_filepath,
+                                                       consistified_wgs_filepath,  consistified_cattle_filepath, 
                                                        consistified_movement_filepath, metadata_path)
     # copy cattle and movement csvs to metadata
     shutil.copy(cattle_filepath, os.path.join(metadata_path, "cattle.csv"))
-    shutil.copy(cattle_filepath, os.path.join(metadata_path, "movement.csv"))
+    shutil.copy(movement_filepath, os.path.join(metadata_path, "movement.csv"))
     return metadata, wgs_consist
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
@@ -268,8 +267,8 @@ def full_pipeline(results_path, consensus_path,
             phylogeny.post_process_snps_csv(os.path.join(results_path, "snps.csv"))
     else:
         # run phylogeny
-        metadata_phylo, *_ = phylo(results_path, consensus_path, True, download_only, 
-                                   n_threads, build_tree, df_filtered=df_filtered)
+        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
+                                   build_tree, df_filtered=df_filtered, light_mode=True)
     metadata.update(metadata_phylo)
     return (metadata,)
 
