@@ -26,7 +26,8 @@ if __name__ == "__main__":
     update_summary_test = [TestUpdateSummary('test_append_df_summary'),
                            TestUpdateSummary('test_get_finalout_s3_keys'),
                            TestUpdateSummary('test_extract_s3_key')]
-    consistify_test = [TestConsistify('test_consistify')]
+    consistify_test = [TestConsistify('test_consistify'),
+                       TestConsistify('test_clade_correction')]
     utils_test = [TestUtils('test_extract_submission_no')]
     runner = unittest.TextTestRunner()
     parser = argparse.ArgumentParser(description='Test code')
