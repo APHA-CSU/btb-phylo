@@ -145,12 +145,12 @@ def consistify_samples(results_path, cat_mov_path):
     filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
     # consistified file outpaths
     consistified_wgs_filepath = os.path.join(metadata_path, "consistified_wgs.csv")
-    consistified_catte_filepath = os.path.join(results_path, "cattle.csv")
+    consistified_cattle_filepath = os.path.join(results_path, "cattle.csv")
     consistified_movement_filepath = os.path.join(results_path, "movement.csv")
     # run consistify and save metadata in results root
     print("\tconsistifying samples ... \n")
     metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_filepath, movement_filepath,
-                                                       consistified_wgs_filepath,  consistified_catte_filepath, 
+                                                       consistified_wgs_filepath,  consistified_cattle_filepath, 
                                                        consistified_movement_filepath, metadata_path)
     # copy cattle and movement csvs to metadata
     shutil.copy(cattle_filepath, os.path.join(metadata_path, "cattle.csv"))
