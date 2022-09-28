@@ -135,11 +135,11 @@ def consistify_samples(results_path, cat_mov_path):
     print("\n## Consistify ##\n")
     # cattle and movement csv filepaths
     cattle_filepath = f"{cat_mov_path}/cattle.csv" 
-    movements_filepath = f"{cat_mov_path}/movement.csv" 
+    movement_filepath = f"{cat_mov_path}/movement.csv" 
     # validate paths
     if not os.path.exists(cattle_filepath):
         raise FileNotFoundError(f"Can't find cattle.csv in {cat_mov_path}")
-    if not os.path.exists(movements_filepath):
+    if not os.path.exists(movement_filepath):
         raise FileNotFoundError(f"Can't find movement.csv in {cat_mov_path}")
     metadata_path = os.path.join(results_path, "metadata")
     filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
@@ -149,12 +149,12 @@ def consistify_samples(results_path, cat_mov_path):
     consistified_movement_filepath = os.path.join(results_path, "movement.csv")
     # run consistify and save metadata in results root
     print("\tconsistifying samples ... \n")
-    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_filepath, movements_filepath,
+    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_filepath, movement_filepath,
                                                        consistified_wgs_filepath,  consistified_catte_filepath, 
                                                        consistified_movement_filepath, metadata_path)
     # copy cattle and movement csvs to metadata
     shutil.copy(cattle_filepath, os.path.join(metadata_path, "cattle.csv"))
-    shutil.copy(movements_filepath, os.path.join(metadata_path, "movement.csv"))
+    shutil.copy(movement_filepath, os.path.join(metadata_path, "movement.csv"))
     return metadata, wgs_consist
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 

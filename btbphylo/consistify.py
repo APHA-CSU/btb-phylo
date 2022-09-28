@@ -7,7 +7,7 @@ import btbphylo.utils as utils
     that don't appear in every file
 """
 
-def consistify(wgs, cattle, movements):
+def consistify(wgs, cattle, movement):
     """
         Consistifies the wgs, cattle and movement datasets, i.e. removes 
         samples from each dataset which are not common to all three.
@@ -19,7 +19,7 @@ def consistify(wgs, cattle, movements):
             cattle (pandas DataFrame object): cattle data from the 
             metadata warehouse
 
-            movements (pandas Dataframe object): movement data from 
+            movement (pandas Dataframe object): movement data from 
             the metadata warehouse
 
         Returns:
@@ -43,7 +43,7 @@ def consistify(wgs, cattle, movements):
     # sets of sample names for the different datasets
     wgs_samples = set(wgs.Submission)
     cattle_samples = set(cattle.CVLRef)
-    movement_samples = set(movements.SampleName)
+    movement_samples = set(movement.SampleName)
     # subsample to select common sample names
     consist_samples = wgs_samples.intersection(cattle_samples)\
         .intersection(movement_samples)
@@ -54,8 +54,8 @@ def consistify(wgs, cattle, movements):
     # subsample full datasets by common names
     wgs_consist = wgs.loc[wgs["Submission"].isin(consist_samples)].copy()
     cattle_consist = cattle[cattle.CVLRef.isin(consist_samples)].copy()
-    movements_consist = movements[movements.SampleName.isin(consist_samples)].copy()
-    return wgs_consist, cattle_consist, movements_consist,\
+    movement_consist = movement[movement.SampleName.isin(consist_samples)].copy()
+    return wgs_consist, cattle_consist, movement_consist,\
         missing_wgs, missing_cattle, missing_movement
 
 def clade_correction(wgs, cattle):
@@ -71,13 +71,13 @@ def clade_correction(wgs, cattle):
     return cattle_corrected
 
 # TODO: move this feature into sql scripts in ViewBovine repo
-def fix_movements(movements):
+def fix_movement(movement):
     """
         removes NaNs from Stay_Length column to avoid error in ViewBovine
     """
-    return movements[movements['Stay_Length'].notna()]
+    return movement[movement['Stay_Length'].notna()]
 
-def process_datasets(wgs, cattle, movements):
+def process_datasets(wgs, cattle, movement):
     """
         Fully processes the datasets so that they are prepped for ViewBovine. This involves
         consistifying, fixing clade mismatches in cattle data and removing movement data 
@@ -85,25 +85,25 @@ def process_datasets(wgs, cattle, movements):
         when using the ViewBovine app.
     """
     # consistify datasets
-    wgs_consist, cattle_consist, movements_consist, missing_wgs, missing_cattle, \
-        missing_movements = consistify(wgs.copy(), cattle.copy(), movements.copy())
+    wgs_consist, cattle_consist, movement_consist, missing_wgs, missing_cattle, \
+        missing_movement = consistify(wgs.copy(), cattle.copy(), movement.copy())
     # correct clade assignment in cattle csv
     cattle_corrected = clade_correction(wgs_consist, cattle_consist)
     # fix movement data
-    fixed_movements = fix_movements(movements_consist)
+    fixed_movement = fix_movement(movement_consist)
     # metadata
     metadata = {"original_number_of_wgs_records": len(wgs),
                 "original_number_of_cattle_records": len(cattle),
-                "original_number_of_movement_records": len(movements),
+                "original_number_of_movement_records": len(movement),
                 "consistified_number_of_wgs_records": len(wgs_consist),
                 "consistified_number_of_cattle_records": len(cattle_corrected),
-                "consistified_number_of_movement_records": len(movements_consist)}
-    return metadata, wgs_consist, cattle_corrected, fixed_movements, \
-        missing_wgs, missing_cattle, missing_movements
+                "consistified_number_of_movement_records": len(movement_consist)}
+    return metadata, wgs_consist, cattle_corrected, fixed_movement, \
+        missing_wgs, missing_cattle, missing_movement
 
 def consistify_csvs(filtered_samples_path, cattle_path, movement_path, 
                     consistified_wgs_path, consistified_cattle_path, 
-                    consisitified_movements_path, missing_samples_path):
+                    consisitified_movement_path, missing_samples_path):
     """
         An I/O layer for consistify: Parses wgs, cattle and movement CSVs.
         Runs consistify().
@@ -112,14 +112,14 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     # load
     wgs = utils.summary_csv_to_df(filtered_samples_path)
     cattle = pd.read_csv(cattle_path, dtype=object)
-    movements = pd.read_csv(movement_path, dtype=object)
+    movement = pd.read_csv(movement_path, dtype=object)
     # process data
-    (metadata, wgs_consist, cattle_corrected, movements_fixed, missing_wgs, \
-        missing_cattle, missing_movement) = process_datasets(wgs, cattle, movements)
+    (metadata, wgs_consist, cattle_corrected, movement_fixed, missing_wgs, \
+        missing_cattle, missing_movement) = process_datasets(wgs, cattle, movement)
     # save consistified csvs
     utils.df_to_csv(wgs_consist, consistified_wgs_path)
     cattle_corrected.to_csv(consistified_cattle_path, index=False)
-    movements_fixed.to_csv(consisitified_movements_path, index=False)
+    movement_fixed.to_csv(consisitified_movement_path, index=False)
     # save missing samples csvs
     (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv", index=False)
     (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv", index=False)
