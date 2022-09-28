@@ -7,7 +7,6 @@ import btbphylo.utils as utils
     that don't appear in every file
 """
 
-# TODO: unit test
 def consistify(wgs, cattle, movements):
     """
         Consistifies the wgs, cattle and movement datasets, i.e. removes 
@@ -56,17 +55,51 @@ def consistify(wgs, cattle, movements):
     wgs_consist = wgs.loc[wgs["Submission"].isin(consist_samples)].copy()
     cattle_consist = cattle[cattle.CVLRef.isin(consist_samples)].copy()
     movements_consist = movements[movements.SampleName.isin(consist_samples)].copy()
-    # removes NaNs from Stay_Length column to avoid error in ViewBovine
-    movements_consist = movements_consist[movements_consist['Stay_Length'].notna()]
+    return wgs_consist, cattle_consist, movements_consist,\
+        missing_wgs, missing_cattle, missing_movement
+
+def clade_correction(wgs, cattle):
+    """
+        Ensures that the clade assigment in cattle csv matches the clade in
+        WGS data. Assumes wgs clade is correct and overwrites the cattle calde
+        if there is a mismatch. This feature corrects an error where the wrong 
+        clade is assigned in the MDWH.
+    """
+    cattle_corrected = cattle.copy()
+    for _, row in cattle_corrected.iterrows():
+        row["clade"] = wgs.loc[wgs["Submission"]==row["CVLRef"], "group"].iloc[0]
+    return cattle_corrected
+
+# TODO: move this feature into sql scripts in ViewBovine repo
+def fix_movements(movements):
+    """
+        removes NaNs from Stay_Length column to avoid error in ViewBovine
+    """
+    return movements[movements['Stay_Length'].notna()]
+
+def process_datasets(wgs, cattle, movements):
+    """
+        Fully processes the datasets so that they are prepped for ViewBovine. This involves
+        consistifying, fixing clade mismatches in cattle data and removing movement data 
+        entries where "Stay_Length" = NaN. These two latter features are to avoid errors
+        when using the ViewBovine app.
+    """
+    # consistify datasets
+    wgs_consist, cattle_consist, movements_consist, missing_wgs, missing_cattle, \
+        missing_movements = consistify(wgs.copy(), cattle.copy(), movements.copy())
+    # correct clade assignment in cattle csv
+    cattle_corrected = clade_correction(wgs_consist, cattle_consist)
+    # fix movement data
+    fixed_movements = fix_movements(movements_consist)
     # metadata
     metadata = {"original_number_of_wgs_records": len(wgs),
                 "original_number_of_cattle_records": len(cattle),
                 "original_number_of_movement_records": len(movements),
                 "consistified_number_of_wgs_records": len(wgs_consist),
-                "consistified_number_of_cattle_records": len(cattle_consist),
+                "consistified_number_of_cattle_records": len(cattle_corrected),
                 "consistified_number_of_movement_records": len(movements_consist)}
-    return metadata, wgs_consist, cattle_consist, movements_consist,\
-        missing_wgs, missing_cattle, missing_movement
+    return metadata, wgs_consist, cattle_corrected, fixed_movements, \
+        missing_wgs, missing_cattle, missing_movements
 
 def consistify_csvs(filtered_samples_path, cattle_path, movement_path, 
                     consistified_wgs_path, consistified_cattle_path, 
@@ -80,13 +113,13 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     wgs = utils.summary_csv_to_df(filtered_samples_path)
     cattle = pd.read_csv(cattle_path, dtype=object)
     movements = pd.read_csv(movement_path, dtype=object)
-    # consistify
-    (metadata, wgs_consist, cattle_consist, movements_consist, missing_wgs, \
-        missing_cattle, missing_movement) = consistify(wgs, cattle, movements)
+    # process data
+    (metadata, wgs_consist, cattle_corrected, movements_fixed, missing_wgs, \
+        missing_cattle, missing_movement) = process_datasets(wgs, cattle, movements)
     # save consistified csvs
     utils.df_to_csv(wgs_consist, consistified_wgs_path)
-    cattle_consist.to_csv(consistified_cattle_path, index=False)
-    movements_consist.to_csv(consisitified_movements_path, index=False)
+    cattle_corrected.to_csv(consistified_cattle_path, index=False)
+    movements_fixed.to_csv(consisitified_movements_path, index=False)
     # save missing samples csvs
     (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv", index=False)
     (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv", index=False)
