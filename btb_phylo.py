@@ -107,12 +107,9 @@ def sample_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
     print("\tsaving filtered samples csv ... \n")
     # save filtered_df to csv in metadata output folder
     utils.df_to_csv(df_filtered, filtered_filepath)
-    # save filters to metadata output folder
-    with open(os.path.join(metadata_path, "filters.json"), "w") as f:
-        json.dump(filter_args, f, indent=2)
     # copy all_samples.csv to metadata
     shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
-    return metadata, df_filtered
+    return metadata, filter_args, df_filtered
 
 def consistify_samples(results_path, cat_mov_path):
     """
@@ -248,8 +245,14 @@ def full_pipeline(results_path, consensus_path,
     metadata_update, *_ = update_samples(results_path, summary_filepath)
     metadata = metadata_update
     # filter samples
-    metadata_filt, df_filtered = sample_filter(results_path, summary_filepath, **kwargs)
+    metadata_filt, filter_args, df_filtered = sample_filter(results_path, summary_filepath, 
+                                                            **kwargs)
     metadata.update(metadata_filt)
+    # create metadatapath
+    metadata_path = os.path.join(results_path, "metadata")
+    # save filters to metadata output folder
+    with open(os.path.join(metadata_path, "filters.json"), "w") as f:
+        json.dump(filter_args, f, indent=2)
     # if running in ViewBovine must consistify datasets
     if cat_mov_path:
         # consistify datasets for ViewBovine
@@ -290,17 +293,26 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
                                         "mismatches", "noCoverage", "anomalous",
                                         "Ncount", "ResultLoc", "ID", "TotalReads", 
                                         "Abundance", "Submission"])
+    filter_args = {}
     # loop through clades in CladeInfo.csv
     for clade, row in clade_info_df.iterrows():
         print(f"## Filtering samples for clade {i} / {len(clade_info_df)} ##")
         # filters samples within each clade according to Ncount in CladeInfo.csv
-        metadata_filt, df_clade = sample_filter(results_path, flag=["BritishbTB"], group=[clade],
-                                                pcMapped=(90,100), Ncount=(0, row["maxN"]))
+        metadata_filt, filter_clade, df_clade = sample_filter(results_path, flag=["BritishbTB"], 
+                                                              group=[clade], pcMapped=(90,100), 
+                                                              Ncount=(0, row["maxN"]))
+        del filter_clade["group"]
+        filter_args[clade] = filter_clade
         # sum the number of filtered samples
         num_filtered_samples += metadata_filt["number_of_filtered_samples"]
         # update df_filtered with cladewise filtering
         df_filtered = pd.concat([df_filtered, df_clade], ignore_index=True)
         i += 1
+    # create metadatapath
+    metadata_path = os.path.join(results_path, "metadata")
+    # save filters to metadata output folder
+    with open(os.path.join(metadata_path, "filters.json"), "w") as f:
+        json.dump(filter_args, f, indent=2)
     # overwrite filtered_samples.csv in metadata output folder with updated df_filtered
     utils.df_to_csv(df_filtered, os.path.join(results_path, "metadata/filtered_samples.csv"))
     # copy CladeInfo.csv into results folder
