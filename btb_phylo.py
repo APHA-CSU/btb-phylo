@@ -264,8 +264,8 @@ def full_pipeline(results_path, consensus_path,
             phylogeny.post_process_snps_csv(os.path.join(results_path, "snps.csv"))
     else:
         # run phylogeny
-        metadata_phylo, *_ = phylo(results_path, consensus_path, True, download_only, 
-                                   n_threads, build_tree, df_filtered=df_filtered)
+        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
+                                   build_tree, df_filtered=df_filtered, light_mode=True)
     metadata.update(metadata_phylo)
     return (metadata,)
 
