@@ -107,12 +107,9 @@ def sample_filter(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
     print("\tsaving filtered samples csv ... \n")
     # save filtered_df to csv in metadata output folder
     utils.df_to_csv(df_filtered, filtered_filepath)
-    # save filters to metadata output folder
-    with open(os.path.join(metadata_path, "filters.json"), "w") as f:
-        json.dump(filter_args, f, indent=2)
     # copy all_samples.csv to metadata
     shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
-    return metadata, df_filtered
+    return metadata, filter_args, df_filtered
 
 def consistify_samples(results_path, cat_mov_path):
     """
@@ -135,26 +132,26 @@ def consistify_samples(results_path, cat_mov_path):
     print("\n## Consistify ##\n")
     # cattle and movement csv filepaths
     cattle_filepath = f"{cat_mov_path}/cattle.csv" 
-    movements_filepath = f"{cat_mov_path}/movement.csv" 
+    movement_filepath = f"{cat_mov_path}/movement.csv" 
     # validate paths
     if not os.path.exists(cattle_filepath):
         raise FileNotFoundError(f"Can't find cattle.csv in {cat_mov_path}")
-    if not os.path.exists(movements_filepath):
+    if not os.path.exists(movement_filepath):
         raise FileNotFoundError(f"Can't find movement.csv in {cat_mov_path}")
     metadata_path = os.path.join(results_path, "metadata")
     filtered_filepath = os.path.join(metadata_path, "filtered_samples.csv")
     # consistified file outpaths
     consistified_wgs_filepath = os.path.join(metadata_path, "consistified_wgs.csv")
-    consistified_catte_filepath = os.path.join(results_path, "cattle.csv")
+    consistified_cattle_filepath = os.path.join(results_path, "cattle.csv")
     consistified_movement_filepath = os.path.join(results_path, "movement.csv")
     # run consistify and save metadata in results root
     print("\tconsistifying samples ... \n")
-    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_filepath, movements_filepath,
-                                                       consistified_wgs_filepath,  consistified_catte_filepath, 
+    metadata, wgs_consist = consistify.consistify_csvs(filtered_filepath, cattle_filepath, movement_filepath,
+                                                       consistified_wgs_filepath,  consistified_cattle_filepath, 
                                                        consistified_movement_filepath, metadata_path)
     # copy cattle and movement csvs to metadata
     shutil.copy(cattle_filepath, os.path.join(metadata_path, "cattle.csv"))
-    shutil.copy(cattle_filepath, os.path.join(metadata_path, "movement.csv"))
+    shutil.copy(movement_filepath, os.path.join(metadata_path, "movement.csv"))
     return metadata, wgs_consist
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
@@ -248,8 +245,14 @@ def full_pipeline(results_path, consensus_path,
     metadata_update, *_ = update_samples(results_path, summary_filepath)
     metadata = metadata_update
     # filter samples
-    metadata_filt, df_filtered = sample_filter(results_path, summary_filepath, **kwargs)
+    metadata_filt, filter_args, df_filtered = sample_filter(results_path, summary_filepath, 
+                                                            **kwargs)
     metadata.update(metadata_filt)
+    # create metadatapath
+    metadata_path = os.path.join(results_path, "metadata")
+    # save filters to metadata output folder
+    with open(os.path.join(metadata_path, "filters.json"), "w") as f:
+        json.dump(filter_args, f, indent=2)
     # if running in ViewBovine must consistify datasets
     if cat_mov_path:
         # consistify datasets for ViewBovine
@@ -264,8 +267,8 @@ def full_pipeline(results_path, consensus_path,
             phylogeny.post_process_snps_csv(os.path.join(results_path, "snps.csv"))
     else:
         # run phylogeny
-        metadata_phylo, *_ = phylo(results_path, consensus_path, True, download_only, 
-                                   n_threads, build_tree, df_filtered=df_filtered)
+        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
+                                   build_tree, df_filtered=df_filtered, light_mode=True)
     metadata.update(metadata_phylo)
     return (metadata,)
 
@@ -290,17 +293,26 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
                                         "mismatches", "noCoverage", "anomalous",
                                         "Ncount", "ResultLoc", "ID", "TotalReads", 
                                         "Abundance", "Submission"])
+    filter_args = {}
     # loop through clades in CladeInfo.csv
     for clade, row in clade_info_df.iterrows():
         print(f"## Filtering samples for clade {i} / {len(clade_info_df)} ##")
         # filters samples within each clade according to Ncount in CladeInfo.csv
-        metadata_filt, df_clade = sample_filter(results_path, flag=["BritishbTB"], group=[clade],
-                                                pcMapped=(90,100), Ncount=(0, row["maxN"]))
+        metadata_filt, filter_clade, df_clade = sample_filter(results_path, flag=["BritishbTB"], 
+                                                              group=[clade], pcMapped=(90,100), 
+                                                              Ncount=(0, row["maxN"]))
+        del filter_clade["group"]
+        filter_args[clade] = filter_clade
         # sum the number of filtered samples
         num_filtered_samples += metadata_filt["number_of_filtered_samples"]
         # update df_filtered with cladewise filtering
         df_filtered = pd.concat([df_filtered, df_clade], ignore_index=True)
         i += 1
+    # create metadatapath
+    metadata_path = os.path.join(results_path, "metadata")
+    # save filters to metadata output folder
+    with open(os.path.join(metadata_path, "filters.json"), "w") as f:
+        json.dump(filter_args, f, indent=2)
     # overwrite filtered_samples.csv in metadata output folder with updated df_filtered
     utils.df_to_csv(df_filtered, os.path.join(results_path, "metadata/filtered_samples.csv"))
     # copy CladeInfo.csv into results folder
