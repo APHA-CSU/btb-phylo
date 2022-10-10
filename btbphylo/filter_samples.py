@@ -98,13 +98,15 @@ def get_indexes_to_remove(df, parameter, method):
             (df[parameter] != threshold_1)].index)
     return indexes
 
-def filter_df(df, **kwargs):
+def filter_df(df, allow_wipe_out=False, **kwargs):
     """ 
         Filters the sample summary dataframe which is based off 
         btb_wgs_samples.csv according to a set of criteria. 
 
         Parameters:
             df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv.
+
+            allow_wipe_out (bool): do not raise exception if 1 or fewer samples pass.
 
             **kwargs: 0 or more optional arguments. Names must match a 
             column name in btb_wgs_samples.csv. If column is of type 
@@ -117,7 +119,7 @@ def filter_df(df, **kwargs):
             min and max value for that column. 
 
         Returns:
-            df_filtered (pandas DataFrame object): a dataframe of 'Pass'
+            df_passed (pandas DataFrame object): a dataframe of 'Pass'
             only samples filtered according to criteria set out in 
             arguments.
 
@@ -144,13 +146,13 @@ def filter_df(df, **kwargs):
                 numerical_kwargs[key] = kwargs[key]
     # calls filter_columns_catergorical() with **categorical_kwargs on df, pipes 
     # the output into filter_columns_numeric() with **numerical_kwargs and assigns
-    # the output to a new df_filtered
-    df_filtered = df.pipe(filter_columns_categorical, 
+    # the output to a new df_passed
+    df_passed = df.pipe(filter_columns_categorical, 
                             **categorical_kwargs).pipe(filter_columns_numeric, 
                                                         **numerical_kwargs)
-    if len(df_filtered) < 2:
+    if not allow_wipe_out and len(df_passed) < 2:
         raise Exception("1 or fewer samples meet specified criteria")
-    return df_filtered
+    return df_passed
     
 def filter_columns_numeric(df, **kwargs):
     """ 
@@ -203,7 +205,7 @@ def filter_columns_categorical(df, **kwargs):
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
     return df.query(query)
 
-def get_samples_df(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
+def get_samples_df(df_samples=None, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
     """
         Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
@@ -212,8 +214,11 @@ def get_samples_df(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
     # pipes the output DataFrame from summary_csv_to_df() (all samples) into filter_df()
     # into remove duplicates()
     # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
-    df = utils.summary_csv_to_df(summary_filepath).pipe(filter_df,
-                                                        **kwargs).pipe(remove_duplicates, 
-                                                                       pcMapped="max", Ncount="min")
-    metadata = {"number_of_filtered_samples": len(df)}
+    if df_samples is not None:
+        df = df_samples.pipe(filter_df, **kwargs).pipe(remove_duplicates, pcMapped="max", Ncount="min")
+    else:
+        df = utils.summary_csv_to_df(summary_filepath).pipe(filter_df,
+                                                            **kwargs).pipe(remove_duplicates, 
+                                                                        pcMapped="max", Ncount="min")
+    metadata = {"number_of_passed_samples": len(df)}
     return df, metadata

@@ -40,6 +40,20 @@ def summary_csv_to_df(summary_filepath):
                      "Abundance":float, "Submission": object})
     return df
 
+def finalout_csv_to_df(finalout_filepath):
+    """
+        Reads finalout CSV and returns the data in a pandas dataframe.
+    """
+    df = pd.read_csv(finalout_filepath, comment="#", 
+                     dtype = {"Sample":"category", "GenomeCov":float, 
+                     "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
+                     "Outcome":"category", "flag":"category", "group":"category", 
+                     "CSSTested":float, "matches":float, "mismatches":float, 
+                     "noCoverage":float, "anomalous":float, "Ncount":float, 
+                     "ResultLoc":"category", "ID":"category", "TotalReads":float, 
+                     "Abundance":float})
+    return df
+
 def extract_submission_no(sample_name):
     """ 
         Extracts submision number from sample name using regex. 

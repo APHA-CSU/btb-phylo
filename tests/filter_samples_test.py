@@ -99,6 +99,10 @@ class TestFilterSamples(unittest.TestCase):
         with self.assertRaises(Exception):
             filter_samples.filter_df(test_df, pcMapped=(0.15, 0.25), 
                                        column_A=["b", "c"], column_D=(2, 4))
+        # test exception is not raised with allow_wipe_out=True
+        # empty
+        filter_samples.filter_df(test_df, allow_wipe_out=True, pcMapped=(0.15, 0.16), 
+                                    column_A=["b", "c"], column_D=(2, 3))
         # test invalid kwarg name
         with self.assertRaises(ValueError):
             filter_samples.filter_df(test_df, foo="foo")
