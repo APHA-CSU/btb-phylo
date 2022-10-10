@@ -300,7 +300,10 @@ def report(results_path, df_no_dedup, df_passed, df_consistified,
                                                                              "nonBritishbTB"])
     # get dataframe of low pcMapped samples
     df_low_pcMapped = filter_samples.filter_columns_numeric(df_filtered, pcMapped=(0, 89.99))
-    df_report = df_fail[["Submission", "df_fail"]]
+    # build report
+    df_report = df_fail[["Submission", "Outcome"]]
+    df_report = df_report.join(df_nonbTB[["Submission", "flag"]], on="Submission", how="outer")
+    df_report = df_report.join(df_low_pcMapped[["Submission", "pcMapped"]], on="Submission", how="outer")
 
 def view_bovine(results_path, consensus_path, cat_mov_path,  
                 clade_info_path=DEFAULT_CLADE_INFO_PATH, 
