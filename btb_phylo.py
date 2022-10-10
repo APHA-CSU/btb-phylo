@@ -53,16 +53,20 @@ def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH
     shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
     return (metadata,)
 
-def sample_filter(results_path, df_samples=None, 
+def sample_filter(results_path, df_samples=None, allow_wipe_out=False, 
                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, config=False, **kwargs):
     """ 
         Filters the sample summary csv file 
 
         Parameters:
-            summary_filepath (str): input path to location of summary csv  
+            results_path (str): output path to results directory
 
-            passed_filepath (str): output path to location of filtered 
-            summary csv  
+            df_samples (pandas DataFrame): optional dataframe on which to filter.
+            If not provided, the dataframe is parsed from summary_filepath csv.
+
+            allow_wipe_out (bool): do not raise exception if 1 or fewer samples pass.
+
+            summary_filepath (str): input path to location of summary csv  
 
             config (str): path to location of config json file
 
@@ -83,11 +87,18 @@ def sample_filter(results_path, df_samples=None,
             only samples filtered according to criteria set out in 
             arguments.
     """
+    print("\n## Filter Samples ##\n")
     # create metadatapath
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
     passed_filepath = os.path.join(metadata_path, "passed_samples.csv")
+    # if no sample set provided
+    if df_samples is None:
+        print("\tremoving duplicates ... \n")
+        # remove duplicate samples from full list of samples
+        df_samples = filter_samples.remove_duplicates(utils.summary_csv_to_df(summary_filepath), 
+                                                      pcMapped="max", Ncount="min")
     if config:
         error_keys = [key for key, val in kwargs.items() if val]
         # if any arguments provided with --config
@@ -100,16 +111,16 @@ def sample_filter(results_path, df_samples=None,
     else:
         # remove unused filtering args
         filter_args = {k: v for k, v in kwargs.items() if v is not None}
-    print("\n## Filter Samples ##\n")
     print("\tfiltering samples ... \n")
     # filter samples
-    df_passed, metadata = filter_samples.get_samples_df(df_samples, summary_filepath, **filter_args)
+    df_passed, metadata = filter_samples.get_samples_df(df_samples, allow_wipe_out, 
+                                                        summary_filepath, **filter_args)
     print("\tsaving filtered samples csv ... \n")
     # save filtered_df to csv in metadata output folder
     utils.df_to_csv(df_passed, passed_filepath)
     # copy all_samples.csv to metadata
     shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
-    return metadata, filter_args, df_passed
+    return metadata, filter_args, df_passed, df_samples
 
 def consistify_samples(results_path, cat_mov_path):
     """
@@ -245,7 +256,7 @@ def full_pipeline(results_path, consensus_path,
     metadata_update, *_ = update_samples(results_path, summary_filepath)
     metadata = metadata_update
     # filter samples
-    metadata_filt, filter_args, df_passed = sample_filter(results_path, **kwargs)
+    metadata_filt, filter_args, df_passed, _ = sample_filter(results_path, **kwargs)
     metadata.update(metadata_filt)
     # create metadatapath
     metadata_path = os.path.join(results_path, "metadata")
@@ -271,16 +282,25 @@ def full_pipeline(results_path, consensus_path,
     metadata.update(metadata_phylo)
     return (metadata,)
 
-def report(results_path, df_passed, df_consistified, 
+def report(results_path, df_no_dedup, df_passed, df_consistified, 
            summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
-    # download sample summary csv
-    df_summary = update_summary.get_df_summary(summary_filepath)
     # get dataframe of filtered samples
-    df_filtered = df_summary[df_summary.index.isin(df_passed.index)]
+    df_filtered = df_no_dedup[df_no_dedup.index.isin(df_passed.index)]
     # get dataframe of fail samples
     df_fail = filter_samples.filter_columns_categorical(df_filtered, Outcome=["Contaminated",
                                                                               "InsufficientData",
-                                                                              "CheckRequired"])
+                                                                              "CheckRequired",
+                                                                              "LowQualData"])
+    # get dataframe of non btb samples
+    df_nonbTB = filter_samples.filter_columns_categorical(df_filtered, flag=["Microti",
+                                                                             "Pinnipedii",
+                                                                             "MicPin",
+                                                                             "nonbTB",
+                                                                             "LowCoverage",
+                                                                             "nonBritishbTB"])
+    # get dataframe of low pcMapped samples
+    df_low_pcMapped = filter_samples.filter_columns_numeric(df_filtered, pcMapped=(0, 89.99))
+    df_report = df_fail[["Submission", "df_fail"]]
 
 def view_bovine(results_path, consensus_path, cat_mov_path,  
                 clade_info_path=DEFAULT_CLADE_INFO_PATH, 
@@ -296,16 +316,16 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     metadata_update, *_ = update_samples(results_path, summary_filepath)
     metadata = metadata_update
     # filter on pcMapped, flag and fail samples
-    metadata_filt, filter_args, df_passed = sample_filter(results_path, flag=["BritishbTB"], 
-                                                          pcMapped=(90,100))
+    metadata_filt, filter_args, df_passed, df_no_dedup = sample_filter(results_path, flag=["BritishbTB"], 
+                                                                       pcMapped=(90, 100))
     i = 1
     num_passed_samples = metadata_filt["number_of_passed_samples"]
     # loop through clades in CladeInfo.csv
     for clade, row in clade_info_df.iterrows():
         print(f"## Filtering samples for clade {i} / {len(clade_info_df)} ##")
         # filters samples within each clade according to Ncount in CladeInfo.csv
-        metadata_filt, filter_clade, df_clade = sample_filter(results_path, df_passed, allow_wipe_out=True, 
-                                                              group=[clade], Ncount=(0, row["maxN"]))
+        metadata_filt, filter_clade, df_clade, _ = sample_filter(results_path, df_passed, allow_wipe_out=True, 
+                                                                 group=[clade], Ncount=(0, row["maxN"]))
         del filter_clade["group"]
         filter_args[clade] = filter_clade
         # sum the number of filtered samples

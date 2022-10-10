@@ -47,7 +47,6 @@ def remove_duplicates(df, **kwargs):
 
         Returns:
             df (pandas DataFrame object)
-
     """
     if not kwargs:
         raise TypeError("no kwargs provided, provide a column name and method for "
@@ -205,7 +204,8 @@ def filter_columns_categorical(df, **kwargs):
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
     return df.query(query)
 
-def get_samples_df(df_samples=None, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
+def get_samples_df(df_samples=None, allow_wipe_out=False, 
+                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
     """
         Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
@@ -215,10 +215,9 @@ def get_samples_df(df_samples=None, summary_filepath=utils.DEFAULT_SUMMARY_FILEP
     # into remove duplicates()
     # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
     if df_samples is not None:
-        df = df_samples.pipe(filter_df, **kwargs).pipe(remove_duplicates, pcMapped="max", Ncount="min")
+        df = df_samples.pipe(filter_df, allow_wipe_out, **kwargs)
     else:
-        df = utils.summary_csv_to_df(summary_filepath).pipe(filter_df,
-                                                            **kwargs).pipe(remove_duplicates, 
-                                                                        pcMapped="max", Ncount="min")
+        df = utils.summary_csv_to_df(summary_filepath).pipe(filter_df, allow_wipe_out,
+                                                            **kwargs)
     metadata = {"number_of_passed_samples": len(df)}
     return df, metadata
