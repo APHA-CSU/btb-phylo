@@ -280,30 +280,34 @@ def full_pipeline(results_path, consensus_path,
     metadata.update(metadata_phylo)
     return (metadata,)
 
-def report(df_no_dedup, df_passed):
+def report(df_no_dedup, df_passed, df_clade_info):
     # get dataframe of filtered samples
-    df_filtered = df_no_dedup[df_no_dedup.index.isin(df_passed.index)]
+    df_filtered = df_no_dedup.drop(list(df_passed.index))
     # get dataframe of fail samples
-    df_fail = filter_samples.filter_columns_categorical(df_filtered, Outcome=["Contaminated",
-                                                                              "InsufficientData",
-                                                                              "CheckRequired",
-                                                                              "LowQualData"])
+    #df_fail = filter_samples.filter_columns_categorical(df_filtered, Outcome=["Contaminated",
+    #                                                                          "InsufficientData",
+    #                                                                          "CheckRequired",
+    #                                                                          "LowQualData"])
     # get dataframe of non btb samples
-    df_nonbTB = filter_samples.filter_columns_categorical(df_filtered, flag=["Microti",
-                                                                             "Pinnipedii",
-                                                                             "MicPin",
-                                                                             "nonbTB",
-                                                                             "LowCoverage",
-                                                                             "nonBritishbTB"])
+    #df_nonbTB = filter_samples.filter_columns_categorical(df_filtered, flag=["Microti",
+    #                                                                         "Pinnipedii",
+    #                                                                         "MicPin",
+    #                                                                         "nonbTB",
+    #                                                                         "LowCoverage",
+    #                                                                         "nonBritishbTB"])
     # get dataframe of low pcMapped samples
-    df_low_pcMapped = filter_samples.filter_columns_numeric(df_filtered, pcMapped=(0, 89.99))
+    #df_low_pcMapped = filter_samples.filter_columns_numeric(df_filtered, pcMapped=(0, 89.99))
     # build report
-    df_report = df_fail[["Submission", "Outcome", "flag", "pcMapped"]]
-    df_report = pd.concat([df_report, df_nonbTB[["Submission", "Outcome", "flag", "pcMapped"]]]) 
-    df_report = pd.concat([df_report, df_low_pcMapped[["Submission", "Outcome", "flag", "pcMapped"]]]) 
-    df_report =  df_report.drop_duplicates(["Submission"])
-    df_report["pcMapped"] = df_report["pcMapped"].map(lambda x: "Pass" if x >= 90 else "Fail")
-    return df_report.drop_duplicates(["Submission"])
+    df_report = df_filtered[["Submission", "Outcome", "flag"]]#, "pcMapped", "group", "Ncount"]]
+    #df_report = pd.concat([df_report, df_nonbTB[["Submission", "Outcome", "flag", "pcMapped"]]]) 
+    #df_report = pd.concat([df_report, df_low_pcMapped[["Submission", "Outcome", "flag", "pcMapped"]]]) 
+    #df_report =  df_report.drop_duplicates(["Submission"])
+    df_report["pcMapped"] = df_filtered["pcMapped"].map(lambda x: "Pass" if x >= 90 else "Fail")
+    # I think the issue here is that It's rewriting over the whole series at df_report["Ncount"] each time
+    for clade, row in df_clade_info.iterrows():
+        df_report["Ncount"] = df_filtered.apply(lambda sample: "Pass" if sample["group"]==clade \
+            and sample["Ncount"]<=row["maxN"] else "Fail", axis=1)
+    return df_report
 
 def view_bovine(results_path, consensus_path, cat_mov_path,  
                 clade_info_path=DEFAULT_CLADE_INFO_PATH, 
@@ -314,18 +318,18 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
         movement data, and runs phylogeny
     """
     # load CladeInfo.csv
-    clade_info_df = pd.read_csv(clade_info_path, index_col="clade")
+    df_clade_info = pd.read_csv(clade_info_path, index_col="clade")
     # update full sample summary
     metadata_update, *_ = update_samples(results_path, summary_filepath)
     metadata = metadata_update
-    # filter on pcMapped, flag and fail samples
+    # filter full set on pcMapped, flag and fail samples
     metadata_filt, filter_args, df_passed, df_no_dedup = sample_filter(results_path, flag=["BritishbTB"], 
                                                                        pcMapped=(90, 100))
     i = 1
     num_passed_samples = metadata_filt["number_of_passed_samples"]
     # loop through clades in CladeInfo.csv
-    for clade, row in clade_info_df.iterrows():
-        print(f"## Filtering samples for clade {i} / {len(clade_info_df)} ##")
+    for clade, row in df_clade_info.iterrows():
+        print(f"## Filtering samples for clade {i} / {len(df_clade_info)} ##")
         # filters samples within each clade according to Ncount in CladeInfo.csv
         metadata_filt, filter_clade, df_clade, _ = sample_filter(results_path, df_passed, allow_wipe_out=True, 
                                                                  group=[clade], Ncount=(0, row["maxN"]))
@@ -334,7 +338,7 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
         # sum the number of filtered samples
         num_passed_samples += metadata_filt["number_of_passed_samples"]
         # update df_passed with cladewise filtering
-        df_passed = pd.concat([df_passed, df_clade], ignore_index=True)
+        df_passed = pd.concat([df_passed, df_clade]).drop_duplicates(["Submission"])
         i += 1
     # create metadatapath
     metadata_path = os.path.join(results_path, "metadata")
@@ -350,7 +354,7 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     metadata.update(metadata_filt)
     metadata["number_of_passed_samples"] = num_passed_samples
     # generate report
-    df_report = report(df_no_dedup, df_passed)
+    df_report = report(df_no_dedup, df_passed, df_clade_info)
     df_report.to_csv("/home/nickpestell/tmp/test_3/report.csv", index=False)
     # consistify datasets for ViewBovine
     metadata_consist, df_consistified = consistify_samples(results_path, cat_mov_path)
