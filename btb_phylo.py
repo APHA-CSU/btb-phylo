@@ -17,8 +17,6 @@ import btbphylo.phylogeny as phylogeny
 
 DEFAULT_CLADE_INFO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "CladeInfo.csv")
 
-# TODO: warning if setting consnesus directory to local path or using light_mode that there will need to be x amount of storage on the machine
-
 def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
         Updates the local copy of the sample summary csv file containing metadata 
@@ -282,8 +280,7 @@ def full_pipeline(results_path, consensus_path,
     metadata.update(metadata_phylo)
     return (metadata,)
 
-def report(results_path, df_no_dedup, df_passed, df_consistified, 
-           summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
+def report(df_no_dedup, df_passed):
     # get dataframe of filtered samples
     df_filtered = df_no_dedup[df_no_dedup.index.isin(df_passed.index)]
     # get dataframe of fail samples
@@ -301,9 +298,12 @@ def report(results_path, df_no_dedup, df_passed, df_consistified,
     # get dataframe of low pcMapped samples
     df_low_pcMapped = filter_samples.filter_columns_numeric(df_filtered, pcMapped=(0, 89.99))
     # build report
-    df_report = df_fail[["Submission", "Outcome"]]
-    df_report = df_report.join(df_nonbTB[["Submission", "flag"]], on="Submission", how="outer")
-    df_report = df_report.join(df_low_pcMapped[["Submission", "pcMapped"]], on="Submission", how="outer")
+    df_report = df_fail[["Submission", "Outcome", "flag", "pcMapped"]]
+    df_report = pd.concat([df_report, df_nonbTB[["Submission", "Outcome", "flag", "pcMapped"]]]) 
+    df_report = pd.concat([df_report, df_low_pcMapped[["Submission", "Outcome", "flag", "pcMapped"]]]) 
+    df_report =  df_report.drop_duplicates(["Submission"])
+    df_report["pcMapped"] = df_report["pcMapped"].map(lambda x: "Pass" if x >= 90 else "Fail")
+    return df_report.drop_duplicates(["Submission"])
 
 def view_bovine(results_path, consensus_path, cat_mov_path,  
                 clade_info_path=DEFAULT_CLADE_INFO_PATH, 
@@ -349,6 +349,9 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     # update metadata
     metadata.update(metadata_filt)
     metadata["number_of_passed_samples"] = num_passed_samples
+    # generate report
+    df_report = report(df_no_dedup, df_passed)
+    df_report.to_csv("/home/nickpestell/tmp/test_3/report.csv", index=False)
     # consistify datasets for ViewBovine
     metadata_consist, df_consistified = consistify_samples(results_path, cat_mov_path)
     # update metadata
