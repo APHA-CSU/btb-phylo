@@ -81,9 +81,13 @@ def sample_filter(results_path, df_samples=None, allow_wipe_out=False,
         Returns:
             metadata (dict): filtering related metadata
 
+            filter_args
+
             df_passed (pandas DataFrame object): a dataframe of 'Pass'
             only samples filtered according to criteria set out in 
             arguments.
+
+            df_samples
     """
     print("\n## Filter Samples ##\n")
     # create metadatapath
@@ -155,13 +159,17 @@ def consistify_samples(results_path, cat_mov_path):
     consistified_movement_filepath = os.path.join(results_path, "movement.csv")
     # run consistify and save metadata in results root
     print("\tconsistifying samples ... \n")
-    metadata, wgs_consist = consistify.consistify_csvs(passed_filepath, cattle_filepath, movement_filepath,
-                                                       consistified_wgs_filepath,  consistified_cattle_filepath, 
-                                                       consistified_movement_filepath, metadata_path)
+    metadata, missing_wgs, wgs_consist = consistify.consistify_csvs(passed_filepath, 
+                                                                    cattle_filepath, 
+                                                                    movement_filepath, 
+                                                                    consistified_wgs_filepath,  
+                                                                    consistified_cattle_filepath, 
+                                                                    consistified_movement_filepath, 
+                                                                    metadata_path)
     # copy cattle and movement csvs to metadata
     shutil.copy(cattle_filepath, os.path.join(metadata_path, "cattle.csv"))
     shutil.copy(movement_filepath, os.path.join(metadata_path, "movement.csv"))
-    return metadata, wgs_consist
+    return metadata, missing_wgs, wgs_consist
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
           build_tree=False, df_passed=None, light_mode=False):
@@ -264,7 +272,7 @@ def full_pipeline(results_path, consensus_path,
     # if running in ViewBovine must consistify datasets
     if cat_mov_path:
         # consistify datasets for ViewBovine
-        metadata_consist, df_consistified = consistify_samples(results_path, cat_mov_path)
+        metadata_consist, _, df_consistified = consistify_samples(results_path, cat_mov_path)
         # update metadata
         metadata.update(metadata_consist)
         # run phylogeny
@@ -280,16 +288,19 @@ def full_pipeline(results_path, consensus_path,
     metadata.update(metadata_phylo)
     return (metadata,)
 
-def report(df_no_dedup, df_passed, df_clade_info):
-    # get dataframe of filtered samples
-    df_filtered = df_no_dedup.drop(list(df_passed.index))
-    df_report = df_filtered[["Submission", "Outcome", "flag"]]#, "pcMapped", "group", "Ncount"]]
-    df_report["pcMapped"] = df_filtered["pcMapped"].map(lambda x: "Pass" if x >= 90 else "Fail")
+def report(df_no_dedup, df_included, missing_wgs, df_clade_info):
+    # get dataframe of excluded samples
+    #df_excluded = df_no_dedup.drop(list(df_included.index))
+    df_excluded = df_no_dedup[~df_no_dedup["Submission"].isin(df_included["Submission"])]
+    df_report = df_excluded[["Submission", "Outcome", "flag"]]
+    df_report["pcMapped"] = df_excluded["pcMapped"].map(lambda x: "Pass" if x >= 90 else "Fail")
     df_report["Ncount"] = "Fail"
     for clade, row in df_clade_info.iterrows():
-        df_report["Ncount"][df_filtered.index[df_filtered["group"]==clade]] = \
-            df_filtered.loc[df_filtered["group"]==clade].apply(lambda sample: "Pass" if sample["group"]==clade \
+        df_report["Ncount"][df_excluded.index[df_excluded["group"]==clade]] = \
+            df_excluded.loc[df_excluded["group"]==clade].apply(lambda sample: "Pass" if sample["group"]==clade \
                 and sample["Ncount"]<=row["maxN"] else "Fail", axis=1)
+    # seems to be mostly working but this line - every sample is coming back as "False"
+    df_report["metadata"] = df_report["Submission"].map(lambda x: x in missing_wgs["Submission"])
     return df_report
 
 def view_bovine(results_path, consensus_path, cat_mov_path,  
@@ -336,11 +347,11 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     # update metadata
     metadata.update(metadata_filt)
     metadata["number_of_passed_samples"] = num_passed_samples
-    # generate report
-    df_report = report(df_no_dedup, df_passed, df_clade_info)
-    df_report.to_csv("/home/nickpestell/tmp/test_3/report.csv", index=False)
     # consistify datasets for ViewBovine
-    metadata_consist, df_consistified = consistify_samples(results_path, cat_mov_path)
+    metadata_consist, missing_wgs, df_consistified = consistify_samples(results_path, cat_mov_path)
+    # generate report
+    df_report = report(df_no_dedup, df_consistified, missing_wgs, df_clade_info)
+    df_report.to_csv("/home/nickpestell/tmp/test_3/report.csv", index=False)
     # update metadata
     metadata.update(metadata_consist)
     # run phylogeny
