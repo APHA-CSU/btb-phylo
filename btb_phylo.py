@@ -283,30 +283,13 @@ def full_pipeline(results_path, consensus_path,
 def report(df_no_dedup, df_passed, df_clade_info):
     # get dataframe of filtered samples
     df_filtered = df_no_dedup.drop(list(df_passed.index))
-    # get dataframe of fail samples
-    #df_fail = filter_samples.filter_columns_categorical(df_filtered, Outcome=["Contaminated",
-    #                                                                          "InsufficientData",
-    #                                                                          "CheckRequired",
-    #                                                                          "LowQualData"])
-    # get dataframe of non btb samples
-    #df_nonbTB = filter_samples.filter_columns_categorical(df_filtered, flag=["Microti",
-    #                                                                         "Pinnipedii",
-    #                                                                         "MicPin",
-    #                                                                         "nonbTB",
-    #                                                                         "LowCoverage",
-    #                                                                         "nonBritishbTB"])
-    # get dataframe of low pcMapped samples
-    #df_low_pcMapped = filter_samples.filter_columns_numeric(df_filtered, pcMapped=(0, 89.99))
-    # build report
     df_report = df_filtered[["Submission", "Outcome", "flag"]]#, "pcMapped", "group", "Ncount"]]
-    #df_report = pd.concat([df_report, df_nonbTB[["Submission", "Outcome", "flag", "pcMapped"]]]) 
-    #df_report = pd.concat([df_report, df_low_pcMapped[["Submission", "Outcome", "flag", "pcMapped"]]]) 
-    #df_report =  df_report.drop_duplicates(["Submission"])
     df_report["pcMapped"] = df_filtered["pcMapped"].map(lambda x: "Pass" if x >= 90 else "Fail")
-    # I think the issue here is that It's rewriting over the whole series at df_report["Ncount"] each time
+    df_report["Ncount"] = "Fail"
     for clade, row in df_clade_info.iterrows():
-        df_report["Ncount"] = df_filtered.apply(lambda sample: "Pass" if sample["group"]==clade \
-            and sample["Ncount"]<=row["maxN"] else "Fail", axis=1)
+        df_report["Ncount"][df_filtered.index[df_filtered["group"]==clade]] = \
+            df_filtered.loc[df_filtered["group"]==clade].apply(lambda sample: "Pass" if sample["group"]==clade \
+                and sample["Ncount"]<=row["maxN"] else "Fail", axis=1)
     return df_report
 
 def view_bovine(results_path, consensus_path, cat_mov_path,  
