@@ -15,6 +15,22 @@ DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.dirname(path.abspath(__fi
                                      "all_samples.csv")
 
 
+class InvalidDtype(Exception):
+    def __init__(self, message="Invalid series name. Series must be of correct type", 
+                 *args, **kwargs):
+        super().__init__(message, args, kwargs)
+        if "dtype" in kwargs:
+            self.message = f"Invalid series name. Series must be of type {kwargs['dtype']}"
+        if "column_name" in kwargs:
+            self.message = f"Invalid series name '{kwargs['column_name']}'. Series must be of the correct type"
+        if "column_name" in kwargs and "dtype" in kwargs:
+            self.message = f"Invalid series name '{kwargs['column_name']}'. Series must be of type {kwargs['dtype']}"
+        else:
+            self.message = message
+
+    def __str__(self):
+        return self.message
+
 class NoS3ObjectError(Exception):
     def __init__(self, bucket, key):
         super().__init__()
