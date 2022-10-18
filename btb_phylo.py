@@ -293,10 +293,10 @@ def full_pipeline(results_path, consensus_path,
     metadata.update(metadata_phylo)
     return (metadata,)
 
-def report(df_no_dedup, df_included, missing_wgs, df_clade_info):
-    # get dataframe of excluded samples
-    #df_excluded = df_no_dedup.drop(list(df_included.index))
+def report(df_no_dedup, df_included, missing_wgs, missing_cattle, missing_movement, df_clade_info):
+    # get dataframe of excluded samples: df_deduped - df_included
     df_excluded = df_no_dedup[~df_no_dedup["Submission"].isin(df_included["Submission"])]
+    # subsample columns
     df_report = df_excluded[["Submission", "Outcome", "flag"]]
     df_report["pcMapped"] = df_excluded["pcMapped"].map(lambda x: "Pass" if x >= 90 else "Fail")
     df_report["Ncount"] = "Fail"
@@ -305,7 +305,7 @@ def report(df_no_dedup, df_included, missing_wgs, df_clade_info):
             df_excluded.loc[df_excluded["group"]==clade].apply(lambda sample: "Pass" if sample["group"]==clade \
                 and sample["Ncount"]<=row["maxN"] else "Fail", axis=1)
     # seems to be mostly working but this line - every sample is coming back as "False"
-    df_report["metadata"] = df_report["Submission"].map(lambda x: x in missing_wgs["Submission"])
+    df_report["metadata"] = df_report["Submission"].map(lambda x: x not in list(missing_wgs["Submission"]))
     return df_report
 
 def view_bovine(results_path, consensus_path, cat_mov_path,  
@@ -324,7 +324,7 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     metadata = metadata_update
     # remove duplicates
     df_deduped = de_duplicate_samples(results_path)
-    # consistify datasets for ViewBovine
+    # consistify datasets for ViewBovine - TODO: maybe run of df_deduped rather than CSV in results path, maybe also return the other missing files ...
     metadata_consist, missing_wgs, df_consistified = consistify_samples(results_path, 
                                                                         os.path.join(metadata_path, 
                                                                                      "deduped_wgs.csv"), 
