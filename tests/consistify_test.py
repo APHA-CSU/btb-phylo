@@ -11,6 +11,7 @@ class TestConsistify(unittest.TestCase):
         test_wgs = pd.DataFrame({"Submission": ["A", "B", "C", "D"]})
         test_cattle = pd.DataFrame({"CVLRef": ["B", "C", "D"]})
         test_movement = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D", "E"]})
+        # test output
         test_wgs_consist = pd.DataFrame({"Submission": ["C", "D"]})
         test_cattle_consist = pd.DataFrame({"CVLRef": ["C", "D"]})
         test_movement_consist = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D"]})

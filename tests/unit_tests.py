@@ -5,6 +5,7 @@ from phylogeny_test import TestPhylogeny
 from filter_samples_test import TestFilterSamples
 from update_summary_test import TestUpdateSummary
 from consistify_test import TestConsistify
+from missing_samples_report_test import TestMissingSamplesReport
 from de_duplicate_test import TestDeDuplicate
 from utils_test import TestUtils
 
@@ -27,6 +28,9 @@ if __name__ == "__main__":
     update_summary_test = [TestUpdateSummary('test_append_df_summary'),
                            TestUpdateSummary('test_get_finalout_s3_keys'),
                            TestUpdateSummary('test_extract_s3_key')]
+    missing_samples_report_test = [TestMissingSamplesReport('test_get_excluded'),
+                                   TestMissingSamplesReport('test_exclusion_reason'),
+                                   TestMissingSamplesReport('test_missing_data')]
     consistify_test = [TestConsistify('test_consistify'),
                        TestConsistify('test_clade_correction')]
     utils_test = [TestUtils('test_extract_submission_no')]
@@ -45,6 +49,8 @@ if __name__ == "__main__":
             runner.run(test_suit(de_duplicate_test)) 
         elif args.module[0] == 'update_summary':
             runner.run(test_suit(update_summary_test)) 
+        elif args.module[0] == 'missing_samples_report':
+            runner.run(test_suit(missing_samples_report_test)) 
         elif args.module[0] == 'consistify':
             runner.run(test_suit(consistify_test)) 
         elif args.module[0] == 'utils':

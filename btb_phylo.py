@@ -182,7 +182,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     """
         Runs phylogeny on filtered samples: Downloads consensus files, 
         concatonates into 1 large fasta file, runs snp-sites, runs snp-dists
-        and runs megacc 
+        and runs megacc. 
 
         Pramaters:
             results_path (str):  output path to results directory
