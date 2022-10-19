@@ -124,4 +124,4 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv", index=False)
     (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv", index=False)
     (pd.DataFrame(missing_movement)).to_csv(missing_samples_path + "/missing_movement.csv", index=False)
-    return metadata, missing_wgs, wgs_consist
+    return metadata, missing_wgs, missing_cattle, missing_movement, wgs_consist
