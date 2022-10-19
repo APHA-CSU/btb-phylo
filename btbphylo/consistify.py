@@ -31,14 +31,14 @@ def consistify(wgs, cattle, movement):
             movement_consist (pandas DataFrame object): consistified
             movement
 
-            missing_wgs (pandas DataFrame object): wgs samples which are 
-            not common to both cattle and movement
+            missing_wgs (pandas DataFrame object): samples that are 
+            missing from WGS data
 
-            missing_cattle (pandas DataFrame object): cattle samples which
-            are not common to both wgs and movement
+            missing_cattle (pandas DataFrame object): samples that are
+            missing from cattle data
 
-            missing movement (pandas DataFrame object): movement samples
-            which are not common to both wgs and cattle
+            missing movement (pandas DataFrame object): samples that
+            are missing from movement data
     """
     # sets of sample names for the different datasets
     wgs_samples = set(wgs.Submission)
@@ -47,16 +47,16 @@ def consistify(wgs, cattle, movement):
     # subsample to select common sample names
     consist_samples = wgs_samples.intersection(cattle_samples)\
         .intersection(movement_samples)
-    # extract the missing
-    missing_wgs = pd.DataFrame({"Submission": sorted(list((cattle_samples | movement_samples)-wgs_samples))})
-    missing_cattle = pd.DataFrame({"CVLRef": sorted(list((wgs_samples | movement_samples)-cattle_samples))})
-    missing_movement = pd.DataFrame({"SampleName": sorted(list((wgs_samples | cattle_samples)-movement_samples))})
+    # extract the missing samples
+    missing_wgs_samples = (cattle_samples | movement_samples)-wgs_samples
+    missing_cattle_samples = (wgs_samples | movement_samples)-cattle_samples
+    missing_movement_samples = (wgs_samples | cattle_samples)-movement_samples
     # subsample full datasets by common names
     wgs_consist = wgs.loc[wgs["Submission"].isin(consist_samples)].copy()
     cattle_consist = cattle[cattle.CVLRef.isin(consist_samples)].copy()
     movement_consist = movement[movement.SampleName.isin(consist_samples)].copy()
     return wgs_consist, cattle_consist, movement_consist,\
-        missing_wgs, missing_cattle, missing_movement
+        missing_wgs_samples, missing_cattle_samples, missing_movement_samples
 
 def clade_correction(wgs, cattle):
     """
@@ -103,7 +103,7 @@ def process_datasets(wgs, cattle, movement):
 
 def consistify_csvs(filtered_samples_path, cattle_path, movement_path, 
                     consistified_wgs_path, consistified_cattle_path, 
-                    consisitified_movement_path, missing_samples_path):
+                    consisitified_movement_path):
     """
         An I/O layer for consistify: Parses wgs, cattle and movement CSVs.
         Runs consistify().
@@ -114,14 +114,12 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     cattle = pd.read_csv(cattle_path, dtype=object)
     movement = pd.read_csv(movement_path, dtype=object)
     # process data
-    (metadata, wgs_consist, cattle_corrected, movement_fixed, missing_wgs, \
-        missing_cattle, missing_movement) = process_datasets(wgs, cattle, movement)
+    metadata, wgs_consist, cattle_corrected, movement_fixed, missing_wgs_samples, \
+        missing_cattle_samples, missing_movement_samples \
+            = process_datasets(wgs, cattle, movement)
     # save consistified csvs
     utils.df_to_csv(wgs_consist, consistified_wgs_path)
     cattle_corrected.to_csv(consistified_cattle_path, index=False)
     movement_fixed.to_csv(consisitified_movement_path, index=False)
-    # save missing samples csvs
-    (pd.DataFrame(missing_wgs)).to_csv(missing_samples_path + "/missing_snps.csv", index=False)
-    (pd.DataFrame(missing_cattle)).to_csv(missing_samples_path + "/missing_cattle.csv", index=False)
-    (pd.DataFrame(missing_movement)).to_csv(missing_samples_path + "/missing_movement.csv", index=False)
-    return metadata, missing_wgs, missing_cattle, missing_movement, wgs_consist
+    return metadata, missing_wgs_samples, missing_cattle_samples, \
+        missing_movement_samples, wgs_consist

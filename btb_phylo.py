@@ -11,8 +11,9 @@ import pandas as pd
 
 import btbphylo.utils as utils
 import btbphylo.update_summary as update_summary
-import btbphylo.consistify as consistify
 import btbphylo.de_duplicate as de_duplicate
+import btbphylo.consistify as consistify
+import btbphylo.missing_samples_report as missing_samples_report
 import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
 
@@ -100,8 +101,7 @@ def consistify_samples(results_path, wgs_samples_path, cat_mov_path):
                                    movement_filepath, 
                                    consistified_wgs_filepath,  
                                    consistified_cattle_filepath, 
-                                   consistified_movement_filepath, 
-                                   metadata_path)
+                                   consistified_movement_filepath) 
     # copy cattle and movement csvs to metadata
     shutil.copy(cattle_filepath, os.path.join(metadata_path, "cattle.csv"))
     shutil.copy(movement_filepath, os.path.join(metadata_path, "movement.csv"))
@@ -294,36 +294,6 @@ def full_pipeline(results_path, consensus_path,
     metadata.update(metadata_phylo)
     return (metadata,)
 
-def report(df_no_dedup, df_included, missing_wgs, missing_cattle, missing_movement, df_clade_info):
-    # get dataframe of excluded samples: df_deduped - df_included
-    df_excluded = df_no_dedup[~df_no_dedup["Submission"].isin(df_included["Submission"])]
-    # subsample columns
-    df_report = df_excluded[["Submission", "Outcome", "flag"]]
-    df_report["pcMapped"] = df_excluded["pcMapped"].map(lambda x: "Pass" if x >= 90 else "Fail")
-    df_report["Ncount"] = "Fail"
-    for clade, row in df_clade_info.iterrows():
-        df_report["Ncount"][df_excluded.index[df_excluded["group"]==clade]] = \
-            df_excluded.loc[df_excluded["group"]==clade].apply(lambda sample: "Pass" if sample["group"]==clade \
-                and sample["Ncount"]<=row["maxN"] else "Fail", axis=1)
-    missing_wgs_samples = (set(missing_movement["SampleName"]) | set(missing_cattle["CVLRef"])) - set(missing_wgs["Submission"])
-    missing_cattle_samples = (set(missing_movement["SampleName"]) | set(missing_wgs["Submission"])) - set(missing_cattle["CVLRef"])
-    missing_movement_samples = (set(missing_wgs["Submission"]) | set(missing_cattle["CVLRef"])) - set(missing_movement["SampleName"])
-    df_report["wgs_data"] = True
-    df_report["cattle_data"] = None 
-    df_report["movement_data"] = None 
-    df_missing_wgs = pd.DataFrame({"Submission": list(missing_wgs_samples), 
-                                   "Outcome": [None]*len(missing_wgs_samples),
-                                   "flag": [None]*len(missing_wgs_samples),
-                                   "pcMapped": [None]*len(missing_wgs_samples),
-                                   "Ncount": [None]*len(missing_wgs_samples),
-                                   "wgs_data": [False]*len(missing_wgs_samples),
-                                   "cattle_data": [None]*len(missing_wgs_samples),
-                                   "movement_data": [None]*len(missing_wgs_samples)})
-    df_report = pd.concat((df_report, df_missing_wgs), ignore_index=True)
-    df_report["cattle_data"] = df_report["Submission"].map(lambda x: x not in missing_cattle_samples)
-    df_report["movement_data"] = df_report["Submission"].map(lambda x: x not in missing_movement_samples)
-    return df_report
-
 def view_bovine(results_path, consensus_path, cat_mov_path,  
                 clade_info_path=DEFAULT_CLADE_INFO_PATH, 
                 summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
@@ -341,8 +311,8 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     # remove duplicates
     df_deduped = de_duplicate_samples(results_path)
     # consistify datasets for ViewBovine - TODO: maybe run of df_deduped rather than CSV in results path, maybe also return the other missing files ...
-    metadata_consist, missing_wgs, missing_cattle, missing_movement, df_consistified =\
-                                             consistify_samples(results_path, 
+    metadata_consist, missing_wgs_samples, missing_cattle_samples, missing_movement_samples, \
+        df_consistified = consistify_samples(results_path, 
                                              os.path.join(metadata_path, 
                                              "deduped_wgs.csv"), 
                                              cat_mov_path)
@@ -383,8 +353,10 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     # update metadata
     metadata.update(metadata_filt)
     metadata["number_of_passed_samples"] = num_passed_samples
-    # generate report
-    df_report = report(df_deduped, df_passed, missing_wgs, missing_cattle, missing_movement, df_clade_info)
+    # generate report of missing samples
+    df_report = missing_samples_report.report(df_deduped, df_passed, missing_wgs_samples, 
+                                              missing_cattle_samples, missing_movement_samples, 
+                                              df_clade_info)
     df_report.to_csv(os.path.join(metadata_path, "report.csv"), index=False)
     # run phylogeny
     metadata_phylo, *_ = phylo(results_path, consensus_path, n_threads=4, 
