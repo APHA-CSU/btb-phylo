@@ -31,14 +31,13 @@ def consistify(wgs, cattle, movement):
             movement_consist (pandas DataFrame object): consistified
             movement
 
-            missing_wgs (pandas DataFrame object): samples that are 
-            missing from WGS data
+            missing_wgs (set): samples that are missing from WGS data
 
-            missing_cattle (pandas DataFrame object): samples that are
-            missing from cattle data
+            missing_cattle (set): samples that are missing from cattle 
+            data
 
-            missing movement (pandas DataFrame object): samples that
-            are missing from movement data
+            missing movement (set): samples that are missing from 
+            movement data
     """
     # sets of sample names for the different datasets
     wgs_samples = set(wgs.Submission)
@@ -115,8 +114,8 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
     movement = pd.read_csv(movement_path, dtype=object)
     # process data
     metadata, wgs_consist, cattle_corrected, movement_fixed, missing_wgs_samples, \
-        missing_cattle_samples, missing_movement_samples \
-            = process_datasets(wgs, cattle, movement)
+        missing_cattle_samples, missing_movement_samples =\
+            process_datasets(wgs, cattle, movement)
     # save consistified csvs
     utils.df_to_csv(wgs_consist, consistified_wgs_path)
     cattle_corrected.to_csv(consistified_cattle_path, index=False)

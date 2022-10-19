@@ -27,6 +27,8 @@ def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH
         them to the a pandas DataFrame and saves the data to csv.
 
         Parameters:
+            results_path (str): output path to results directory
+
             summary_filepath (str): path to location of summary csv  
 
         Returns:
@@ -59,9 +61,10 @@ def de_duplicate_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FI
     df_deduped =  de_duplicate.remove_duplicates(df_samples, pcMapped="max", Ncount="min")
     deduped_path = os.path.join(results_path, "metadata/deduped_wgs.csv")
     df_deduped.to_csv(deduped_path, index=False)
-    return de_duplicate.remove_duplicates(df_samples, pcMapped="max", Ncount="min")
+    return df_deduped
 
-def consistify_samples(results_path, wgs_samples_path, cat_mov_path):
+def consistify_samples(results_path, cat_mov_path, df_wgs_samples=None,
+                       summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
         'Consistifies' wgs samples with cattle and movement samples; removes
         samples from each dataset that aren't present in all three datasets.
@@ -73,11 +76,25 @@ def consistify_samples(results_path, wgs_samples_path, cat_mov_path):
             cat_mov_path (str): path to folder containing cattle and movement
             .csv files 
 
+            df_samples (pandas DataFrame): optional dataframe on which to 
+            consistify. If not provided, the dataframe is parsed from 
+            summary_filepath csv.
+
+            summary_filepath (str): input path to location of summary csv  
+
         Returns:
             metadata (dict): metadata related to consitify
 
-            wgs_consist (pandas DataFrame object): consistified wgs samples; contains
-            the same fields as the summary csv 
+            missing_wgs (set): samples that are missing from WGS data
+
+            missing_cattle (set): samples that are missing from cattle 
+            data
+
+            missing movement (set): samples that are missing from 
+            movement data
+            
+            wgs_consist (pandas DataFrame object): consistified wgs samples; 
+            contains the same fields as the summary csv 
     """
     print("\n## Consistify ##\n")
     # cattle and movement csv filepaths
@@ -93,19 +110,26 @@ def consistify_samples(results_path, wgs_samples_path, cat_mov_path):
     consistified_wgs_filepath = os.path.join(metadata_path, "consistified_wgs.csv")
     consistified_cattle_filepath = os.path.join(results_path, "cattle.csv")
     consistified_movement_filepath = os.path.join(results_path, "movement.csv")
-    # run consistify and save metadata in results root
+    # load
+    if df_wgs_samples is None:
+        df_wgs_samples = utils.summary_csv_to_df(summary_filepath)
+    df_cattle_samples = pd.read_csv(cattle_filepath, dtype=object)
+    df_movement_samples = pd.read_csv(movement_filepath, dtype=object)
+    # process data
     print("\tconsistifying samples ... \n")
-    metadata, missing_wgs, missing_cattle, missing_movement, wgs_consist = \
-        consistify.consistify_csvs(wgs_samples_path, 
-                                   cattle_filepath, 
-                                   movement_filepath, 
-                                   consistified_wgs_filepath,  
-                                   consistified_cattle_filepath, 
-                                   consistified_movement_filepath) 
+    metadata, wgs_consist, cattle_corrected, movement_fixed, missing_wgs_samples, \
+        missing_cattle_samples, missing_movement_samples =\
+            consistify.process_datasets(df_wgs_samples, df_cattle_samples, 
+                                        df_movement_samples)
+    # save consistified csvs
+    utils.df_to_csv(wgs_consist, consistified_wgs_filepath)
+    cattle_corrected.to_csv(consistified_cattle_filepath, index=False)
+    movement_fixed.to_csv(consistified_movement_filepath, index=False)
     # copy cattle and movement csvs to metadata
     shutil.copy(cattle_filepath, os.path.join(metadata_path, "cattle.csv"))
     shutil.copy(movement_filepath, os.path.join(metadata_path, "movement.csv"))
-    return metadata, missing_wgs, missing_cattle, missing_movement, wgs_consist
+    return metadata, missing_wgs_samples, missing_cattle_samples, \
+        missing_movement_samples, wgs_consist
 
 def sample_filter(results_path, df_samples=None, allow_wipe_out=False, 
                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, config=False, **kwargs):
@@ -296,7 +320,8 @@ def full_pipeline(results_path, consensus_path,
 
 def view_bovine(results_path, consensus_path, cat_mov_path,  
                 clade_info_path=DEFAULT_CLADE_INFO_PATH, 
-                summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
+                summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
+                **kwargs):
     """
         Phylogeny for plugging into ViewBovine: filters samples with different 
         Ncount thresholds for each clade, consistifies samples with cattle and
@@ -310,12 +335,11 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     metadata = metadata_update
     # remove duplicates
     df_deduped = de_duplicate_samples(results_path)
-    # consistify datasets for ViewBovine - TODO: maybe run of df_deduped rather than CSV in results path, maybe also return the other missing files ...
+    # consistify datasets for ViewBovine
     metadata_consist, missing_wgs_samples, missing_cattle_samples, missing_movement_samples, \
         df_consistified = consistify_samples(results_path, 
-                                             os.path.join(metadata_path, 
-                                             "deduped_wgs.csv"), 
-                                             cat_mov_path)
+                                             cat_mov_path,
+                                             df_deduped)
     # update metadata
     metadata.update(metadata_consist)
     df_passed = pd.DataFrame(columns=["Sample", "GenomeCov", "MeanDepth", 
@@ -331,11 +355,12 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     for clade, row in df_clade_info.iterrows():
         print(f"## Filtering samples for clade {i} / {len(df_clade_info)} ##")
         # filters samples within each clade according to Ncount in CladeInfo.csv
-        metadata_filt, filter_clade, df_clade, _ = sample_filter(results_path, df_deduped, 
+        metadata_filt, filter_clade, df_clade, _ = sample_filter(results_path, 
+                                                                 df_consistified, 
                                                                  allow_wipe_out=True, 
-                                                                 flag=["BritishbTB"], 
-                                                                 group=[clade], pcMapped=(90,100),
-                                                                 Ncount=(0, row["maxN"]))
+                                                                 group=[clade],
+                                                                 Ncount=(0, row["maxN"]),
+                                                                 **kwargs)
         del filter_clade["group"]
         filter_args[clade] = filter_clade
         # sum the number of filtered samples
@@ -451,6 +476,9 @@ def parse_args():
                            default=DEFAULT_CLADE_INFO_PATH)
     subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
                            default=utils.DEFAULT_SUMMARY_FILEPATH)
+    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter",
+                           default=(0,90))
+    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter", default=["BritishbTB"])
     subparser.set_defaults(func=view_bovine)
 
     # pasre args
