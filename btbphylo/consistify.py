@@ -84,8 +84,8 @@ def process_datasets(wgs, cattle, movement):
         when using the ViewBovine app.
     """
     # consistify datasets
-    wgs_consist, cattle_consist, movement_consist, missing_wgs, missing_cattle, \
-        missing_movement = consistify(wgs.copy(), cattle.copy(), movement.copy())
+    wgs_consist, cattle_consist, movement_consist, *_ =\
+        consistify(wgs.copy(), cattle.copy(), movement.copy())
     # correct clade assignment in cattle csv
     cattle_corrected = clade_correction(wgs_consist, cattle_consist)
     # fix movement data
@@ -97,8 +97,7 @@ def process_datasets(wgs, cattle, movement):
                 "consistified_number_of_wgs_records": len(wgs_consist),
                 "consistified_number_of_cattle_records": len(cattle_corrected),
                 "consistified_number_of_movement_records": len(movement_consist)}
-    return metadata, wgs_consist, cattle_corrected, fixed_movement, \
-        missing_wgs, missing_cattle, missing_movement
+    return metadata, wgs_consist, cattle_corrected, fixed_movement
 
 def consistify_csvs(filtered_samples_path, cattle_path, movement_path, 
                     consistified_wgs_path, consistified_cattle_path, 

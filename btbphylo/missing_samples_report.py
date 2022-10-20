@@ -1,5 +1,7 @@
 import pandas as pd
 
+from btbphylo.consistify import consistify
+
 """
     Generates a Pandas DataFrame which reports on all samples that are excluded 
     from ViewBovine. 
@@ -64,8 +66,7 @@ def missing_data(df_report, missing_wgs_samples, missing_cattle_samples,
         map(lambda x: x not in missing_movement_samples)
     return df_report_missing_data
 
-def report(df_deduped, df_included, missing_wgs_samples, 
-           missing_cattle_samples, missing_movement_samples, df_clade_info):
+def report(df_deduped, df_included, cat_mov_path, df_clade_info):
     """
         Generates a Pandas DataFrame which reports on all samples that are 
         excluded from ViewBovine. The DataFrame has an entry for each 
@@ -97,6 +98,13 @@ def report(df_deduped, df_included, missing_wgs_samples,
             report (pandas DataFrame object): report of samples excluded from
             ViewBovine
     """
+    # cattle and movement csv filepaths
+    cattle_filepath = f"{cat_mov_path}/cattle.csv" 
+    movement_filepath = f"{cat_mov_path}/movement.csv" 
+    df_cattle = pd.read_csv(cattle_filepath, dtype=object)
+    df_movement = pd.read_csv(movement_filepath, dtype=object)
+    _, _, _, missing_wgs_samples, missing_cattle_samples, missing_movement_samples = \
+        consistify(df_deduped, df_cattle, df_movement)
     return df_deduped.pipe(get_excluded, df_included).pipe(exclusion_reason, df_clade_info).\
         pipe(missing_data, missing_wgs_samples, missing_cattle_samples, 
              missing_movement_samples)
