@@ -76,7 +76,7 @@ def consistify_samples(results_path, cat_mov_path, df_wgs_samples=None,
             cat_mov_path (str): path to folder containing cattle and movement
             .csv files 
 
-            df_samples (pandas DataFrame): optional dataframe on which to 
+            df_wgs_samples (pandas DataFrame): optional dataframe on which to 
             consistify. If not provided, the dataframe is parsed from 
             summary_filepath csv.
 
@@ -117,11 +117,11 @@ def consistify_samples(results_path, cat_mov_path, df_wgs_samples=None,
     df_movement_samples = pd.read_csv(movement_filepath, dtype=object)
     # process data
     print("\tconsistifying samples ... \n")
-    metadata, wgs_consist, cattle_corrected, movement_fixed, missing_wgs_samples, \
-        missing_cattle_samples, missing_movement_samples =\
+    metadata, cattle_corrected, movement_fixed, missing_wgs_samples, \
+        missing_cattle_samples, missing_movement_samples, wgs_consist =\
             consistify.process_datasets(df_wgs_samples, df_cattle_samples, 
                                         df_movement_samples)
-    # save consistified csvs
+    # save consistified cattle & movement csvs
     utils.df_to_csv(wgs_consist, consistified_wgs_filepath)
     cattle_corrected.to_csv(consistified_cattle_filepath, index=False)
     movement_fixed.to_csv(consistified_movement_filepath, index=False)
