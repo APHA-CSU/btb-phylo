@@ -376,9 +376,9 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     # update metadata
     metadata.update(metadata_consist)
     # generate report of missing samples
-    #df_report = missing_samples_report.report(df_deduped, df_consistified, cat_mov_path,
-    #                                          df_clade_info)
-    #df_report.to_csv(os.path.join(metadata_path, "report.csv"), index=False)
+    df_report = missing_samples_report.report(df_deduped, df_consistified, cat_mov_path,
+                                              df_clade_info)
+    df_report.to_csv(os.path.join(metadata_path, "report.csv"), index=False)
     # run phylogeny
     metadata_phylo, *_ = phylo(results_path, consensus_path, n_threads=4, 
                                df_passed=df_consistified, light_mode=True)
