@@ -117,8 +117,8 @@ def consistify_samples(results_path, cat_mov_path, df_wgs_samples=None,
     df_movement_samples = pd.read_csv(movement_filepath, dtype=object)
     # process data
     print("\tconsistifying samples ... \n")
-    metadata, cattle_corrected, movement_fixed, missing_wgs_samples, \
-        missing_cattle_samples, missing_movement_samples, wgs_consist =\
+    metadata, wgs_consist, cattle_corrected, movement_fixed, missing_wgs_samples, \
+        missing_cattle_samples, missing_movement_samples =\
             consistify.process_datasets(df_wgs_samples, df_cattle_samples, 
                                         df_movement_samples)
     # save consistified cattle & movement csvs
