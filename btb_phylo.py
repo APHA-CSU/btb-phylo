@@ -477,7 +477,7 @@ def parse_args():
     subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
                            default=utils.DEFAULT_SUMMARY_FILEPATH)
     subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter",
-                           default=(90,100))
+                           default=(90, 100))
     subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter", default=["BritishbTB"])
     subparser.set_defaults(func=view_bovine)
 
