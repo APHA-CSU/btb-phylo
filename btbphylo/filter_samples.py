@@ -50,14 +50,13 @@ def filter_df(df, allow_wipe_out=False, **kwargs):
         if key not in df.columns:
             raise ValueError(f"Invalid kwarg '{key}': must be one of: " 
                              f"{', '.join(df.columns.to_list())}")
+        if pd.api.types.is_categorical_dtype(df[key]) or \
+                pd.api.types.is_object_dtype(df[key]):
+            # add categorical columns in **kwargs to categorical_kwargs
+            categorical_kwargs[key] = kwargs[key]
         else:
-            if pd.api.types.is_categorical_dtype(df[key]) or \
-                    pd.api.types.is_object_dtype(df[key]):
-                # add categorical columns in **kwargs to categorical_kwargs
-                categorical_kwargs[key] = kwargs[key]
-            else:
-                # add numerical columns in **kwargs to numerical_kwargs
-                numerical_kwargs[key] = kwargs[key]
+            # add numerical columns in **kwargs to numerical_kwargs
+            numerical_kwargs[key] = kwargs[key]
     # calls filter_columns_catergorical() with **categorical_kwargs on df, pipes 
     # the output into filter_columns_numeric() with **numerical_kwargs and assigns
     # the output to a new df_passed
