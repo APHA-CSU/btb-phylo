@@ -1,8 +1,6 @@
 
 import pandas as pd
 
-import btbphylo.utils as utils
-
 
 """
     Removes dupliacte WGS samples
@@ -43,7 +41,7 @@ def remove_duplicates(df, **kwargs):
             if value != "min" and value != "max":
                 raise ValueError(f"Inavlid kwarg value: '{value}', for numerical column, "
                                 "must be either 'min' or 'max'")
-        elif value not in df[column_name]:
+        elif value not in list(df[column_name]):
             raise ValueError(f"Inavlid kwarg value: '{value}', for categorical column, "
                              f"must be a value in the '{column_name}' column")
         # get indexes to remove based on column_name and the selected value (min/max)
@@ -51,7 +49,8 @@ def remove_duplicates(df, **kwargs):
                                                   column_name, value)
         # update the remaining indexes by subtracting the indexes to remove
         remaining_indexes = remaining_indexes.difference(indexes_to_remove)
-    # drop the indexes to remove
+    # drop the indexes to remove - additional .drop_duplicates ensures the first appearing
+    # is kept if not resolved
     return df.drop(df.index.difference(remaining_indexes)).drop_duplicates(["Submission"])
 
 def get_indexes_to_remove(df, parameter, method):
@@ -75,20 +74,23 @@ def get_indexes_to_remove(df, parameter, method):
             indexes (pandas index object): indexes to remove from dataframe
     """
     indexes = pd.Index([])
+    submission_list = list(df["Submission"])
     for submission_no in df.Submission.unique():
-        # if parameter is numeric: set the threshold value to the max or min value 
-        # of that paramater for all samples with a Submission number of submission_no
-        if pd.api.types.is_numeric_dtype(df[parameter]):
-            if method == "max":
-                threshold = df.loc[df["Submission"]==submission_no][parameter].max()
-            elif method == "min":
-                threshold = df.loc[df["Submission"]==submission_no][parameter].min()
-        # otherwise: set the threshold to the method parameter
-        elif pd.api.types.is_categorical_dtype(df[parameter]) or \
-                pd.api.types.is_object_dtype(df[parameter]):
-            threshold = method 
-        # find all indexes for samples with Submission number = submission_no, where
-        # the parameter is not equal to threshold
-        indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
-            (df[parameter] != threshold)].index)
+        # ensure that only duplicates entries are considered
+        if submission_list.count(submission_no) > 1: 
+            # if parameter is numeric: set the threshold value to the max or min value 
+            # of that paramater for all samples with a Submission number of submission_no
+            if pd.api.types.is_numeric_dtype(df[parameter]):
+                if method == "max":
+                    threshold = df.loc[df["Submission"]==submission_no][parameter].max()
+                elif method == "min":
+                    threshold = df.loc[df["Submission"]==submission_no][parameter].min()
+            # otherwise: set the threshold to the method parameter
+            elif pd.api.types.is_categorical_dtype(df[parameter]) or \
+                    pd.api.types.is_object_dtype(df[parameter]):
+                threshold = method 
+            # find all indexes for samples with Submission number = submission_no, where
+            # the parameter is not equal to threshold
+            indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
+                (df[parameter] != threshold)].index)
     return indexes
