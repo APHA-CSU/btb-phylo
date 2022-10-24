@@ -26,7 +26,9 @@ def remove_duplicates(df, **kwargs):
             within the DataFrame's column if the specified column is categorical.    
 
         Returns:
-            df (pandas DataFrame object)
+            metadata (dict): contains the number of duplicate WGS entries
+            df_deduped (pandas DataFrame object): WGS samples with duplicate entries 
+            removed
     """
     if not kwargs:
         raise TypeError("no kwargs provided, provide a column name and value for "
@@ -51,7 +53,10 @@ def remove_duplicates(df, **kwargs):
         remaining_indexes = remaining_indexes.difference(indexes_to_remove)
     # drop the indexes to remove - additional .drop_duplicates ensures the first appearing
     # is kept if not resolved
-    return df.drop(df.index.difference(remaining_indexes)).drop_duplicates(["Submission"])
+    df_deduped = df.drop(df.index.difference(remaining_indexes)).drop_duplicates(["Submission"])
+    # metadata
+    metadata = {"number_of_duplicate_WGS_submissions": len(df)-len(df_deduped)}
+    return metadata, df_deduped
 
 def get_indexes_to_remove(df, parameter, method):
     """
@@ -76,7 +81,7 @@ def get_indexes_to_remove(df, parameter, method):
     indexes = pd.Index([])
     submission_list = list(df["Submission"])
     for submission_no in df.Submission.unique():
-        # ensure that only duplicates entries are considered
+        # ensure that only duplicated entries are considered
         if submission_list.count(submission_no) > 1: 
             # if parameter is numeric: set the threshold value to the max or min value 
             # of that paramater for all samples with a Submission number of submission_no
@@ -89,8 +94,10 @@ def get_indexes_to_remove(df, parameter, method):
             elif pd.api.types.is_categorical_dtype(df[parameter]) or \
                     pd.api.types.is_object_dtype(df[parameter]):
                 threshold = method 
-            # find all indexes for samples with Submission number = submission_no, where
-            # the parameter is not equal to threshold
-            indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
-                (df[parameter] != threshold)].index)
+            # ensure at least one entry meets requirement - avoids removing entire submission
+            if threshold in df.loc[(df["Submission"]==submission_no)][parameter].values:
+                # find all indexes for samples with Submission number = submission_no, where
+                # the parameter is not equal to threshold
+                indexes = indexes.append(df.loc[(df["Submission"]==submission_no) & \
+                    (df[parameter] != threshold)].index)
     return indexes

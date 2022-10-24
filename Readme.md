@@ -33,7 +33,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 ```
 .
 ├── metadata
-│   ├── all_samples.csv
+│   ├── all_wgs_samples.csv
 │   ├── filtered_samples.csv
 │   ├── filters.json
 │   └── metadata.json
@@ -41,7 +41,7 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 ├── snps.csv
 └── snps.fas
 ```
-- `all_samples.csv`: a summary csv file containing metadata for all samples in `s3-csu-003`;
+- `all_wgs_samples.csv`: a summary csv file containing metadata for all samples in `s3-csu-003`;
 - `filtered_samples.csv`: a summary csv file containing metadata for all samples included in the results;
 - `filters.json`: a `.json` file describing the filters used for choosing samples;
 - `metadata.json`: a `.json` containing metadata for a `btb-phylo` run;
@@ -102,7 +102,7 @@ Read 4 sequences of length 831
 ## <a name="pipe-dets"></a> Pipeline details
 
 The full pipeline consists of five main stages:
-1. Updating a local `.csv` that contains metadata for every processed APHA bovine-TB sample. The default path of this file is `./all_samples.csv`. When new samples are available in `s3-csu-003` this file is updated with new samples only.
+1. Updating a local `.csv` that contains metadata for every processed APHA bovine-TB sample. The default path of this file is `./all_wgs_samples.csv`. When new samples are available in `s3-csu-003` this file is updated with new samples only.
 2. Filtering the samples by a set of criteria defined in either the [configuration file](#config-file) or a set of command line arguments. The metadata file for filtered samples is saved in the results directory. 
 3. "Consistifying" the samples with cattle and movement data. Designed for use with ViewBovine, this removes samples from WGS, cattle and movement datasets that are not common to all three datasets.
 4. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.

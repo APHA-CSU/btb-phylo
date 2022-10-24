@@ -33,6 +33,9 @@ def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH
 
         Returns:
             metadata (dict): metadata relating to the complete (unfiltered) dataset
+
+            updated_df_summary (pandas DataFrame object): updated dataframe 
+            containing all WGS samples held in s3-csu-003.
     """
     print("\n## Update Summary ##\n")
     # create metadata path
@@ -51,28 +54,56 @@ def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH
     print("\tsaving summary csv file ... \n")
     # save summary to csv 
     utils.df_to_csv(updated_df_summary, summary_filepath)
-    # copy all_samples.csv to metadata
-    shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
-    return (metadata,)
+    # copy all_wgs_samples.csv to metadata
+    shutil.copy(summary_filepath, os.path.join(metadata_path, "all_wgs_samples.csv"))
+    return metadata, updated_df_summary
 
-#TODO: metadata
-def de_duplicate_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
-    df_samples = utils.summary_csv_to_df(summary_filepath)
-    df_deduped =  de_duplicate.remove_duplicates(df_samples, 
-                                                 Outcome="Pass", 
-                                                 flag="BritishbTB", 
-                                                 pcMapped="max", 
-                                                 Ncount="min")
-    deduped_path = os.path.join(results_path, "metadata/deduped_wgs.csv")
-    df_deduped.to_csv(deduped_path, index=False)
-    return df_deduped
+def de_duplicate_samples(results_path, df_samples=None, 
+                         summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
+    """
+        'De-duplicates' wgs samples in df_samples. Removes dupliacte entries from WGS 
+        data based based on key value pairs in kwargs. If df_samples is not provided,
+        summary_filepath csv is parsed and used. Automatically saves the de_uplicated
+        samples to 'deduped_wgs.csv' in the results metadata folder.
+
+        Parameters:
+            results_path (str): output path to results directory
+
+            df_samples (pandas DataFrame object): WGS samples to de-duplicate. 
+            DataFrame is of the same form as df_summary and all_wgs_samples.csv.
+            
+            summary_filepath (str): path to location of summary csv  
+
+        Returns:
+            metadata (dict): metadata relating to the complete (unfiltered) dataset
+
+            df_deduped (pandas DataFrame object): a deduplicated version of 
+            df_samples
+
+    """
+    print("\n## De-Duplicate ##\n")
+    # create metadatapath
+    metadata_path = os.path.join(results_path, "metadata")
+    if not os.path.exists(metadata_path):
+        os.makedirs(metadata_path)
+    # remove unused kwargs
+    args = {k: v for k, v in kwargs.items() if v is not None}
+    # load df_samples from summary csv if dataframe not provided
+    if df_samples is None:
+        df_samples = utils.summary_csv_to_df(summary_filepath)
+    # remove duplicates
+    metadata, df_deduped = de_duplicate.remove_duplicates(df_samples, **args) 
+    # save deduped wgs to metadata path
+    metadata_path = os.path.join(results_path, "metadata")
+    df_deduped.to_csv(os.path.join(metadata_path, "deduped_wgs.csv"), index=False)
+    return metadata, df_deduped
 
 def consistify_samples(results_path, cat_mov_path, df_wgs_samples=None,
                        summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     """
         'Consistifies' wgs samples with cattle and movement samples; removes
         samples from each dataset that aren't present in all three datasets.
-        Saves output .csvs to results_path.
+        Automatically saves th output .csvs to the results_path.
 
         Parameters:
             results_path (str): output path to results directory
@@ -109,7 +140,10 @@ def consistify_samples(results_path, cat_mov_path, df_wgs_samples=None,
         raise FileNotFoundError(f"Can't find cattle.csv in {cat_mov_path}")
     if not os.path.exists(movement_filepath):
         raise FileNotFoundError(f"Can't find movement.csv in {cat_mov_path}")
+    # create metadatapath
     metadata_path = os.path.join(results_path, "metadata")
+    if not os.path.exists(metadata_path):
+        os.makedirs(metadata_path)
     # consistified file outpaths
     consistified_wgs_filepath = os.path.join(metadata_path, "consistified_wgs.csv")
     consistified_cattle_filepath = os.path.join(results_path, "cattle.csv")
@@ -136,7 +170,8 @@ def consistify_samples(results_path, cat_mov_path, df_wgs_samples=None,
 def sample_filter(results_path, df_samples=None, allow_wipe_out=False, 
                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, config=False, **kwargs):
     """ 
-        Filters the sample summary csv file 
+        Filters the sample summary csv file. Automatically saves the the filtered
+        csv file to 'passed_samples.csv' in the results metadata folder.
 
         Parameters:
             results_path (str): output path to results directory
@@ -176,7 +211,6 @@ def sample_filter(results_path, df_samples=None, allow_wipe_out=False,
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
-    passed_filepath = os.path.join(metadata_path, "passed_samples.csv")
     # if no sample set provided
     if df_samples is None:
         df_samples = utils.summary_csv_to_df(summary_filepath) 
@@ -198,9 +232,9 @@ def sample_filter(results_path, df_samples=None, allow_wipe_out=False,
                                                         summary_filepath, **filter_args)
     print("\tsaving filtered samples csv ... \n")
     # save filtered_df to csv in metadata output folder
-    utils.df_to_csv(df_passed, passed_filepath)
-    # copy all_samples.csv to metadata
-    shutil.copy(summary_filepath, os.path.join(metadata_path, "all_samples.csv"))
+    utils.df_to_csv(df_passed, os.path.join(metadata_path, "passed_samples.csv"))
+    # copy all_wgs_samples.csv to metadata
+    shutil.copy(summary_filepath, os.path.join(metadata_path, "all_wgs_samples.csv"))
     return metadata, filter_args, df_passed, df_samples
 
 def phylo(results_path, consensus_path, download_only=False, n_threads=1, 
@@ -208,7 +242,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     """
         Runs phylogeny on filtered samples: Downloads consensus files, 
         concatonates into 1 large fasta file, runs snp-sites, runs snp-dists
-        and runs megacc. 
+        and runs megacc. Automatically writes the results on-disk (see parameters). 
 
         Pramaters:
             results_path (str):  output path to results directory
@@ -234,6 +268,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
         Returns:
             metadata (dict): phylogeny related metadata
     """
+    # create metadatapath
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
@@ -287,8 +322,35 @@ def full_pipeline(results_path, consensus_path,
                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, n_threads=1,
                   build_tree=False, download_only=False, cat_mov_path=None, **kwargs):
     """
-        Updates local copy of summary csv file, filters samples and
-        runs phylogeny 
+        Runs the full pipeline: 
+            1. updates with new samples;
+            2. removed duplicated wgs samples;
+            3. filters samples;
+            4. consistifies samples with cattle and movement data if cat_mov_path provided;
+            5. runs phylogeny
+        Saves all results and metadata to results_path
+
+        Pramaters:
+            results_path (str):  output path to results directory
+
+            consenus_path (str): output path to directory for saving consensus files
+
+            summary_filepath (str): input path to location of summary csv  
+
+            n_threads (int): the number of threads to use for building the snp_matrix
+
+            build_tree (bool): build a phylogentic tree using mega
+
+            download_only (bool): only download consensus files without running 
+                phylogeny
+
+            cat_mov_path (str): path to folder containing cattle and movement
+                .csv files 
+
+            **kwargs: see sample_filter() for available kwargs
+        
+        Returns:
+            metadata (dict): full_pipeline metadata
     """
     # update full sample summary
     metadata_update, *_ = update_samples(results_path, summary_filepath)
@@ -325,18 +387,48 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
                 summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH,
                 **kwargs):
     """
-        Phylogeny for plugging into ViewBovine: filters samples with different 
-        Ncount thresholds for each clade, consistifies samples with cattle and
-        movement data, and runs phylogeny
+        Phylogeny for plugging into ViewBovine: 
+            1. updates with new samples;
+            2. removed duplicated wgs samples;
+            3. filters samples with different Ncount thresholds for each clade; 
+            4. consistifies samples with cattle and movement data;
+            5. runs phylogeny
+            6. post-processes snp-matrix to have consistent names with cattle and
+                movement data.
+        Saves all results and metadata to results_path
+
+        Pramaters:
+            results_path (str):  output path to results directory
+
+            consenus_path (str): output path to directory for saving consensus files
+
+            cat_mov_path (str): path to folder containing cattle and movement
+                .csv files 
+            
+            clade_info_path (str): path to CladeInfo csv file 
+
+            summary_filepath (str): input path to location of summary csv  
+
+            **kwargs: see sample_filter() for available kwargs
+        
+        Returns:
+            metadata (dict): ViewBovine metadata
     """
+    # create metadatapath
     metadata_path = os.path.join(results_path, "metadata")
     # load CladeInfo.csv
     df_clade_info = pd.read_csv(clade_info_path, index_col="clade")
     # update full sample summary
-    metadata_update, *_ = update_samples(results_path, summary_filepath)
+    metadata_update, df_all_wgs = update_samples(results_path, summary_filepath)
     metadata = metadata_update
     # remove duplicates
-    df_deduped = de_duplicate_samples(results_path)
+    metadata_dedup, df_deduped = de_duplicate_samples(results_path,
+                                                      df_samples=df_all_wgs,
+                                                      Outcome="Pass", 
+                                                      flag="BritishbTB", 
+                                                      pcMapped="max", 
+                                                      Ncount="min")
+    metadata.update(metadata_dedup)
     df_passed = pd.DataFrame(columns=["Sample", "GenomeCov", "MeanDepth", 
                                       "NumRawReads", "pcMapped", "Outcome", 
                                       "flag", "group", "CSSTested", "matches", 
@@ -363,8 +455,8 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
         # update df_passed with cladewise filtering
         df_passed = pd.concat([df_passed, df_clade])
         i += 1
-    # create metadatapath
-    metadata_path = os.path.join(results_path, "metadata")
+    # save filtered_df to csv in metadata output folder
+    utils.df_to_csv(df_passed, os.path.join(metadata_path, "passed_samples.csv"))
     # save filters to metadata output folder
     with open(os.path.join(metadata_path, "filters.json"), "w") as f:
         json.dump(filter_args, f, indent=2)
@@ -380,14 +472,15 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     # update metadata
     metadata.update(metadata_consist)
     # generate report of missing samples
-    # TODO - save missing samples CSVs
-    df_report = missing_samples_report.report(df_deduped, df_consistified, cat_mov_path,
+    df_report = missing_samples_report.report(df_deduped, df_consistified, cat_mov_path, 
                                               df_clade_info)
+    # save report to metadata folder
     df_report.to_csv(os.path.join(metadata_path, "report.csv"), index=False)
     # run phylogeny
     metadata_phylo, *_ = phylo(results_path, consensus_path, n_threads=4, 
                                df_passed=df_consistified, light_mode=True)
-    # process sample names in snps.csv to be consistent with cattle and movement data
+    # process sample names in the snp matrix: snps.csv to be consistent with cattle 
+    # and movement data
     phylogeny.post_process_snps_csv(os.path.join(results_path, "snps.csv"))
     metadata.update(metadata_phylo)
     return (metadata,)
@@ -408,7 +501,7 @@ def parse_args():
     subparser.set_defaults(func=update_samples)
 
     # filter samples
-    subparser = subparsers.add_parser('filter', help='filters sample metadata .csv file')
+    subparser = subparsers.add_parser('filter', help='filters wgs_samples.csv file')
     subparser.add_argument("results_path", help="path to results directory")
     subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
                            default=utils.DEFAULT_SUMMARY_FILEPATH)
@@ -422,6 +515,21 @@ def parse_args():
     subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
     subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
     subparser.set_defaults(func=sample_filter)
+
+    # de_duplicate
+    subparser = subparsers.add_parser('de_duplicate', help='removes duplicated wgs samples from wgs_samples.csv')
+    subparser.add_argument("results_path", help="path to results directory")
+    subparser.add_argument("--summary_filepath", help="path to sample metadata .csv file", 
+                           default=utils.DEFAULT_SUMMARY_FILEPATH)
+    subparser.add_argument("--outcome", dest="Outcome", help="optional filter, must be a valid value in Outcome column \
+                           of wgs_samples csv")
+    subparser.add_argument("--flag", "-f", dest="flag", help="optional filter, must be a valid value in flag column \
+                           of wgs_samples csv")
+    subparser.add_argument("--genomecov", "-gc", dest="GenomeCov", help="optional filter, must be 'min' or 'max'")
+    subparser.add_argument("--n_count", "-nc", dest="Ncount", help="optional filter, must be 'min' or 'max'")
+    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", help="optional filter, must be 'min' or 'max'")
+    subparser.add_argument("--meandepth", "-md", dest="MeanDepth", help="optional filter, must be 'min' or 'max'")
+    subparser.set_defaults(func=de_duplicate_samples)
 
     # consistify
     subparser = subparsers.add_parser('consistify', help='removes wgs samples that are missing from \
