@@ -58,7 +58,11 @@ def update_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH
 #TODO: metadata
 def de_duplicate_samples(results_path, summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
     df_samples = utils.summary_csv_to_df(summary_filepath)
-    df_deduped =  de_duplicate.remove_duplicates(df_samples, pcMapped="max", Ncount="min")
+    df_deduped =  de_duplicate.remove_duplicates(df_samples, 
+                                                 Outcome="Pass", 
+                                                 flag="BritishbTB", 
+                                                 pcMapped="max", 
+                                                 Ncount="min")
     deduped_path = os.path.join(results_path, "metadata/deduped_wgs.csv")
     df_deduped.to_csv(deduped_path, index=False)
     return df_deduped
@@ -372,10 +376,11 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
     # consistify datasets
     metadata_consist, df_consistified = consistify_samples(results_path, 
                                                            cat_mov_path,
-                                                           df_passed)
+                                                           df_wgs_samples=df_passed)
     # update metadata
     metadata.update(metadata_consist)
     # generate report of missing samples
+    # TODO - save missing samples CSVs
     df_report = missing_samples_report.report(df_deduped, df_consistified, cat_mov_path,
                                               df_clade_info)
     df_report.to_csv(os.path.join(metadata_path, "report.csv"), index=False)
