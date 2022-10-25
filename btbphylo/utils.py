@@ -126,7 +126,6 @@ def run(cmd, *args, **kwargs):
     """
     # TODO: store stdout to a file
     ps = subprocess.run(cmd, *args, **kwargs)
-
     returncode = ps.returncode
     if returncode:
         raise Exception("""*****
