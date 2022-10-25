@@ -353,32 +353,26 @@ def full_pipeline(results_path, consensus_path,
             metadata (dict): full_pipeline metadata
     """
     # update full sample summary
-    metadata_update, *_ = update_samples(results_path, summary_filepath)
+    metadata_update, df_all_wgs = update_samples(results_path, summary_filepath)
     metadata = metadata_update
+    # remove duplicates
+    metadata_dedup, df_deduped = de_duplicate_samples(results_path,
+                                                      df_samples=df_all_wgs,
+                                                      Outcome="Pass", 
+                                                      flag="BritishbTB", 
+                                                      pcMapped="max", 
+                                                      Ncount="min")
+    metadata.update(metadata_dedup)
     # filter samples
-    metadata_filt, filter_args, df_passed, _ = sample_filter(results_path, **kwargs)
+    metadata_filt, filter_args, df_passed, _ = sample_filter(results_path, df_deduped, **kwargs)
     metadata.update(metadata_filt)
-    # create metadatapath
-    metadata_path = os.path.join(results_path, "metadata")
     # save filters to metadata output folder
+    metadata_path = os.path.join(results_path, "metadata")
     with open(os.path.join(metadata_path, "filters.json"), "w") as f:
         json.dump(filter_args, f, indent=2)
-    # if running in ViewBovine must consistify datasets
-    if cat_mov_path:
-        # consistify datasets for ViewBovine
-        metadata_consist, _, df_consistified = consistify_samples(results_path, cat_mov_path)
-        # update metadata
-        metadata.update(metadata_consist)
-        # run phylogeny
-        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
-                                   build_tree, df_passed=df_consistified, light_mode=True)
-        if not download_only:
-            # process sample names in snps.csv to be consistent with cattle and movement data
-            phylogeny.post_process_snps_csv(os.path.join(results_path, "snps.csv"))
-    else:
-        # run phylogeny
-        metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
-                                   build_tree, df_passed=df_passed, light_mode=True)
+    # run phylogeny
+    metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
+                               build_tree, df_passed, light_mode=True)
     metadata.update(metadata_phylo)
     return (metadata,)
 
@@ -392,8 +386,9 @@ def view_bovine(results_path, consensus_path, cat_mov_path,
             2. removed duplicated wgs samples;
             3. filters samples with different Ncount thresholds for each clade; 
             4. consistifies samples with cattle and movement data;
-            5. runs phylogeny
-            6. post-processes snp-matrix to have consistent names with cattle and
+            5. generate a report of missing sampes;
+            6. runs phylogeny;
+            7. post-processes snp-matrix to have consistent names with cattle and
                 movement data.
         Saves all results and metadata to results_path
 
@@ -571,8 +566,6 @@ def parse_args():
     subparser.add_argument("--n_count", "-nc", dest="Ncount", type=float, nargs=2, help="optional filter")
     subparser.add_argument("--flag", "-f", dest="flag", nargs="+", help="optional filter")
     subparser.add_argument("--meandepth", "-md", dest="MeanDepth", type=float, nargs=2, help="optional filter")
-    subparser.add_argument("--cat_mov_path", "-cmp", default=None, help="if running for \
-                           ViewBovine production provide a path to the folder containing cattle and movement .csv files")
     subparser.set_defaults(func=full_pipeline)
 
     # view bovine
