@@ -5,7 +5,7 @@ import pandas as pd
 import btbphylo.utils as utils
 
 """
-    Filters the samples according to criteria based on the fields in
+    Filters WGS samples according to criteria based on the fields in
     summary csv file
 """
 
@@ -14,11 +14,12 @@ warnings.formatwarning = utils.format_warning
 
 def filter_df(df, allow_wipe_out=False, **kwargs):
     """ 
-        Filters the sample summary dataframe which is based off 
-        btb_wgs_samples.csv according to a set of criteria. 
+        Filters WGS df (which is based off 'all_wgs_samples' csv file) 
+        according to a set of criteria. 
 
         Parameters:
-            df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv.
+            df (pandas DataFrame object): a dataframe read from all_wgs_samples 
+            csv file.
 
             allow_wipe_out (bool): do not raise exception if 1 or fewer samples pass.
 
@@ -118,16 +119,15 @@ def filter_columns_categorical(df, **kwargs):
     query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
     return df.query(query)
 
-def get_samples_df(df_samples=None, allow_wipe_out=False, 
+def get_wgs_samples_df(df_samples=None, allow_wipe_out=False, 
                    summary_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH, **kwargs):
     """
-        Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
-        into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
-        **kwargs. Removes Duplicated submissions.
+        Gets all the WGS samples to be included in phylogeny. Parses all_wgs_samples
+        csv file into a pandas DataFrame. Filters the DataFrame arcording to criteria 
+        descriped in **kwargs. 
     """
-    # pipes the output DataFrame from wgs_csv_to_df() (all samples) into filter_df()
-    # into remove duplicates()
-    # i.e. wgs_csv_to_df() | filter_df() | remove_duplicates() > df
+    # pipes the output DataFrame from wgs_csv_to_df() (all wgs samples) into filter_df()
+    # i.e. wgs_csv_to_df() | filter_df() > df
     if df_samples is not None:
         df = df_samples.pipe(filter_df, allow_wipe_out, **kwargs)
     else:

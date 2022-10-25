@@ -232,8 +232,8 @@ def sample_filter(results_path, df_wgs_samples=None, allow_wipe_out=False,
         filter_args = {k: v for k, v in kwargs.items() if v is not None}
     print("\tfiltering samples ... \n")
     # filter samples
-    df_wgs_passed, metadata = filter_samples.get_samples_df(df_wgs_samples, allow_wipe_out, 
-                                                            all_wgs_samples_filepath, **filter_args)
+    df_wgs_passed, metadata = filter_samples.get_wgs_samples_df(df_wgs_samples, allow_wipe_out, 
+                                                                all_wgs_samples_filepath, **filter_args)
     print("\tsaving filtered samples csv ... \n")
     # save filtered_df to csv in metadata output folder
     utils.df_to_csv(df_wgs_passed, os.path.join(metadata_path, "wgs_passed_samples.csv"))

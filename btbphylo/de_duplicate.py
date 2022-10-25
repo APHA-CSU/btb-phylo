@@ -18,7 +18,7 @@ def remove_duplicates(df, **kwargs):
         duplicated sample appearing first in the dataframe is chosen.
 
         Parameters:
-            df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv
+            df (pandas DataFrame object): WGS samples
 
             **kwargs: 1 (minimum) or more optional arguments. The names of the 
             arguments must be a column name in df, the values must be of type str equal 
@@ -64,7 +64,7 @@ def get_indexes_to_remove(df, parameter, method):
         submisions which should be excluded.
 
         Parameters:
-            df (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv
+            df (pandas DataFrame object): WGS samples
 
             parameter (str): a column name from df on which to decide which 
             duplicate to keep, e.g. keep the submission with the largest pcMapped
