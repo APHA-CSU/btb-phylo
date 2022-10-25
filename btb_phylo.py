@@ -5,7 +5,9 @@ import subprocess
 import shutil
 import sys
 import tempfile
+import io
 from datetime import datetime
+from contextlib import redirect_stdout
 
 import pandas as pd
 
@@ -91,6 +93,7 @@ def de_duplicate_samples(results_path, df_wgs_samples=None,
     # load df_samples from summary csv if dataframe not provided
     if df_wgs_samples is None:
         df_wgs_samples = utils.wgs_csv_to_df(all_wgs_samples_filepath)
+    print("\tremoving duplicate WGS samples ... \n")
     # remove duplicates
     metadata, df_wgs_deduped = de_duplicate.remove_duplicates(df_wgs_samples, **args) 
     # save deduped wgs to metadata path
@@ -433,16 +436,19 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
     i = 1
     num_passed_samples = 0
     filter_args = {}
+    f = io.StringIO()
+    print("\n## Filter Samples ##\n")
     # loop through clades in CladeInfo.csv
     for clade, row in df_clade_info.iterrows():
-        print(f"## Filtering samples for clade {i} / {len(df_clade_info)} ##")
+        print(f"\t\tclade: {i} / {len(df_clade_info)}", end="\r")
         # filters samples within each clade according to Ncount in CladeInfo.csv
-        metadata_filt, filter_clade, df_clade, _ = sample_filter(results_path, 
-                                                                 df_wgs_deduped, 
-                                                                 allow_wipe_out=True, 
-                                                                 group=[clade],
-                                                                 Ncount=(0, row["maxN"]),
-                                                                 **kwargs)
+        with redirect_stdout(f):
+            metadata_filt, filter_clade, df_clade, _ = sample_filter(results_path, 
+                                                                    df_wgs_deduped, 
+                                                                    allow_wipe_out=True, 
+                                                                    group=[clade],
+                                                                    Ncount=(0, row["maxN"]),
+                                                                    **kwargs)
         del filter_clade["group"]
         filter_args[clade] = filter_clade
         # sum the number of filtered samples
@@ -450,6 +456,7 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
         # update df_passed with cladewise filtering
         df_wgs_passed = pd.concat([df_wgs_passed, df_clade])
         i += 1
+    print(f"\t\tclade: {i-1} / {len(df_clade_info)}", end="\n")
     # save filtered_df to csv in metadata output folder
     utils.df_to_csv(df_wgs_passed, os.path.join(metadata_path, "passed_samples.csv"))
     # save filters to metadata output folder
