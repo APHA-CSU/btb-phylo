@@ -99,7 +99,7 @@ def process_datasets(wgs, cattle, movement):
                 "consistified_number_of_movement_records": len(movement_consist)}
     return metadata, wgs_consist, cattle_corrected, fixed_movement
 
-def consistify_csvs(filtered_samples_path, cattle_path, movement_path, 
+def consistify_csvs(wgs_samples_path, cattle_path, movement_path, 
                     consistified_wgs_path, consistified_cattle_path, 
                     consisitified_movement_path):
     """
@@ -108,7 +108,7 @@ def consistify_csvs(filtered_samples_path, cattle_path, movement_path,
         Saves consistified outputs to CSV
     """
     # load
-    wgs = utils.summary_csv_to_df(filtered_samples_path)
+    wgs = utils.summary_csv_to_df(wgs_samples_path)
     cattle = pd.read_csv(cattle_path, dtype=object)
     movement = pd.read_csv(movement_path, dtype=object)
     # process data

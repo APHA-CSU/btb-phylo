@@ -36,7 +36,7 @@ def finalout_s3_to_df(s3_key, s3_bucket="s3-csu-003"):
         utils.s3_download_file_cli(s3_bucket, s3_key, finalout_path)
         return utils.finalout_csv_to_df(finalout_path)
 
-def get_df_summary(summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH):
+def get_df_summary(summary_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH):
     """
         Reads summary csv into pandas dataframe. Creates new empty dataframe
         if local copy of summary csv does not exist.

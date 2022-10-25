@@ -119,7 +119,7 @@ def filter_columns_categorical(df, **kwargs):
     return df.query(query)
 
 def get_samples_df(df_samples=None, allow_wipe_out=False, 
-                   summary_filepath=utils.DEFAULT_SUMMARY_FILEPATH, **kwargs):
+                   summary_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH, **kwargs):
     """
         Gets all the samples to be included in phylogeny. Loads btb_wgs_samples.csv
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in

@@ -11,8 +11,8 @@ import pandas as pd
     Utility functions
 """
 
-DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.dirname(path.abspath(__file__))), 
-                                     "all_samples.csv")
+DEFAULT_WGS_SAMPLES_FILEPATH = path.join(path.dirname(path.dirname(path.abspath(__file__))), 
+                                     "all_wgs_samples.csv")
 
 
 class InvalidDtype(Exception):
@@ -185,7 +185,7 @@ def list_s3_objects(bucket, prefix):
     response = s3_client.list_objects_v2(Bucket=bucket, Delimiter = '/', Prefix=prefix)
     return [i['Prefix'] for i in response['CommonPrefixes']]
 
-def df_to_csv(df_summary, summary_filepath=DEFAULT_SUMMARY_FILEPATH):
+def df_to_csv(df_summary, summary_filepath=DEFAULT_WGS_SAMPLES_FILEPATH):
     """
         Save df_summary to csv
     """
