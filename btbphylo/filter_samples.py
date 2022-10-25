@@ -125,13 +125,13 @@ def get_samples_df(df_samples=None, allow_wipe_out=False,
         into a pandas DataFrame. Filters the DataFrame arcording to criteria descriped in
         **kwargs. Removes Duplicated submissions.
     """
-    # pipes the output DataFrame from summary_csv_to_df() (all samples) into filter_df()
+    # pipes the output DataFrame from wgs_csv_to_df() (all samples) into filter_df()
     # into remove duplicates()
-    # i.e. summary_csv_to_df() | filter_df() | remove_duplicates() > df
+    # i.e. wgs_csv_to_df() | filter_df() | remove_duplicates() > df
     if df_samples is not None:
         df = df_samples.pipe(filter_df, allow_wipe_out, **kwargs)
     else:
-        df = utils.summary_csv_to_df(summary_filepath).pipe(filter_df, allow_wipe_out,
+        df = utils.wgs_csv_to_df(summary_filepath).pipe(filter_df, allow_wipe_out,
                                                             **kwargs)
     metadata = {"number_of_passed_samples": len(df)}
     return df, metadata

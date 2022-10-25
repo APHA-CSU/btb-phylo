@@ -36,13 +36,13 @@ def finalout_s3_to_df(s3_key, s3_bucket="s3-csu-003"):
         utils.s3_download_file_cli(s3_bucket, s3_key, finalout_path)
         return utils.finalout_csv_to_df(finalout_path)
 
-def get_df_summary(summary_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH):
+def get_df_wgs(summary_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH):
     """
         Reads summary csv into pandas dataframe. Creates new empty dataframe
         if local copy of summary csv does not exist.
     """
     if path.exists(summary_filepath):
-        return utils.summary_csv_to_df(summary_filepath)
+        return utils.wgs_csv_to_df(summary_filepath)
     # if running for the first time (i.e. no btb_wgs_samples.csv), create new empty dataframe
     else:
         column_names = ["Sample", "GenomeCov", "MeanDepth", "NumRawReads", "pcMapped", 
@@ -54,7 +54,7 @@ def get_df_summary(summary_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH):
 def new_final_out_keys(df_summary):
     """
         Returns a list of s3_keys for FinalOut.csv files not currently in the
-        summary csv file, i.e. new data.
+        'all_wgs_samples' .csv file, i.e. new data.
     """
     # get list of all FinalOut.csv s3 keys
     s3_keys = get_finalout_s3_keys()
@@ -76,10 +76,10 @@ def add_submission_col(df):
     df["Submission"] = df["Sample"].map(utils.extract_submission_no)
     return df
 
-def append_df_summary(df_summary, new_keys, itteration=0):
+def append_df_wgs(df_summary, new_keys, itteration=0):
     """
         Appends new FinalOut.csv data (with additional submission number)
-        to the df_summary.
+        to the df_wgs.
 
         Parameters:
             df_summary (pandas DataFrame object): a dataframe read from btb_wgs_samples.csv
@@ -100,7 +100,7 @@ def append_df_summary(df_summary, new_keys, itteration=0):
         # read FinalOut.csv for current key
         finalout_df = finalout_s3_to_df(new_keys[itteration]).pipe(add_submission_col)
         # append to df_summary
-        df_summary, _ = append_df_summary(pd.concat([df_summary, finalout_df]), 
+        df_summary, _ = append_df_wgs(pd.concat([df_summary, finalout_df]), 
                                           new_keys, itteration+1)
     else:
         print(f"\t\tdownloaded batch summaries: {num_batches} / {num_batches} \n")

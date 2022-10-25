@@ -12,7 +12,7 @@ import pandas as pd
 """
 
 DEFAULT_WGS_SAMPLES_FILEPATH = path.join(path.dirname(path.dirname(path.abspath(__file__))), 
-                                     "all_wgs_samples.csv")
+                                         "all_wgs_samples.csv")
 
 
 class InvalidDtype(Exception):
@@ -42,7 +42,7 @@ class NoS3ObjectError(Exception):
 def format_warning(message, category, filename, lineno, file=None, line=None):
     return '%s:%s: %s:%s\n' % (filename, lineno, category.__name__, message)
 
-def summary_csv_to_df(summary_filepath):
+def wgs_csv_to_df(summary_filepath):
     """
         Read sample summary CSV and returns the data in a pandas dataframe.
     """
@@ -185,8 +185,8 @@ def list_s3_objects(bucket, prefix):
     response = s3_client.list_objects_v2(Bucket=bucket, Delimiter = '/', Prefix=prefix)
     return [i['Prefix'] for i in response['CommonPrefixes']]
 
-def df_to_csv(df_summary, summary_filepath=DEFAULT_WGS_SAMPLES_FILEPATH):
+def df_to_csv(df_wgs, summary_filepath=DEFAULT_WGS_SAMPLES_FILEPATH):
     """
-        Save df_summary to csv
+        Save df_wgs to csv
     """
-    df_summary.to_csv(summary_filepath, index=False)
+    df_wgs.to_csv(summary_filepath, index=False)

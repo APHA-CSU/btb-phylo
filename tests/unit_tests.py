@@ -25,7 +25,7 @@ if __name__ == "__main__":
                            TestFilterSamples('test_filter_columns_categorical')]
     de_duplicate_test = [TestDeDuplicate('test_remove_duplicates'),
                          TestDeDuplicate('test_get_indexes_to_remove')]
-    update_summary_test = [TestUpdateSummary('test_append_df_summary'),
+    update_summary_test = [TestUpdateSummary('test_append_df_wgs'),
                            TestUpdateSummary('test_get_finalout_s3_keys'),
                            TestUpdateSummary('test_extract_s3_key')]
     missing_samples_report_test = [TestMissingSamplesReport('test_get_excluded'),

@@ -108,7 +108,7 @@ def consistify_csvs(wgs_samples_path, cattle_path, movement_path,
         Saves consistified outputs to CSV
     """
     # load
-    wgs = utils.summary_csv_to_df(wgs_samples_path)
+    wgs = utils.wgs_csv_to_df(wgs_samples_path)
     cattle = pd.read_csv(cattle_path, dtype=object)
     movement = pd.read_csv(movement_path, dtype=object)
     # process data

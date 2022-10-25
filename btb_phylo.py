@@ -44,13 +44,13 @@ def update_samples(results_path, all_wgs_samples_filepath=utils.DEFAULT_WGS_SAMP
         os.makedirs(metadata_path)
     print("\tloading summary csv file ... \n")
     # download sample summary csv
-    df_all_wgs = update_summary.get_df_summary(all_wgs_samples_filepath)
+    df_all_wgs = update_summary.get_df_wgs(all_wgs_samples_filepath)
     print("\tgetting s3 keys for batch summary files ... \n")
     # get s3 keys of FinalOut.csv for new batches of samples
     new_keys = update_summary.new_final_out_keys(df_all_wgs)
     print("\tappending new metadata to df_summary ... \n")
     # update the summary dataframe
-    df_all_wgs_updated, metadata = update_summary.append_df_summary(df_all_wgs, new_keys)
+    df_all_wgs_updated, metadata = update_summary.append_df_wgs(df_all_wgs, new_keys)
     print("\tsaving summary csv file ... \n")
     # save summary to csv 
     utils.df_to_csv(df_all_wgs, all_wgs_samples_filepath)
@@ -90,7 +90,7 @@ def de_duplicate_samples(results_path, df_wgs_samples=None,
     args = {k: v for k, v in kwargs.items() if v is not None}
     # load df_samples from summary csv if dataframe not provided
     if df_wgs_samples is None:
-        df_wgs_samples = utils.summary_csv_to_df(all_wgs_samples_filepath)
+        df_wgs_samples = utils.wgs_csv_to_df(all_wgs_samples_filepath)
     # remove duplicates
     metadata, df_wgs_deduped = de_duplicate.remove_duplicates(df_wgs_samples, **args) 
     # save deduped wgs to metadata path
@@ -152,7 +152,7 @@ def consistify_samples(results_path, cattle_movements_path, df_wgs_samples=None,
     consistified_movement_filepath = os.path.join(results_path, "movement.csv")
     # load
     if df_wgs_samples is None:
-        df_wgs_samples = utils.summary_csv_to_df(all_wgs_samples_filepath)
+        df_wgs_samples = utils.wgs_csv_to_df(all_wgs_samples_filepath)
     df_cattle_samples = pd.read_csv(cattle_filepath, dtype=object)
     df_movement_samples = pd.read_csv(movement_filepath, dtype=object)
     # process data
@@ -217,7 +217,7 @@ def sample_filter(results_path, df_wgs_samples=None, allow_wipe_out=False,
         os.makedirs(metadata_path)
     # if no sample set provided
     if df_wgs_samples is None:
-        df_wgs_samples = utils.summary_csv_to_df(all_wgs_samples_filepath) 
+        df_wgs_samples = utils.wgs_csv_to_df(all_wgs_samples_filepath) 
     if config:
         error_keys = [key for key, val in kwargs.items() if val]
         # if any arguments provided with --config
@@ -282,10 +282,10 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
         pass
     # otherwise if consistified_wgs.csv in metadata folder: load csv
     elif os.path.exists(os.path.join(metadata_path, "consistified_wgs.csv")):
-        df_wgs = utils.summary_csv_to_df(os.path.join(metadata_path, "consistified_wgs.csv"))
+        df_wgs = utils.wgs_csv_to_df(os.path.join(metadata_path, "consistified_wgs.csv"))
     # otherwise if passed_samples.csv in metadata folder: load csv
     elif os.path.exists(os.path.join(metadata_path, "passed_samples.csv")):
-        df_wgs = utils.summary_csv_to_df(os.path.join(metadata_path, "wgs_passed_samples.csv"))
+        df_wgs = utils.wgs_csv_to_df(os.path.join(metadata_path, "wgs_passed_samples.csv"))
     else:
         raise ValueError("If wgs_passed_samples.csv does not exist in results_path ensure "
                          "that the filtered_df argument is provided")
@@ -489,16 +489,16 @@ def parse_args():
 
     # update complete summary csv
     subparser = subparsers.add_parser('update_samples', 
-                                      help='updates a local copy of all sample metadata .csv file')
+                                      help='updates a local copy of "all_wgs_samples" metadata .csv file')
     subparser.add_argument("results_path", help="path to results directory")
-    subparser.add_argument("--all_wgs_samples_filepath", help="path to sample metadata .csv file", 
+    subparser.add_argument("--all_wgs_samples_filepath", help="path to 'all_wgs_samples' .csv file", 
                            default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)
     subparser.set_defaults(func=update_samples)
 
     # filter samples
     subparser = subparsers.add_parser('filter', help='filters wgs_samples.csv file')
     subparser.add_argument("results_path", help="path to results directory")
-    subparser.add_argument("--all_wgs_samples_filepath", help="path to sample metadata .csv file", 
+    subparser.add_argument("--all_wgs_samples_filepath", help="path to 'all_wgs_samples' .csv file", 
                            default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)
     subparser.add_argument("--config", default=None, help="path to configuration file")
     subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", help="optional filter")
@@ -514,7 +514,7 @@ def parse_args():
     # de_duplicate
     subparser = subparsers.add_parser('de_duplicate', help='removes duplicated wgs samples from wgs_samples.csv')
     subparser.add_argument("results_path", help="path to results directory")
-    subparser.add_argument("--all_wgs_samples_filepath", help="path to sample metadata .csv file", 
+    subparser.add_argument("--all_wgs_samples_filepath", help="path to 'all_wgs_samples' .csv file", 
                            default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)
     subparser.add_argument("--outcome", dest="Outcome", help="optional filter, must be a valid value in Outcome column \
                            of wgs_samples csv")
@@ -551,7 +551,7 @@ def parse_args():
                                       samples summary, filters samples and performs phylogeny")
     subparser.add_argument("results_path", help="path to results directory")
     subparser.add_argument("consensus_path", help = "path to where consensus files will be held")
-    subparser.add_argument("--all_wgs_samples_filepath", help="path to sample metadata .csv file", 
+    subparser.add_argument("--all_wgs_samples_filepath", help="path to 'all_wgs_samples' .csv file", 
                            default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)
     subparser.add_argument("--download_only", help="if only dowloading connsensus sequences",
                            action="store_true", default=False)
@@ -576,7 +576,7 @@ def parse_args():
                            folder containing cattle and movement .csv files")
     subparser.add_argument("--clade_info_path", help="path to CladeInfo csv file", 
                            default=DEFAULT_CLADE_INFO_PATH)
-    subparser.add_argument("--all_wgs_samples_filepath", help="path to sample metadata .csv file", 
+    subparser.add_argument("--all_wgs_samples_filepath", help="path to 'all_wgs_samples' .csv file", 
                            default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)
     subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", type=float, nargs=2, help="optional filter",
                            default=(90, 100))
