@@ -8,6 +8,10 @@ import tempfile
 import io
 from datetime import datetime
 from contextlib import redirect_stdout
+import threading
+import itertools
+import sys
+import time
 
 import pandas as pd
 
@@ -20,6 +24,21 @@ import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
 
 DEFAULT_CLADE_INFO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "CladeInfo.csv")
+
+
+def process_print(print_message):
+    t = threading.currentThread()
+    t.running = True
+    try:
+        for c in itertools.cycle(['|', '/', '-', '\\']):
+            if not getattr(t, "running"):
+                print("\n")
+                break
+            sys.stdout.write(f"\r {print_message} {c}")
+            sys.stdout.flush()
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        sys.exit(1)
 
 def update_samples(results_path, all_wgs_samples_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH):
     """
@@ -44,16 +63,21 @@ def update_samples(results_path, all_wgs_samples_filepath=utils.DEFAULT_WGS_SAMP
     metadata_path = os.path.join(results_path, "metadata")
     if not os.path.exists(metadata_path):
         os.makedirs(metadata_path)
-    print("\tloading summary csv file ... \n")
+    print("\tloading all_wgs_samples.csv ... \n")
     # download sample summary csv
     df_all_wgs = update_summary.get_df_wgs(all_wgs_samples_filepath)
-    print("\tgetting s3 keys for batch summary files ... \n")
+    # printing in seperate thread
+    t = threading.Thread(target=process_print, args=("\tgetting s3 keys for batch summary files",), daemon=True)
+    t.start()
     # get s3 keys of FinalOut.csv for new batches of samples
     new_keys = update_summary.new_final_out_keys(df_all_wgs)
+    # terminate printing thread
+    t.running = False
+    t.join()
     print("\tappending new metadata to df_summary ... \n")
     # update the summary dataframe
     df_all_wgs_updated, metadata = update_summary.append_df_wgs(df_all_wgs, new_keys)
-    print("\tsaving summary csv file ... \n")
+    print("\tsaving all_wgs_samples.csv ... \n")
     # save summary to csv 
     utils.df_to_csv(df_all_wgs, all_wgs_samples_filepath)
     # copy all_wgs_samples.csv to metadata
@@ -92,12 +116,19 @@ def de_duplicate_samples(results_path, df_wgs_samples=None,
     args = {k: v for k, v in kwargs.items() if v is not None}
     # load df_samples from summary csv if dataframe not provided
     if df_wgs_samples is None:
+        print("\tloading all_wgs_samples.csv ... \n")
         df_wgs_samples = utils.wgs_csv_to_df(all_wgs_samples_filepath)
-    print("\tremoving duplicate WGS samples ... \n")
+    # printing in seperate thread
+    t = threading.Thread(target=process_print, args=("\tremoving duplicate WGS samples",), daemon=True)
+    t.start()
     # remove duplicates
     metadata, df_wgs_deduped = de_duplicate.remove_duplicates(df_wgs_samples, **args) 
+    # terminate printing thread
+    t.running = False
+    t.join()
     # save deduped wgs to metadata path
     metadata_path = os.path.join(results_path, "metadata")
+    print("\tsaving deduped_wgs.csv ... \n")
     df_wgs_deduped.to_csv(os.path.join(metadata_path, "deduped_wgs.csv"), index=False)
     # copy all_wgs_samples.csv to metadata
     shutil.copy(all_wgs_samples_filepath, os.path.join(metadata_path, "all_wgs_samples.csv"))
@@ -154,16 +185,23 @@ def consistify_samples(results_path, cattle_movements_path, df_wgs_samples=None,
     consistified_cattle_filepath = os.path.join(results_path, "cattle.csv")
     consistified_movement_filepath = os.path.join(results_path, "movement.csv")
     # load
+    print("\tloading metadata files ... \n")
     if df_wgs_samples is None:
         df_wgs_samples = utils.wgs_csv_to_df(all_wgs_samples_filepath)
     df_cattle_samples = pd.read_csv(cattle_filepath, dtype=object)
     df_movement_samples = pd.read_csv(movement_filepath, dtype=object)
+    # printing in seperate thread
+    t = threading.Thread(target=process_print, args=("\tconsistifying samples",), daemon=True)
+    t.start()
     # process data
-    print("\tconsistifying samples ... \n")
     metadata, df_wgs_consist, df_cattle_corrected, df_movement_fixed =\
             consistify.process_datasets(df_wgs_samples, df_cattle_samples, 
                                         df_movement_samples)
+    # terminate printing thread
+    t.running = False
+    t.join()
     # save consistified cattle & movement csvs
+    print("\tsaving metadata files ... \n")
     utils.df_to_csv(df_wgs_consist, consistified_wgs_filepath)
     df_cattle_corrected.to_csv(consistified_cattle_filepath, index=False)
     df_movement_fixed.to_csv(consistified_movement_filepath, index=False)
@@ -220,6 +258,7 @@ def sample_filter(results_path, df_wgs_samples=None, allow_wipe_out=False,
         os.makedirs(metadata_path)
     # if no sample set provided
     if df_wgs_samples is None:
+        print("\tloading all_wgs_samples.csv ... \n")
         df_wgs_samples = utils.wgs_csv_to_df(all_wgs_samples_filepath) 
     if config:
         error_keys = [key for key, val in kwargs.items() if val]
@@ -319,7 +358,7 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
             if not os.path.exists(tree_path):
                 os.makedirs(tree_path)        
             # build tree
-            print("\n\trunning mega ... \n")
+            print("\trunning mega ... \n")
             phylogeny.build_tree(tree_path, snp_sites_outpath)
     if light_mode:
         shutil.rmtree(fasta_path)
