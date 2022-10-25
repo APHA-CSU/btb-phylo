@@ -28,8 +28,8 @@ def exclusion_reason(df_wgs_excluded, df_clade_info):
     # map Ncount column to a pass/fail value
     df_report["Ncount"] = "Fail"
     for clade, row in df_clade_info.iterrows():
-        df_report["Ncount"][df_wgs_excluded.index[df_wgs_excluded["group"]==clade]] = \
-            df_wgs_excluded.loc[df_wgs_excluded["group"]==clade].\
+        mask = df_wgs_excluded.index[df_wgs_excluded["group"]==clade]
+        df_report.loc[mask, "Ncount"] = df_wgs_excluded.loc[df_wgs_excluded["group"]==clade].\
                 apply(lambda sample: "Pass" if sample["Ncount"]<=row["maxN"] \
                     else "Fail", axis=1)
     return df_report
