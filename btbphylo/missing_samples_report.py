@@ -7,29 +7,29 @@ from btbphylo.consistify import consistify
     from ViewBovine. 
 """
 
-def get_excluded(df_deduped, df_included):
+def get_excluded(df_wgs_deduped, df_wgs_included):
     """
         Returns a DataFrame for WGS samples that are filtered. The DataFrame is 
         in the form of df_summary (see Readme). 
     """
     # get dataframe of excluded samples: df_deduped - df_included
-    return df_deduped[~df_deduped["Submission"].isin(df_included["Submission"])]
+    return df_wgs_deduped[~df_wgs_deduped["Submission"].isin(df_wgs_included["Submission"])]
 
-def exclusion_reason(df_excluded, df_clade_info):
+def exclusion_reason(df_wgs_excluded, df_clade_info):
     """
         Returns a "report" DataFrame, detailing the reasons why each WGS sample
         is excluded.
     """
     # subsample df_excluded columns
-    df_report = df_excluded[["Submission", "Outcome", "flag"]].copy()
+    df_report = df_wgs_excluded[["Submission", "Outcome", "flag"]].copy()
     # map pcMapped column to a pass/fail value
-    df_report["pcMapped"] = df_excluded["pcMapped"]\
+    df_report["pcMapped"] = df_wgs_excluded["pcMapped"]\
         .map(lambda x: "Pass" if x >= 90 else "Fail")
     # map Ncount column to a pass/fail value
     df_report["Ncount"] = "Fail"
     for clade, row in df_clade_info.iterrows():
-        df_report["Ncount"][df_excluded.index[df_excluded["group"]==clade]] = \
-            df_excluded.loc[df_excluded["group"]==clade].\
+        df_report["Ncount"][df_wgs_excluded.index[df_wgs_excluded["group"]==clade]] = \
+            df_wgs_excluded.loc[df_wgs_excluded["group"]==clade].\
                 apply(lambda sample: "Pass" if sample["Ncount"]<=row["maxN"] \
                     else "Fail", axis=1)
     return df_report
@@ -66,45 +66,39 @@ def missing_data(df_report, missing_wgs_samples, missing_cattle_samples,
         map(lambda x: x not in missing_movement_samples)
     return df_report_missing_data
 
-def report(df_deduped, df_included, cat_mov_path, df_clade_info):
+def report(df_wgs_deduped, df_wgs_included, cattle_movements_path, df_clade_info):
     """
         Generates a Pandas DataFrame which reports on all samples that are 
         excluded from ViewBovine. The DataFrame has an entry for each 
         excluded sample and columns for all possible reasons of exclusion, 
         including filtering: Outcome, flag, pcMapped, Ncount. It also 
-        includes True/False values for each samples prescence in the 3 
+        includes True/False values for each sample's prescence in the 3 
         required datasets: WGS, cattle and movement.  
 
         Parameters:
-            df_deduped (pandas DataFrame object): WGS samples with duplicates 
+            df_wgs_deduped (pandas DataFrame object): WGS samples with duplicates 
             removed. In the form of df_summary
 
-            df_included (pandas DataFrame object): WGS samples included in 
+            df_wgs_included (pandas DataFrame object): WGS samples included in 
             ViewBovine. In the form of df_summary
+
+            cattle_movements_path (str): path to folder containing cattle and 
+            movement .csv files 
 
             df_clade_info (pandas DataFrame object): Ncount filters for each
             WGS clade
-
-            missing_wgs_samples (set): set of sample names missing from WGS
-            data
-
-            missing_cattle_samples (set): set of sample names missing from 
-            cattle data
-
-            missing_movement_samples (set): set of sample names missing from 
-            movement data
 
         Returns:
             report (pandas DataFrame object): report of samples excluded from
             ViewBovine
     """
     # cattle and movement csv filepaths
-    cattle_filepath = f"{cat_mov_path}/cattle.csv" 
-    movement_filepath = f"{cat_mov_path}/movement.csv" 
+    cattle_filepath = f"{cattle_movements_path}/cattle.csv" 
+    movement_filepath = f"{cattle_movements_path}/movement.csv" 
     df_cattle = pd.read_csv(cattle_filepath, dtype=object)
     df_movement = pd.read_csv(movement_filepath, dtype=object)
     _, _, _, missing_wgs_samples, missing_cattle_samples, missing_movement_samples = \
-        consistify(df_deduped, df_cattle, df_movement)
-    return df_deduped.pipe(get_excluded, df_included).pipe(exclusion_reason, df_clade_info).\
+        consistify(df_wgs_deduped, df_cattle, df_movement)
+    return df_wgs_deduped.pipe(get_excluded, df_wgs_included).pipe(exclusion_reason, df_clade_info).\
         pipe(missing_data, missing_wgs_samples, missing_cattle_samples, 
              missing_movement_samples)
