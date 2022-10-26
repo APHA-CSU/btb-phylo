@@ -370,8 +370,8 @@ def full_pipeline(results_path, consensus_path,
     """
         Runs the full pipeline: 
             1. updates with new WGS samples;
-            2. removes duplicated WGS samples;
-            3. filters WGS samples;
+            2. filters WGS samples;
+            3. removes duplicated WGS samples;
             4. runs phylogeny
         Saves all results and metadata to results_path
 
@@ -397,24 +397,24 @@ def full_pipeline(results_path, consensus_path,
     # update full sample summary
     metadata_update, df_all_wgs = update_samples(results_path, all_wgs_samples_filepath)
     metadata = metadata_update
-    # remove duplicates
-    metadata_dedup, df_wgs_deduped = de_duplicate_samples(results_path,
-                                                          df_wgs_samples=df_all_wgs,
-                                                          Outcome="Pass", 
-                                                          flag="BritishbTB", 
-                                                          pcMapped="max", 
-                                                          Ncount="min")
-    metadata.update(metadata_dedup)
     # filter samples
-    metadata_filt, filter_args, df_wgs_passed, _ = sample_filter(results_path, df_wgs_deduped, **kwargs)
+    metadata_filt, filter_args, df_wgs_passed, _ = sample_filter(results_path, df_all_wgs, **kwargs)
     metadata.update(metadata_filt)
     # save filters to metadata output folder
     metadata_path = os.path.join(results_path, "metadata")
     with open(os.path.join(metadata_path, "filters.json"), "w") as f:
         json.dump(filter_args, f, indent=2)
+    # remove duplicates
+    metadata_dedup, df_wgs_deduped = de_duplicate_samples(results_path,
+                                                          df_wgs_samples=df_wgs_passed,
+                                                          Outcome="Pass", 
+                                                          flag="BritishbTB", 
+                                                          pcMapped="max", 
+                                                          Ncount="min")
+    metadata.update(metadata_dedup)
     # run phylogeny
     metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, n_threads, 
-                               build_tree, df_wgs_passed, light_mode=True)
+                               build_tree, df_wgs_deduped, light_mode=True)
     metadata.update(metadata_phylo)
     return (metadata,)
 
@@ -483,11 +483,11 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
         # filters samples within each clade according to Ncount in CladeInfo.csv
         with redirect_stdout(f):
             metadata_filt, filter_clade, df_clade, _ = sample_filter(results_path, 
-                                                                    df_wgs_deduped, 
-                                                                    allow_wipe_out=True, 
-                                                                    group=[clade],
-                                                                    Ncount=(0, row["maxN"]),
-                                                                    **kwargs)
+                                                                     df_wgs_deduped, 
+                                                                     allow_wipe_out=True, 
+                                                                     group=[clade],
+                                                                     Ncount=(0, row["maxN"]),
+                                                                     **kwargs)
         del filter_clade["group"]
         filter_args[clade] = filter_clade
         # sum the number of filtered samples
