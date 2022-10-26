@@ -97,11 +97,11 @@ def de_duplicate_samples(results_path, df_wgs_samples=None,
                          all_wgs_samples_filepath=\
                          utils.DEFAULT_WGS_SAMPLES_FILEPATH, **kwargs):
     """
-        'De-duplicates' WGS samples in df_wgs_samples. Removes dupliacte 
+        'De-duplicates' WGS samples in df_wgs_samples. Removes dupliacte
         entries from WGS data based based on key value pairs in kwargs. 
         If df_samples is not provided, all_wgs_samples_filepath csv is 
         parsed and used. Automatically saves the de_uplicated samples to
-        'deduped_wgs.csv' in the results metadata folder.
+        'deduped_wgs_samples.csv' in the results metadata folder.
 
         Parameters:
             results_path (str): output path to results directory
@@ -145,9 +145,9 @@ def de_duplicate_samples(results_path, df_wgs_samples=None,
     t.join()
     # save deduped wgs to metadata path
     metadata_path = os.path.join(results_path, "metadata")
-    print("\tsaving deduped_wgs.csv ... \n")
-    df_wgs_deduped.to_csv(os.path.join(metadata_path, "deduped_wgs.csv"), 
-                          index=False)
+    print("\tsaving deduped_wgs_samples.csv ... \n")
+    df_wgs_deduped.to_csv(os.path.join(metadata_path, 
+                          "deduped_wgs_samples.csv"), index=False)
     # copy all_wgs_samples.csv to metadata
     shutil.copy(all_wgs_samples_filepath, os.path.join(metadata_path, 
                 "all_wgs_samples.csv"))
@@ -244,7 +244,8 @@ def sample_filter(results_path, df_wgs_samples=None, allow_wipe_out=False,
                   config=False, **kwargs):
     """ 
         Filters the WGS samples. Automatically saves the the filtered 
-        csv file to 'passed_samples.csv' in the results metadata folder.
+        csv file to 'passed_wgs_samples.csv' in the results metadata 
+        folder.
 
         Parameters:
             results_path (str): output path to results directory
@@ -312,8 +313,8 @@ def sample_filter(results_path, df_wgs_samples=None, allow_wipe_out=False,
                                           **filter_args)
     print("\tsaving filtered samples csv ... \n")
     # save filtered_df to csv in metadata output folder
-    utils.df_to_csv(df_wgs_passed, 
-                    os.path.join(metadata_path, "wgs_passed_samples.csv"))
+    utils.df_to_csv(df_wgs_passed, os.path.join(metadata_path, 
+                    "passed_wgs_samples.csv"))
     # copy all_wgs_samples.csv to metadata
     shutil.copy(all_wgs_samples_filepath, 
                 os.path.join(metadata_path, "all_wgs_samples.csv"))
@@ -366,14 +367,15 @@ def phylo(results_path, consensus_path, download_only=False, n_threads=1,
     # otherwise if consistified_wgs.csv in metadata folder: load csv
     elif os.path.exists(os.path.join(metadata_path, "consistified_wgs.csv")):
         df_wgs = utils.wgs_csv_to_df(os.path.join(metadata_path, 
-                                                  "consistified_wgs.csv"))
-    # otherwise if passed_samples.csv in metadata folder: load csv
-    elif os.path.exists(os.path.join(metadata_path, "passed_samples.csv")):
+                                     "consistified_wgs.csv"))
+    # otherwise if passed_wgs_samples.csv in metadata folder: load csv
+    elif os.path.exists(os.path.join(metadata_path, "passed_wgs_samples.csv")):
         df_wgs = utils.wgs_csv_to_df(os.path.join(metadata_path, 
-                                                  "wgs_passed_samples.csv"))
+                                                  "passed_wgs_samples.csv"))
     else:
-        raise ValueError("If wgs_passed_samples.csv does not exist in \
-            results_path ensure that the filtered_df argument is provided")
+        raise ValueError("If passed_wgs_samples.csv does not exist in \
+            results_path ensure that the filtered_df argument is \
+                provided")
     if not os.path.exists(results_path):
         os.makedirs(results_path)
     # if light_mode: use temporary directory for fasta files
@@ -553,7 +555,7 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
     print(f"\t\tclade: {i-1} / {len(df_clade_info)}", end="\n")
     # save filtered_df to csv in metadata output folder
     utils.df_to_csv(df_wgs_passed, 
-                    os.path.join(metadata_path, "passed_samples.csv"))
+                    os.path.join(metadata_path, "passed_wgs_samples.csv"))
     # save filters to metadata output folder
     with open(os.path.join(metadata_path, "filters.json"), "w") as f:
         json.dump(filter_args, f, indent=2)
