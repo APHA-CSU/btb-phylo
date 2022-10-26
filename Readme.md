@@ -4,6 +4,8 @@
 
 `btb-phylo` is APHA software that provides tools for performing phylogeny on processed bovine TB WGS data.
 
+It is also used in production for producing snp matricies to serve the ViewBovine APHA app.
+
 The software can run on any linux EC2 instance within DEFRA's scientific computing environment (SCE), with read access to `s3-csu-003`. 
 
 It downloads consensus files from `s3` from which it builds SNP matricies and phylogenetic trees.
@@ -34,17 +36,19 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 .
 ├── metadata
 │   ├── all_wgs_samples.csv
-│   ├── filtered_samples.csv
+│   ├── deduped_wgs_samples.csv
 │   ├── filters.json
-│   └── metadata.json
+│   ├── metadata.json
+│   └── passed_wgs_samples.csv
 ├── multi_fasta.fas
 ├── snps.csv
 └── snps.fas
 ```
-- `all_wgs_samples.csv`: a summary csv file containing metadata for all samples in `s3-csu-003`;
-- `filtered_samples.csv`: a summary csv file containing metadata for all samples included in the results;
+- `all_wgs_samples.csv`: a csv file containing metadata for all WGS samples in `s3-csu-003`;
+- `deduped_wgs_samples.csv`: a copy of `all_wgs_samples.csv` with duplicate submissions removed;
 - `filters.json`: a `.json` file describing the filters used for choosing samples;
 - `metadata.json`: a `.json` containing metadata for a `btb-phylo` run;
+- `passed_wgs_samples.csv`: a copy of `deduped_wgs_samples.csv` after filtering, i.e. WGS metadata for all samples included in phylogeny;
 - `multi_fasta.fas`: a fasta file containing consensus sequences for all samples included in the results;
 - `snps.fas`: a fasta file containing consensus sequences for all samples included in the results, where only snp sites are retained;
 - `snps.csv`: a snp matrix
@@ -101,30 +105,33 @@ Read 4 sequences of length 831
 ```
 ## <a name="pipe-dets"></a> Pipeline details
 
-The full pipeline consists of five main stages:
+The full pipeline consists of six main stages:
 1. Updating a local `.csv` that contains metadata for every processed APHA bovine-TB sample. The default path of this file is `./all_wgs_samples.csv`. When new samples are available in `s3-csu-003` this file is updated with new samples only.
-2. Filtering the samples by a set of criteria defined in either the [configuration file](#config-file) or a set of command line arguments. The metadata file for filtered samples is saved in the results directory. 
-3. "Consistifying" the samples with cattle and movement data. Designed for use with ViewBovine, this removes samples from WGS, cattle and movement datasets that are not common to all three datasets.
-4. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.
-5. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
+2. Removing duplicate WGS submissions. Multiple samples may exist for a given submission, generally due to poor quality data or inconclusive outcomes. This stage chooses one sample from each submission.
+3. Filtering the samples by a set of criteria defined in either the [configuration file](#config-file) or a set of command line arguments. The metadata file for filtered samples is saved in the results directory. 
+4. "Consistifying" the samples with cattle and movement data. Designed for use with ViewBovine, this removes samples from WGS, cattle and movement datasets that are not common to all three datasets.
+5. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.
+6. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
 
 ## Using the software
 
-Stages 1-5 in [pipeline detials](#pipe-dets) can be run in isolation or combination via a set of sub-commands.
+Stages 1-6 in [pipeline detials](#pipe-dets) can be run in isolation or combination via a set of sub-commands.
 
 ### `python btb_phylo.py -h` (help)
 
 ```
-usage: btb-phylo [-h] {update_samples,filter,consistify,phylo,full_pipeline,ViewBovine} ...
+usage: btb-phylo [-h] {update_samples,filter,de_duplicate,consistify,phylo,full_pipeline,ViewBovine} ...
 
 positional arguments:
-  {update_samples,filter,consistify,phylo,full_pipeline,ViewBovine}
+  {update_samples,filter,de_duplicate,consistify,phylo,full_pipeline,ViewBovine}
                         sub-command help
-    update_samples      updates a local copy of all sample metadata .csv file
-    filter              filters sample metadata .csv file
+    update_samples      updates a local copy of "all_wgs_samples" metadata .csv file
+    filter              filters wgs_samples.csv file
+    de_duplicate        removes duplicated wgs samples from wgs_samples.csv
     consistify          removes wgs samples that are missing from cattle and movement data (metadata warehouse)
     phylo               performs phylogeny
-    full_pipeline       runs the full phylogeny pipeline: updates full samples summary, filters samples and performs phylogeny
+    full_pipeline       runs the full phylogeny pipeline: updates full samples summary, filters samples and performs
+                        phylogeny
     ViewBovine          runs phylogeny with default settings for ViewBovine
 
 optional arguments:
@@ -135,7 +142,7 @@ optional arguments:
 ```
 python btb_phylo.py sub-command -h
 ```
-- `sub-command` is one of `update_samples`, `filter`, `consistify`, `phylo`, `full_pipeline`.
+- `sub-command` is one of `update_samples`, `filter`, `de_duplicate`, `consistify`, `phylo`, `full_pipeline`, `ViewBovine`.
 
 ### Common usage patterns
 
@@ -146,7 +153,7 @@ python btb_phylo.py sub-command -h
 python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
 ```
 
-- on all pass samples, "consistified" with cattle and movement data
+- on all pass samples + "consistified" with cattle and movement data
 ```
 python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --cat_mov_path path/to/folder/with/cattle/and/movement/csvs
 ```
@@ -183,6 +190,24 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 2. Run the following command; 
 ```
 ./btb-phylo.sh {fsx-017_path}/ViewBovine/app/prod {fsx-042_path}/share/ViewBovine_consensus --meta_path {fsx-017_path}/ViewBovine/app/raw --with-docker
+```
+**By default the results directory will contain:**
+```
+.
+├── metadata
+│   ├── CladeInfo.csv
+│   ├── all_wgs_samples.csv
+│   ├── cattle.csv
+│   ├── consistified_wgs.csv
+│   ├── deduped_wgs_samples.csv
+│   ├── filters.json
+│   ├── metadata.json
+│   ├── movement.csv
+│   ├── passed_wgs_samples.csv
+│   └── report.csv
+├── multi_fasta.fas
+├── snps.csv
+└── snps.fas
 ```
 This will use predefined filtering criteria to download new samples to `fsx-017`, consistify the samples with cattle and movement data and update the snp-matrix on `fsx-017`. 
 
