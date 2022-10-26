@@ -90,7 +90,7 @@ def de_duplicate_samples(results_path, df_wgs_samples=None,
         'De-duplicates' WGS samples in df_wgs_samples. Removes dupliacte entries from WGS 
         data based based on key value pairs in kwargs. If df_samples is not provided,
         all_wgs_samples_filepath csv is parsed and used. Automatically saves the de_uplicated
-        samples to 'deduped_wgs.csv' in the results metadata folder.
+        samples to 'deduped_wgs_samples.csv' in the results metadata folder.
 
         Parameters:
             results_path (str): output path to results directory
@@ -128,8 +128,8 @@ def de_duplicate_samples(results_path, df_wgs_samples=None,
     t.join()
     # save deduped wgs to metadata path
     metadata_path = os.path.join(results_path, "metadata")
-    print("\tsaving deduped_wgs.csv ... \n")
-    df_wgs_deduped.to_csv(os.path.join(metadata_path, "deduped_wgs.csv"), index=False)
+    print("\tsaving deduped_wgs_samples.csv ... \n")
+    df_wgs_deduped.to_csv(os.path.join(metadata_path, "deduped_wgs_samples.csv"), index=False)
     # copy all_wgs_samples.csv to metadata
     shutil.copy(all_wgs_samples_filepath, os.path.join(metadata_path, "all_wgs_samples.csv"))
     return metadata, df_wgs_deduped
