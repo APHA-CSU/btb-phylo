@@ -69,6 +69,6 @@ The below Venn diagram illustrates the set of submissions that are included in t
 
 ## 6. Phylogeny
 
-The final stage of `btb-phylo` is to build a SNP matrix for all the the "ViewBovine" samples. 
+The final stage of `btb-phylo` is to build a SNP matrix for all the the "ViewBovine samples". 
 
 In the phylo stage, the `constified_wgs` metadata is parsed and the consensus file for each sample in this file is downloaded from `s3-csu-003` and is then used to build a giant SNP matrix, `snps.csv`, displaying pair-wise SNP distance between every sample in the `consistified_wgs.csv` file.
