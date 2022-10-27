@@ -3,6 +3,8 @@
 
 Collating samples involves cleaning and filtering WGS samples based on their metadata before cross-referencing with two other datasets (cattle and movement data) which are loaded into ViewBovine along with processed WGS SNP data.
 
+## Overview
+
 The below the diagram illustrates how metadata pertainting to all samples is processed and collated from three sources: 
 1. WGS (`all_wgs_samples.csv`);
 2. cattle (`cattle.csv`);
