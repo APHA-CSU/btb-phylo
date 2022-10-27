@@ -508,8 +508,8 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
     metadata["number_of_passed_samples"] = num_passed_samples
     # consistify datasets
     metadata_consist, df_wgs_consistified = consistify_samples(results_path, 
-                                                              cattle_movements_path,
-                                                              df_wgs_samples=df_wgs_passed)
+                                                               cattle_movements_path,
+                                                               df_wgs_samples=df_wgs_passed)
     # update metadata
     metadata.update(metadata_consist)
     # generate report of missing samples
