@@ -36,19 +36,19 @@ This will download the latest docker image from [DockerHub](https://hub.docker.c
 .
 ├── metadata
 │   ├── all_wgs_samples.csv
-│   ├── deduped_wgs_samples.csv
+│   ├── deduped_wgs.csv
 │   ├── filters.json
 │   ├── metadata.json
-│   └── passed_wgs_samples.csv
+│   └── passed_wgs.csv
 ├── multi_fasta.fas
 ├── snps.csv
 └── snps.fas
 ```
 - `all_wgs_samples.csv`: a csv file containing metadata for all WGS samples in `s3-csu-003`;
-- `deduped_wgs_samples.csv`: a copy of `all_wgs_samples.csv` with duplicate submissions removed;
+- `deduped_wgs.csv`: a copy of `all_wgs_samples.csv` with duplicate submissions removed;
 - `filters.json`: a `.json` file describing the filters used for choosing samples;
 - `metadata.json`: a `.json` containing metadata for a `btb-phylo` run;
-- `passed_wgs_samples.csv`: a copy of `deduped_wgs_samples.csv` after filtering, i.e. WGS metadata for all samples included in phylogeny;
+- `passed_wgs.csv`: a copy of `deduped_wgs.csv` after filtering, i.e. WGS metadata for all samples included in phylogeny;
 - `multi_fasta.fas`: a fasta file containing consensus sequences for all samples included in the results;
 - `snps.fas`: a fasta file containing consensus sequences for all samples included in the results, where only snp sites are retained;
 - `snps.csv`: a snp matrix
@@ -199,11 +199,11 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 │   ├── all_wgs_samples.csv
 │   ├── cattle.csv
 │   ├── consistified_wgs.csv
-│   ├── deduped_wgs_samples.csv
+│   ├── deduped_wgs.csv
 │   ├── filters.json
 │   ├── metadata.json
 │   ├── movement.csv
-│   ├── passed_wgs_samples.csv
+│   ├── passed_wgs.csv
 │   └── report.csv
 ├── multi_fasta.fas
 ├── snps.csv
