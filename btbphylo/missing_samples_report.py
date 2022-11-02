@@ -66,6 +66,27 @@ def missing_data(df_report, missing_wgs_samples, missing_cattle_samples,
         map(lambda x: x not in missing_movement_samples)
     return df_report_missing_data
 
+def add_eartag_column(df_report, df_cattle, df_movement):
+    """
+        Add an eartag column. Eartag comes from cattle or movement data.
+        If the submission is missing from either cattle or movement data
+        the entry is None.
+    """
+    df_report_eartag = df_report.copy()
+    # map df_cattle['RawEartag2'] to df_report_eartag['eartag'], skipping 
+    # submissions where there is no cattle data. 
+    df_report_eartag["eartag"] = df_report.apply(lambda x: \
+        df_cattle.loc[df_cattle["CVLRef"]==x["Submission"],"RawEartag2"].item()\
+            if x["cattle_data"] else None)
+    # map df_movement['StandardEartag'] to df_report_eartag['eartag'], skipping 
+    # submissions where there is already an eartag number and where there is no
+    # movement data. 
+    df_report_eartag["eartag"] = df_report.apply(lambda x: \
+        df_movement.loc[df_movement["SampleName"]==x["Submission"],\
+            "StandardEartag"].item() if not x["eartag"] and x["movement_data"] \
+                else None)
+    return df_report_eartag
+
 def report(df_wgs_deduped, df_wgs_included, cattle_movements_path, df_clade_info):
     """
         Generates a Pandas DataFrame which reports on all samples that are 
@@ -97,8 +118,11 @@ def report(df_wgs_deduped, df_wgs_included, cattle_movements_path, df_clade_info
     movement_filepath = f"{cattle_movements_path}/movement.csv" 
     df_cattle = pd.read_csv(cattle_filepath, dtype=object)
     df_movement = pd.read_csv(movement_filepath, dtype=object)
+    # get missing wgs, cattle and movement samples
     _, _, _, missing_wgs_samples, missing_cattle_samples, missing_movement_samples = \
         consistify(df_wgs_deduped, df_cattle, df_movement)
+    # process data to return the full report
     return df_wgs_deduped.pipe(get_excluded, df_wgs_included).pipe(exclusion_reason, df_clade_info).\
         pipe(missing_data, missing_wgs_samples, missing_cattle_samples, 
-             missing_movement_samples)
+             missing_movement_samples).pipe(add_eartag_column, df_cattle, 
+                                            df_movement)
