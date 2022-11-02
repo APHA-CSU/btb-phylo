@@ -69,4 +69,24 @@ class TestMissingSamplesReport(unittest.TestCase):
                                                                          test_missing_movement_samples),
                                      test_df_report_missing_data)
 
+    def test_add_eartag_column(slef):
+        # test input
+        test_df_report = pd.DataFrame({"Submission": ["A", "B", "C", "D"], 
+                                       "cattle_data": [True, True, False, False], 
+                                       "movement_data": [True, False, True, False]})
+        test_df_cattle = pd.DataFrame({"CVLRef": ["A", "B"], 
+                                       "RawEartag2": ["foo", "bar"]})
+        test_df_movement = pd.DataFrame({"SampleName": ["A", "C"], 
+                                         "StandardEartag": ["foo", "foobar"]})
+        # test output
+        test_df_report_eartag = pd.DataFrame({"Submission": ["A", "B", "C", "D"], 
+                                              "eartag": ["foo", "bar", "foobar", None],
+                                              "cattle_data": [True, True, False, False], 
+                                              "movement_data": [True, False, True, False]})
+        # assert output
+        nptesting.assert_array_equal(missing_samples_report.add_eartag_column(test_df_report, 
+                                                                              test_df_cattle, 
+                                                                              test_df_movement), 
+                                     test_df_report_eartag)
+
         

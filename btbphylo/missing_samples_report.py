@@ -75,16 +75,16 @@ def add_eartag_column(df_report, df_cattle, df_movement):
     df_report_eartag = df_report.copy()
     # map df_cattle['RawEartag2'] to df_report_eartag['eartag'], skipping 
     # submissions where there is no cattle data. 
+    df_report_eartag.insert(loc=1, column="eartag", value=None)
     df_report_eartag["eartag"] = df_report.apply(lambda x: \
         df_cattle.loc[df_cattle["CVLRef"]==x["Submission"],"RawEartag2"].item()\
-            if x["cattle_data"] else None)
+            if x["cattle_data"] else None, axis=1)
     # map df_movement['StandardEartag'] to df_report_eartag['eartag'], skipping 
-    # submissions where there is already an eartag number and where there is no
-    # movement data. 
+    # submissions where there is already there is cattle data and where there is
+    # no movement data. 
     df_report_eartag["eartag"] = df_report.apply(lambda x: \
         df_movement.loc[df_movement["SampleName"]==x["Submission"],\
-            "StandardEartag"].item() if not x["eartag"] and x["movement_data"] \
-                else None)
+            "StandardEartag"].item() if x["movement_data"] else None, axis=1)
     return df_report_eartag
 
 def report(df_wgs_deduped, df_wgs_included, cattle_movements_path, df_clade_info):

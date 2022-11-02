@@ -30,7 +30,8 @@ if __name__ == "__main__":
                            TestUpdateSummary('test_extract_s3_key')]
     missing_samples_report_test = [TestMissingSamplesReport('test_get_excluded'),
                                    TestMissingSamplesReport('test_exclusion_reason'),
-                                   TestMissingSamplesReport('test_missing_data')]
+                                   TestMissingSamplesReport('test_missing_data'),
+                                   TestMissingSamplesReport('test_add_eartag_column')]
     consistify_test = [TestConsistify('test_consistify'),
                        TestConsistify('test_clade_correction')]
     utils_test = [TestUtils('test_extract_submission_no')]
