@@ -93,6 +93,7 @@ def append_df_wgs(df_summary, new_keys, itteration=0):
             df_summary (pandas DataFrame object): an updated dataframe with new wgs sample
             metadata added
     """
+    df_summary.reset_index(inplace=True, drop=True)
     # if not yet on last itteration (last new_key element)
     num_batches = len(new_keys)
     if itteration < num_batches:
@@ -101,7 +102,7 @@ def append_df_wgs(df_summary, new_keys, itteration=0):
         finalout_df = finalout_s3_to_df(new_keys[itteration]).pipe(add_submission_col)
         # append to df_summary
         df_summary, _ = append_df_wgs(pd.concat([df_summary, finalout_df]), 
-                                          new_keys, itteration+1)
+                                      new_keys, itteration+1)
     else:
         print(f"\t\tdownloaded batch summaries: {num_batches} / {num_batches} \n")
     metadata = {"total_number_of_wgs_samples": len(df_summary)}

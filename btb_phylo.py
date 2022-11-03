@@ -512,9 +512,16 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
                                                                df_wgs_samples=df_wgs_passed)
     # update metadata
     metadata.update(metadata_consist)
+    # printing in seperate thread
+    print("## Missing samples report ##\n")
+    t = threading.Thread(target=process_print, args=("\tgenerating report",), daemon=True)
+    t.start()
     # generate report of missing samples
     df_report = missing_samples_report.report(df_wgs_deduped, df_wgs_consistified, cattle_movements_path, 
                                               df_clade_info)
+    # terminate printing thread
+    t.running = False
+    t.join()
     # save report to metadata folder
     df_report.to_csv(os.path.join(metadata_path, "report.csv"), index=False)
     # run phylogeny
