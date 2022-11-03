@@ -72,19 +72,17 @@ def add_eartag_column(df_report, df_cattle, df_movement):
         If the submission is missing from either cattle or movement data
         the entry is None.
     """
+    # setup new dataframe with eartag column in the 2nd position
     df_report_eartag = df_report.copy()
-    # map df_cattle['RawEartag2'] to df_report_eartag['eartag'], skipping 
-    # submissions where there is no cattle data. 
     df_report_eartag.insert(loc=1, column="eartag", value=None)
+    # map df_cattle['RawEartag2'] to df_report_eartag['eartag'] if there is 
+    # cattle data. Else, map df_movement['StandardEartag'] to 
+    # df_report_eartag['eartag'] if there is movement data. Else value is None.
     df_report_eartag["eartag"] = df_report.apply(lambda x: \
         df_cattle.loc[df_cattle["CVLRef"]==x["Submission"],"RawEartag2"].item()\
-            if x["cattle_data"] else None, axis=1)
-    # map df_movement['StandardEartag'] to df_report_eartag['eartag'], skipping 
-    # submissions where there is already there is cattle data and where there is
-    # no movement data. 
-    df_report_eartag["eartag"] = df_report.apply(lambda x: \
-        df_movement.loc[df_movement["SampleName"]==x["Submission"],\
-            "StandardEartag"].item() if x["movement_data"] else None, axis=1)
+            if x["cattle_data"] else df_movement.loc[df_movement["SampleName"] \
+                ==x["Submission"],"StandardEartag"].item() if \
+                    x["movement_data"] else None, axis=1)
     return df_report_eartag
 
 def report(df_wgs_deduped, df_wgs_included, cattle_movements_path, df_clade_info):
