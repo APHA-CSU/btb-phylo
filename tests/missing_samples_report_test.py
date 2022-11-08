@@ -88,5 +88,3 @@ class TestMissingSamplesReport(unittest.TestCase):
                                                                               test_df_cattle, 
                                                                               test_df_movement), 
                                      test_df_report_eartag)
-
-        

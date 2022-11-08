@@ -9,9 +9,6 @@ import io
 from datetime import datetime
 from contextlib import redirect_stdout
 import threading
-import itertools
-import sys
-import time
 
 import pandas as pd
 
@@ -26,20 +23,6 @@ import btbphylo.phylogeny as phylogeny
 DEFAULT_CLADE_INFO_PATH = os.path.join(os.path.dirname\
     (os.path.abspath(__file__)), "CladeInfo.csv")
 
-
-def process_print(print_message):
-    t = threading.currentThread()
-    t.running = True
-    try:
-        for c in itertools.cycle(['|', '/', '-', '\\']):
-            if not getattr(t, "running"):
-                print("\n")
-                break
-            sys.stdout.write(f"\r {print_message} {c}")
-            sys.stdout.flush()
-            time.sleep(0.1)
-    except KeyboardInterrupt:
-        sys.exit(1)
 
 def update_samples(results_path, 
                    all_wgs_samples_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH):
@@ -72,7 +55,7 @@ def update_samples(results_path,
     # download sample summary csv
     df_all_wgs = update_summary.get_df_wgs(all_wgs_samples_filepath)
     # printing in seperate thread
-    t = threading.Thread(target=process_print, 
+    t = threading.Thread(target=utils.process_print, 
                          args=("\tgetting s3 keys for batch summary files",), 
                          daemon=True)
     t.start()
@@ -133,7 +116,7 @@ def de_duplicate_samples(results_path, df_wgs_samples=None,
         print("\tloading all_wgs_samples.csv ... \n")
         df_wgs_samples = utils.wgs_csv_to_df(all_wgs_samples_filepath)
     # printing in seperate thread
-    t = threading.Thread(target=process_print, 
+    t = threading.Thread(target=utils.process_print, 
                          args=("\tremoving duplicate WGS samples",), 
                          daemon=True)
     t.start()
@@ -216,7 +199,7 @@ def consistify_samples(results_path, cattle_movements_path, df_wgs_samples=None,
     df_cattle_samples = pd.read_csv(cattle_filepath, dtype=object)
     df_movement_samples = pd.read_csv(movement_filepath, dtype=object)
     # printing in seperate thread
-    t = threading.Thread(target=process_print, 
+    t = threading.Thread(target=utils.process_print, 
                          args=("\tconsistifying samples",), daemon=True)
     t.start()
     # process data
@@ -449,8 +432,16 @@ def full_pipeline(results_path, consensus_path,
     metadata_update, df_all_wgs = update_samples(results_path, 
                                                  all_wgs_samples_filepath)
     metadata = metadata_update
+    # remove duplicates
+    metadata_dedup, df_wgs_deduped = de_duplicate_samples(results_path,
+                                                          df_all_wgs,
+                                                          Outcome="Pass", 
+                                                          flag="BritishbTB", 
+                                                          pcMapped="max", 
+                                                          Ncount="min")
+    metadata.update(metadata_dedup)
     # filter samples
-    metadata_filt, filter_args, df_wgs_passed, _ = sample_filter(results_path, 
+    metadata_filt, filter_args, df_wgs_deduped, _ = sample_filter(results_path, 
                                                                  df_all_wgs, 
                                                                  **kwargs)
     metadata.update(metadata_filt)
@@ -458,14 +449,6 @@ def full_pipeline(results_path, consensus_path,
     metadata_path = os.path.join(results_path, "metadata")
     with open(os.path.join(metadata_path, "filters.json"), "w") as f:
         json.dump(filter_args, f, indent=2)
-    # remove duplicates
-    metadata_dedup, df_wgs_deduped = de_duplicate_samples(results_path,
-                                                          df_wgs_passed,
-                                                          Outcome="Pass", 
-                                                          flag="BritishbTB", 
-                                                          pcMapped="max", 
-                                                          Ncount="min")
-    metadata.update(metadata_dedup)
     # run phylogeny
     metadata_phylo, *_ = phylo(results_path, consensus_path, download_only, 
                                n_threads, build_tree, df_wgs_deduped, 
@@ -572,7 +555,8 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
     metadata.update(metadata_consist)
     # printing in seperate thread
     print("## Missing samples report ##\n")
-    t = threading.Thread(target=process_print, args=("\tgenerating report",), 
+    t = threading.Thread(target=utils.process_print, 
+                         args=("\tgenerating report",), 
                          daemon=True)
     t.start()
     # generate report of missing samples
