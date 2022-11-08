@@ -11,16 +11,23 @@ class TestConsistify(unittest.TestCase):
         test_wgs = pd.DataFrame({"Submission": ["A", "B", "C", "D"]})
         test_cattle = pd.DataFrame({"CVLRef": ["B", "C", "D"]})
         test_movement = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D", "E"]})
+        # test output
         test_wgs_consist = pd.DataFrame({"Submission": ["C", "D"]})
         test_cattle_consist = pd.DataFrame({"CVLRef": ["C", "D"]})
         test_movement_consist = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D"]})
+        test_missing_wgs = {"E"}
+        test_missing_cattle ={"A", "E"}
+        test_missing_movement = {"A", "B"}
         # run consistify
-        (wgs_consist, cattle_consist, movement_consist, *_) = \
+        (wgs_consist, cattle_consist, movement_consist, missing_wgs, missing_cattle, missing_movement) = \
             consistify.consistify(test_wgs, test_cattle, test_movement)
         # assert output
         nptesting.assert_array_equal(wgs_consist, test_wgs_consist)
         nptesting.assert_array_equal(cattle_consist, test_cattle_consist)
         nptesting.assert_array_equal(movement_consist, test_movement_consist)
+        self.assertSetEqual(missing_wgs, test_missing_wgs)
+        self.assertSetEqual(missing_cattle, test_missing_cattle)
+        self.assertSetEqual(missing_movement, test_missing_movement)
 
     def test_clade_correction(self):
         # test input

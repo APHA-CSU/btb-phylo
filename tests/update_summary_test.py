@@ -9,12 +9,12 @@ from btbphylo import update_summary
 
 class TestUpdateSummary(unittest.TestCase):
     @mock.patch("btbphylo.update_summary.finalout_s3_to_df")
-    def test_append_df_summary(self, mock_finalout_s3_to_df):
+    def test_append_df_wgs(self, mock_finalout_s3_to_df):
         mock_finalout_s3_to_df.return_value = pd.DataFrame()
         # simulate 7 new keys
         test_new_keys = [0, 1, 2, 3, 4, 5, 6]
         # start with empty df_summary
-        test_df_summary = pd.DataFrame({"foo":[], "bar":[], "baz":[]})
+        test_df_wgs = pd.DataFrame({"foo":[], "bar":[], "baz":[]})
         with mock.patch("btbphylo.update_summary.add_submission_col") as mock_add_submission_col:
             # mock sequential return values of calls to update_summary.add_submission_col, 
             # this effectively mocks the return value of finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
@@ -25,7 +25,7 @@ class TestUpdateSummary(unittest.TestCase):
                                                    pd.DataFrame({"foo":["e"], "bar":["e"], "baz":["e"]}),
                                                    pd.DataFrame({"foo":["f"], "bar":["f"], "baz":["f"]}),
                                                    pd.DataFrame({"foo":["g"], "bar":["g"], "baz":["g"]})]
-            test_output, _ = update_summary.append_df_summary(test_df_summary, test_new_keys)
+            test_output, _ = update_summary.append_df_wgs(test_df_wgs, test_new_keys)
             # assert correct output
             nptesting.assert_array_equal(test_output,
                                          pd.DataFrame({"foo":["a", "b", "c", "d", "e", "f", "g"], 
