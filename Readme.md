@@ -113,6 +113,8 @@ The full pipeline consists of six main stages:
 5. Downloading consensus sequences for the filtered sample set from `s3-csu-003`. If a consistent directory is used for storing consensus sequences, then only new samples will be downloaded.
 6. Performing phylogeny: Detecting snp sites using `snp-sites`, building a snp matrix using `snp-dists` and optionally building a phylogentic tree using `megacc`.
 
+<img src="https://user-images.githubusercontent.com/10742324/200572223-39b10c57-88ff-43ab-83e7-c6272acb4f70.png" width=650, alt="centered image">
+
 ## Using the software
 
 Stages 1-6 in [pipeline detials](#pipe-dets) can be run in isolation or combination via a set of sub-commands.
