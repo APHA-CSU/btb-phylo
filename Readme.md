@@ -179,7 +179,7 @@ Other common optional arguments are:
 
 ## Production - serving ViewBovine app
 
-`btb-phylo` provides a snp-matrix for ViewBovine APHA. 
+`btb-phylo` provides a snp-matrix for ViewBovine APHA. Details of the ViewBovine phylogeny dataflow and sample selection are provided in [ViewBovineDataFlow.md]((https://github.com/APHA-CSU/btb-phylo/blob/main/ViewBovineDataFlow.md)) 
 
 Updating the snp-matrix is triggered manually and should be run either weekly or on arrival of new processed WGS data.
 
