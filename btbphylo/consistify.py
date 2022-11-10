@@ -77,7 +77,7 @@ def fix_movement(df_movement):
     """
         removes NaNs from Stay_Length column to avoid error in ViewBovine
     """
-    return df_movement[df_movement['Stay_Length'].notna()]
+    return df_movement[df_movement['Stay_Length'].fillna(0)]
 
 def process_datasets(df_wgs, df_cattle, df_movement):
     """
