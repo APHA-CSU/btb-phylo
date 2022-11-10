@@ -503,9 +503,7 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
     # remove duplicates
     metadata_dedup, df_wgs_deduped = de_duplicate_samples(results_path,
                                                           df_all_wgs,
-                                                          Outcome="Pass", 
                                                           flag="BritishbTB", 
-                                                          pcMapped="max", 
                                                           Ncount="min")
     metadata.update(metadata_dedup)
     df_wgs_passed = pd.DataFrame(columns=["Sample", "GenomeCov", "MeanDepth", 
@@ -716,8 +714,6 @@ def parse_args():
     subparser.add_argument("--all_wgs_samples_filepath", help="path to \
         'all_wgs_samples' .csv file", \
             default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)
-    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", \
-        type=float, nargs=2, help="optional filter", default=(90, 100))
     subparser.add_argument("--flag", "-f", dest="flag", nargs="+", \
         help="optional filter", default=["BritishbTB"])
     subparser.set_defaults(func=view_bovine)

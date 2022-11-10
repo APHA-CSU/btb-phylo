@@ -12,7 +12,7 @@ def remove_duplicates(df, **kwargs):
         values of kwargs. Duplicated samples are kept if their entry in 
         the column specified by the kwarg name contains either the min 
         or max value (specified by the kwarg value), for numerical 
-        columns. Or the value itself, for categorical columns. If more 
+        columns, or the value itself, for categorical columns. If more 
         than one sample in the column name contain the min or max value,
         or the value itself, then the second kwarg is used to choose 
         which of these duplicates to keep. This pattern continues for n 
