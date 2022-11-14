@@ -75,9 +75,13 @@ def clade_correction(df_wgs, df_cattle):
 # TODO: move this feature into sql scripts in ViewBovine repo
 def fix_movement(df_movement):
     """
-        removes NaNs from Stay_Length column to avoid error in ViewBovine
+        removes NaNs from Stay_Length column to avoid error in 
+        ViewBovine
     """
-    return df_movement[df_movement['Stay_Length'].fillna(0)]
+    df_movement_fixed = df_movement.copy()
+    df_movement_fixed['Stay_Length'] = \
+        df_movement_fixed['Stay_Length'].fillna(0)
+    return df_movement_fixed
 
 def process_datasets(df_wgs, df_cattle, df_movement):
     """
