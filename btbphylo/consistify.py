@@ -72,13 +72,6 @@ def clade_correction(df_wgs, df_cattle):
             df_wgs.loc[df_wgs["Submission"]==row["CVLRef"], "group"].iloc[0]
     return df_cattle_corrected
 
-# TODO: move this feature into sql scripts in ViewBovine repo
-def fix_movement(df_movement):
-    """
-        removes NaNs from Stay_Length column to avoid error in ViewBovine
-    """
-    return df_movement[df_movement['Stay_Length'].notna()]
-
 def process_datasets(df_wgs, df_cattle, df_movement):
     """
         Fully processes the datasets so that they are prepped for 
@@ -92,8 +85,6 @@ def process_datasets(df_wgs, df_cattle, df_movement):
         consistify(df_wgs.copy(), df_cattle.copy(), df_movement.copy())
     # correct clade assignment in cattle csv
     df_cattle_corrected = clade_correction(df_wgs_consist, df_cattle_consist)
-    # fix movement data
-    df_fixed_movement = fix_movement(df_movement_consist)
     # metadata
     metadata = {"original_number_of_wgs_records": len(df_wgs),
                 "original_number_of_cattle_records": len(df_cattle),
@@ -103,7 +94,7 @@ def process_datasets(df_wgs, df_cattle, df_movement):
                     len(df_cattle_corrected),
                 "consistified_number_of_movement_records": \
                     len(df_movement_consist)}
-    return metadata, df_wgs_consist, df_cattle_corrected, df_fixed_movement
+    return metadata, df_wgs_consist, df_cattle_corrected, df_movement_consist
 
 def consistify_csvs(wgs_samples_path, cattle_path, movement_path, 
                     consistified_wgs_path, consistified_cattle_path, 

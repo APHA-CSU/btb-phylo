@@ -702,7 +702,7 @@ def parse_args():
         nargs=2, help="optional filter")
     subparser.set_defaults(func=full_pipeline)
 
-    # view bovine
+    # viewbovine
     subparser = subparsers.add_parser('ViewBovine', help="runs phylogeny with \
         default settings for ViewBovine")
     subparser.add_argument("results_path", help="path to results directory")
