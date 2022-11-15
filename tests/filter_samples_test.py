@@ -7,58 +7,6 @@ from btbphylo import filter_samples
 
 
 class TestFilterSamples(unittest.TestCase):
-    def test_remove_duplicates(self):
-        # test 2 kwargs
-        test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float),
-                                "Ncount":pd.Series([1, 2, 3, 4, 5, 6], dtype=float)})
-        nptesting.assert_array_equal(filter_samples.remove_duplicates(test_df, pcMapped="max", Ncount="min").values,
-                                     pd.DataFrame({"Submission":["1", "2", "3"], 
-                                                   "pcMapped":[0.1, 0.4, 0.6], "Ncount":[1, 4, 6]}).values)
-        # test 3 kwargs
-        test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3", "1"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6, 0.1], dtype=float),
-                                "Ncount":pd.Series([1, 2, 3, 4, 5, 6, 1], dtype=float),
-                                "foo":pd.Series([10, 20, 30, 40, 50, 60, 70], dtype=float)})
-        nptesting.assert_array_equal(filter_samples.remove_duplicates(test_df, pcMapped="max", Ncount="min", foo="max").values,
-                                     pd.DataFrame({"Submission":["2", "3", "1"], 
-                                                   "pcMapped":[0.4, 0.6, 0.1], "Ncount":[4, 6, 1], "foo":[40, 60, 70]}).values)
-        # test defaulting to first sample
-        test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3", "1"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6, 0.1], dtype=float),
-                                "Ncount":pd.Series([1, 2, 3, 4, 5, 6, 1], dtype=float),
-                                "foo":pd.Series([10, 20, 30, 40, 50, 60, 10], dtype=float)})
-        nptesting.assert_array_equal(filter_samples.remove_duplicates(test_df, pcMapped="max", Ncount="min", foo="max").values,
-                                     pd.DataFrame({"Submission":["1", "2", "3"], 
-                                                   "pcMapped":[0.1, 0.4, 0.6], "Ncount":[1, 4, 6], "foo":[10, 40, 60]}).values)
-        # test exceptions
-        with self.assertRaises(filter_samples.InvalidDtype):
-            filter_samples.remove_duplicates(pd.DataFrame({"Submission":pd.Series(["1"], dtype="object"),
-                                        "foo":pd.Series(["a"], dtype="object")}), foo="max")
-        with self.assertRaises(ValueError):
-            filter_samples.remove_duplicates(pd.DataFrame({"Submission":pd.Series(["1"], dtype="object"),
-                                        "foo":pd.Series([1], dtype=float)}), bar="max")
-        with self.assertRaises(ValueError):
-            filter_samples.remove_duplicates(pd.DataFrame({"Submission":pd.Series(["1"], dtype="object"),
-                                        "foo":pd.Series([1], dtype=float)}), foo="bar")
-        with self.assertRaises(TypeError):
-            filter_samples.remove_duplicates(pd.DataFrame({"Submission":pd.Series(["1"], dtype="object"),
-                                        "foo":pd.Series([1], dtype=float)}))
-
-    def test_get_indexes_to_remove(self):
-        # test max
-        test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.2, 0.6], dtype=float),
-                                "Ncount":pd.Series([1, 2, 3, 4, 5, 6], dtype=float)})
-        pd.testing.assert_index_equal(filter_samples.get_indexes_to_remove(test_df, "pcMapped", "max"),
-                                      pd.Index([0, 1, 2]), check_order=False)
-        # test min
-        test_df = pd.DataFrame({"Submission":pd.Series(["1", "2", "2", "2", "1", "3"], dtype="object"),
-                                "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.1, 0.6], dtype=float),
-                                "Ncount":pd.Series([1, 2, 3, 4, 5, 6], dtype=float)})
-        pd.testing.assert_index_equal(filter_samples.get_indexes_to_remove(test_df, "Ncount", "min"),
-                                      pd.Index([2, 3, 4]), check_order=False)
-
     def test_filter_df(self):
         # define dataframe for input
         test_df = pd.DataFrame({"column_A":pd.Series(["a", "b", "c", "d", "e"], dtype="object"),
@@ -99,6 +47,10 @@ class TestFilterSamples(unittest.TestCase):
         with self.assertRaises(Exception):
             filter_samples.filter_df(test_df, pcMapped=(0.15, 0.25), 
                                        column_A=["b", "c"], column_D=(2, 4))
+        # test exception is not raised with allow_wipe_out=True
+        # empty
+        filter_samples.filter_df(test_df, allow_wipe_out=True, pcMapped=(0.15, 0.16), 
+                                    column_A=["b", "c"], column_D=(2, 3))
         # test invalid kwarg name
         with self.assertRaises(ValueError):
             filter_samples.filter_df(test_df, foo="foo")
@@ -130,9 +82,9 @@ class TestFilterSamples(unittest.TestCase):
         self.assertTrue(filter_samples.filter_columns_numeric(test_df, column_C=(0.23, 0.24)).empty)
         # test exceptions
         # invalid kwarg type
-        with self.assertRaises(filter_samples.InvalidDtype):
+        with self.assertRaises(filter_samples.utils.InvalidDtype):
             filter_samples.filter_columns_numeric(test_df, column_A="foo")
-        with self.assertRaises(filter_samples.InvalidDtype):
+        with self.assertRaises(filter_samples.utils.InvalidDtype):
             filter_samples.filter_columns_numeric(test_df, column_B="foo")
         # invlalid kwarg: is not in df.columns
         with self.assertRaises(KeyError):
@@ -191,10 +143,10 @@ class TestFilterSamples(unittest.TestCase):
             filter_samples.filter_columns_categorical(test_df, column_A=["Z", "Y"], column_B=["x"])
         # test exceptions
         # invalid kwarg type
-        with self.assertRaises(filter_samples.InvalidDtype):
+        with self.assertRaises(filter_samples.utils.InvalidDtype):
             filter_samples.filter_columns_categorical(test_df, column_C=[])
         # invalid kwarg type
-        with self.assertRaises(filter_samples.InvalidDtype):
+        with self.assertRaises(filter_samples.utils.InvalidDtype):
             filter_samples.filter_columns_categorical(test_df, column_D=[])
         # invlalid kwarg: is not in df.columns
         with self.assertRaises(KeyError):

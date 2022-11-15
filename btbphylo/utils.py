@@ -1,6 +1,10 @@
 import subprocess
 from os import path
 import re
+import itertools
+import time
+import sys
+import threading
 
 import boto3
 import botocore
@@ -11,9 +15,32 @@ import pandas as pd
     Utility functions
 """
 
-DEFAULT_SUMMARY_FILEPATH = path.join(path.dirname(path.dirname(path.abspath(__file__))), 
-                                     "all_samples.csv")
+DEFAULT_WGS_SAMPLES_FILEPATH = \
+    path.join(path.dirname(path.dirname(path.abspath(__file__))), 
+              "all_wgs_samples.csv")
 
+
+class InvalidDtype(Exception):
+    def __init__(self, 
+                 message="Invalid series name. Series must be of correct type", 
+                 *args, **kwargs):
+        super().__init__(message, args, kwargs)
+        if "dtype" in kwargs:
+            self.message = \
+                f"Invalid series name. Series must be of type {kwargs['dtype']}"
+        if "column_name" in kwargs:
+            self.message = \
+                f"Invalid series name '{kwargs['column_name']}'. Series must be\
+                     of the correct type"
+        if "column_name" in kwargs and "dtype" in kwargs:
+            self.message = \
+                f"Invalid series name '{kwargs['column_name']}'. Series must be\
+                     of type {kwargs['dtype']}"
+        else:
+            self.message = message
+
+    def __str__(self):
+        return self.message
 
 class NoS3ObjectError(Exception):
     def __init__(self, bucket, key):
@@ -23,21 +50,52 @@ class NoS3ObjectError(Exception):
     def __str__(self):
         return self.message
 
+def process_print(print_message):
+    t = threading.currentThread()
+    t.running = True
+    try:
+        for c in itertools.cycle(['|', '/', '-', '\\']):
+            if not getattr(t, "running"):
+                print("\n")
+                break
+            sys.stdout.write(f"\r {print_message} {c}")
+            sys.stdout.flush()
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        sys.exit(1)
+
+
 def format_warning(message, category, filename, lineno, file=None, line=None):
     return '%s:%s: %s:%s\n' % (filename, lineno, category.__name__, message)
 
-def summary_csv_to_df(summary_filepath):
+def wgs_csv_to_df(summary_filepath):
     """
-        Read sample summary CSV and returns the data in a pandas dataframe.
+        Read sample summary CSV and returns the data in a pandas 
+        dataframe.
     """
     df = pd.read_csv(summary_filepath, comment="#", 
                      dtype = {"Sample":"category", "GenomeCov":float, 
                      "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
-                     "Outcome":"category", "flag":"category", "group":"category", 
-                     "CSSTested":float, "matches":float, "mismatches":float, 
-                     "noCoverage":float, "anomalous":float, "Ncount":float, 
-                     "ResultLoc":"category", "ID":"category", "TotalReads":float, 
-                     "Abundance":float, "Submission": object})
+                     "Outcome":"category", "flag":"category", 
+                     "group":"category", "CSSTested":float, "matches":float, 
+                     "mismatches":float, "noCoverage":float, "anomalous":float, 
+                     "Ncount":float, "ResultLoc":"category", "ID":"category", 
+                     "TotalReads":float, "Abundance":float, 
+                     "Submission": object})
+    return df
+
+def finalout_csv_to_df(finalout_filepath):
+    """
+        Reads finalout CSV and returns the data in a pandas dataframe.
+    """
+    df = pd.read_csv(finalout_filepath, comment="#", 
+                     dtype = {"Sample":"category", "GenomeCov":float, 
+                     "MeanDepth":float, "NumRawReads":float, "pcMapped":float, 
+                     "Outcome":"category", "flag":"category", 
+                     "group":"category", "CSSTested":float, "matches":float, 
+                     "mismatches":float, "noCoverage":float, "anomalous":float, 
+                     "Ncount":float, "ResultLoc":"category", "ID":"category", 
+                     "TotalReads":float, "Abundance":float})
     return df
 
 def extract_submission_no(sample_name):
@@ -83,11 +141,12 @@ def s3_object_exists(bucket, key):
     return  key_exists
 
 def run(cmd, *args, **kwargs):
-    """ Run a command and assert that the process exits with a non-zero exit code.
-        See python's subprocess.run command for args/kwargs
+    """ Run a command and assert that the process exits with a non-zero 
+        exit code. See python's subprocess.run command for args/kwargs
 
         Parameters:
-            cmd (list): List of strings defining the command, see (subprocess.run in python docs)
+            cmd (list): List of strings defining the command, see 
+            (subprocess.run in python docs)
             cwd (str): Set surr
 
         Returns:
@@ -96,7 +155,6 @@ def run(cmd, *args, **kwargs):
     """
     # TODO: store stdout to a file
     ps = subprocess.run(cmd, *args, **kwargs)
-
     returncode = ps.returncode
     if returncode:
         raise Exception("""*****
@@ -138,7 +196,8 @@ def s3_download_file_cli(bucket, key, dest):
         path (string) using the AWS CLI
     """
     if s3_object_exists(bucket, key):
-        run(["aws", "s3", "cp", f"s3://{bucket}/{key}", dest], capture_output=True)
+        run(["aws", "s3", "cp", f"s3://{bucket}/{key}", dest], 
+             capture_output=True)
     else:
         raise NoS3ObjectError(bucket, key)
 
@@ -152,11 +211,12 @@ def list_s3_objects(bucket, prefix):
         Return a list of s3 objects with the common prefix (argument)
     """
     s3_client = boto3.client('s3')
-    response = s3_client.list_objects_v2(Bucket=bucket, Delimiter = '/', Prefix=prefix)
+    response = s3_client.list_objects_v2(Bucket=bucket, Delimiter = '/', 
+                                         Prefix=prefix)
     return [i['Prefix'] for i in response['CommonPrefixes']]
 
-def df_to_csv(df_summary, summary_filepath=DEFAULT_SUMMARY_FILEPATH):
+def df_to_csv(df_wgs, summary_filepath=DEFAULT_WGS_SAMPLES_FILEPATH):
     """
-        Save df_summary to csv
+        Save df_wgs to csv
     """
-    df_summary.to_csv(summary_filepath, index=False)
+    df_wgs.to_csv(summary_filepath, index=False)
