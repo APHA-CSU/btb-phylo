@@ -720,9 +720,6 @@ def parse_args():
         type=float, nargs=2, help="optional filter", default=(90, 100))
     subparser.add_argument("--flag", "-f", dest="flag", nargs="+", \
         help="optional filter", default=["BritishbTB"])
-    # TODO: remove this argument as it's just here for testing purposes
-    subparser.add_argument("--sample_name", "-s", dest="Sample", nargs="+", \
-        help="optional filter")
     subparser.set_defaults(func=view_bovine)
 
     # pasre args
