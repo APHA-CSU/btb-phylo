@@ -18,15 +18,13 @@ def get_excluded(df_wgs_deduped, df_wgs_included):
 
 def exclusion_reason(df_wgs_excluded, df_clade_info):
     """
-        Returns a "report" DataFrame, detailing the reasons why each WGS
-        sample
-        is excluded.
+        Returns a "report" DataFrame, with all submissions that are 
+        excluded. df_report has two columns "Submission" and "Ncount". 
+        Ncount, is "Pass" or "Fail" depending on whether each submission
+        passes the Ncount filter.
     """
     # subsample df_excluded columns
-    df_report = df_wgs_excluded[["Submission", "Outcome", "flag"]].copy()
-    # map pcMapped column to a pass/fail value
-    df_report["pcMapped"] = df_wgs_excluded["pcMapped"]\
-        .map(lambda x: "Pass" if x >= 90 else "Fail")
+    df_report = df_wgs_excluded[["Submission"]].copy()
     # map Ncount column to a pass/fail value
     df_report["Ncount"] = "Fail"
     for clade, row in df_clade_info.iterrows():
@@ -51,9 +49,6 @@ def missing_data(df_report, missing_wgs_samples, missing_cattle_samples,
     # generate report df for samples with missing wgs data
     df_report_missing_wgs = \
         pd.DataFrame({"Submission": list(missing_wgs_samples), 
-                      "Outcome": [None]*len(missing_wgs_samples),
-                      "flag": [None]*len(missing_wgs_samples),
-                      "pcMapped": [None]*len(missing_wgs_samples),
                       "Ncount": [None]*len(missing_wgs_samples),
                       "wgs_data": [False]*len(missing_wgs_samples),
                       "cattle_data": [None]*len(missing_wgs_samples),
@@ -97,9 +92,9 @@ def report(df_wgs_deduped, df_wgs_included, cattle_movements_path,
         Generates a Pandas DataFrame which reports on all samples that 
         are excluded from ViewBovine. The DataFrame has an entry for 
         each excluded sample and columns for all possible reasons of 
-        exclusion, including filtering: Outcome, flag, pcMapped, Ncount.
-        It also includes True/False values for each sample's prescence 
-        in the 3 required datasets: WGS, cattle and movement.  
+        exclusion, Ncount filtering and True/False values for each 
+        sample's prescence in the 3 required datasets: WGS, cattle and 
+        movement.  
 
         Parameters:
             df_wgs_deduped (pandas DataFrame object): WGS samples with 
