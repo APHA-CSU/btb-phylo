@@ -71,7 +71,7 @@ if [ $CONFIG == 0 ]; then
     echo "{}" > $CONFIG
 fi
 
-ALL_SAMPLES="$(dirname $(realpath $0))/all_samples.csv"
+ALL_SAMPLES="$(dirname $(realpath $0))/all_wgs_samples.csv"
 
 # if running with docker 
 if [ $DOCKER == 1 ]; then
