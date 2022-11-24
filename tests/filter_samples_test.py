@@ -14,30 +14,30 @@ class TestFilterSamples(unittest.TestCase):
                                 "pcMapped":pd.Series([0.1, 0.2, 0.3, 0.4, 0.5], dtype=float),
                                 "column_D":pd.Series([1, 3, 5, 7, 9], dtype=int)})
         # test individual filters
-        outcome = filter_samples.filter_df(test_df, pcMapped=(0.1, 0.3))
+        outcome = filter_samples.filter_df(test_df, pcMapped=(0.1, 0.3), Outcome=["Pass"])
         nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b", "c"], "Outcome":["Pass", "Pass"],
                                      "pcMapped":[0.2, 0.3], "column_D":[3, 5]}).values)
-        outcome = filter_samples.filter_df(test_df, column_A=["a", "b", "e"])
+        outcome = filter_samples.filter_df(test_df, column_A=["a", "b", "e"], Outcome=["Pass"])
         nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b", "e"], "Outcome":["Pass", "Pass"],
                                      "pcMapped":[0.2, 0.5], "column_D":[3, 9]}).values)
-        outcome = filter_samples.filter_df(test_df, column_D=(7, 10))
+        outcome = filter_samples.filter_df(test_df, column_D=(7, 10), Outcome=["Pass"])
         nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["d", "e"], "Outcome":["Pass", "Pass"],
                                      "pcMapped":[0.4, 0.5], "column_D":[7, 9]}).values)
         # test multiple filters
-        outcome = filter_samples.filter_df(test_df, pcMapped=(0.15, 0.45), 
+        outcome = filter_samples.filter_df(test_df, pcMapped=(0.15, 0.45), Outcome=["Pass"], 
                                            column_A=["a", "b", "d", "e"], column_D=(2, 8)) 
         nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["b", "d"], "Outcome":["Pass", "Pass"],
                                      "pcMapped":[0.2, 0.4], "column_D":[3, 7]}).values)
-        outcome = filter_samples.filter_df(test_df, pcMapped=(0.05, 0.45), 
+        outcome = filter_samples.filter_df(test_df, pcMapped=(0.05, 0.45),
                                            column_A=["a", "b", "d", "e"], column_D=(0.5, 8), Outcome=["Pass", "Fail"]) 
         nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":["a", "b", "d"], "Outcome":["Fail", "Pass", "Pass"],
                                      "pcMapped":[0.1, 0.2, 0.4], "column_D":[1, 3, 7]}).values)
         # test no filters
-        outcome = filter_samples.filter_df(test_df)
+        outcome = filter_samples.filter_df(test_df, Outcome=["Pass"]) 
         nptesting.assert_array_equal(outcome.values, pd.DataFrame({"column_A":pd.Series(["b", "c", "d", "e"], dtype="object"),
-                                                                  "Outcome":pd.Series(["Pass", "Pass", "Pass", "Pass"], dtype="category"), 
-                                                                  "pcMapped":pd.Series([0.2, 0.3, 0.4, 0.5], dtype=float),
-                                                                  "column_D":pd.Series([3, 5, 7, 9], dtype=int)}).values)
+                                                                   "Outcome":pd.Series(["Pass", "Pass", "Pass", "Pass"], dtype="category"), 
+                                                                   "pcMapped":pd.Series([0.2, 0.3, 0.4, 0.5], dtype=float),
+                                                                   "column_D":pd.Series([3, 5, 7, 9], dtype=int)}).values)
         # test empty output < 1 samples
         # empty
         with self.assertRaises(Exception):

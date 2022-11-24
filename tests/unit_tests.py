@@ -38,7 +38,7 @@ if __name__ == "__main__":
     runner = unittest.TextTestRunner()
     parser = argparse.ArgumentParser(description='Test code')
     module_arg = parser.add_argument('--module', '-m', nargs=1, 
-                                     help="module to test: phylogeny, update_summary, filter_samples, de_duplicate, consistify or uitls'",
+                                     help="module to test: phylogeny, update_summary, filter_samples, de_duplicate, consistify, uitls or missing_samples_report",
                                      default=None)
     args = parser.parse_args()
     if args.module:
@@ -58,6 +58,6 @@ if __name__ == "__main__":
             runner.run(test_suit(utils_test)) 
         else:
             raise argparse.ArgumentError(module_arg, 
-                                         "Invalid argument. Please use phylogeny, update_summary, filter_samples, consistify or utils")
+                                         "Invalid argument. Please use phylogeny, update_summary, de_duplicate, filter_samples, consistify, utils or missing_samples_report")
     else:
         unittest.main(buffer=True)
