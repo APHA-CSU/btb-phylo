@@ -152,12 +152,12 @@ python btb_phylo.py sub-command -h
 
 - on all pass samples
 ```
-python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --Outcome Pass
 ```
 
 - on all pass samples + "consistified" with cattle and movement data
 ```
-python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --cat_mov_path path/to/folder/with/cattle/and/movement/csvs
+python btb_phylo.py full_pipeline path/to/results/directory path/to/consensus/directory --Outcome Pass --cat_mov_path path/to/folder/with/cattle/and/movement/csvs
 ```
 
 - filtering with a [configuration file](#config-file)
@@ -237,4 +237,4 @@ For numerical variables, e.g. `Ncount` and `pcMapped` the criteria should be a m
 
 See example, [example_config.json](https://github.com/APHA-CSU/btb-phylo/blob/main/example_config.json), which includes a selection of 6 samples if; they have `pcMapped` > 95%; are in the B6-84, B1-11, B6-11, or B3-11 clades; are either `BritishbTB` or `nonBritishbTB`; and have a maximum `Ncount` of 56000.
 
-To perform phylogeny without any filters, i.e. on all pass samples, simply omit the `-c` option.
+To perform phylogeny without any filters, simply omit the `-c` option.
