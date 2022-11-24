@@ -35,18 +35,12 @@ def filter_df(df, allow_wipe_out=False, **kwargs):
             specifying a min and max value for that column. 
 
         Returns:
-            df_passed (pandas DataFrame object): a dataframe of 'Pass'
-            only samples filtered according to criteria set out in 
-            arguments.
+            df_passed (pandas DataFrame object): a dataframe of samples 
+            filtered according to criteria set out in arguments.
 
             ValueError: if any kwarg is not in df.columns  
     """
-    # add "Pass" only samples and pcmap_theshold to the filtering 
-    # criteria by default
-    if "Outcome" not in kwargs:
-        categorical_kwargs = {"Outcome": ["Pass"]}
-    else:
-        categorical_kwargs = {}
+    categorical_kwargs = {}
     numerical_kwargs = {}
     for key in kwargs.keys():
         if key not in df.columns:

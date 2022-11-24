@@ -437,13 +437,12 @@ def full_pipeline(results_path, consensus_path,
                                                           df_all_wgs,
                                                           Outcome="Pass", 
                                                           flag="BritishbTB", 
-                                                          pcMapped="max", 
                                                           Ncount="min")
     metadata.update(metadata_dedup)
     # filter samples
     metadata_filt, filter_args, df_wgs_deduped, _ = sample_filter(results_path, 
-                                                                 df_all_wgs, 
-                                                                 **kwargs)
+                                                                  df_all_wgs, 
+                                                                  **kwargs)
     metadata.update(metadata_filt)
     # save filters to metadata output folder
     metadata_path = os.path.join(results_path, "metadata")

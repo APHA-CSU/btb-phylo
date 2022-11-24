@@ -24,7 +24,7 @@ def exclusion_reason(df_wgs_excluded, df_clade_info):
         passes the Ncount filter.
     """
     # subsample df_excluded columns
-    df_report = df_wgs_excluded[["Submission"]].copy()
+    df_report = df_wgs_excluded[["Submission", "flag"]].copy()
     # map Ncount column to a pass/fail value
     df_report["Ncount"] = "Fail"
     for clade, row in df_clade_info.iterrows():
@@ -49,6 +49,7 @@ def missing_data(df_report, missing_wgs_samples, missing_cattle_samples,
     # generate report df for samples with missing wgs data
     df_report_missing_wgs = \
         pd.DataFrame({"Submission": list(missing_wgs_samples), 
+                      "flag": [None]*len(missing_wgs_samples),
                       "Ncount": [None]*len(missing_wgs_samples),
                       "wgs_data": [False]*len(missing_wgs_samples),
                       "cattle_data": [None]*len(missing_wgs_samples),
