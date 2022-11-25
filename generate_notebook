@@ -1,0 +1,1 @@
+papermill -p results_path /home/nickpestell/tmp/test_main stats.ipynb stats_out.ipynb
