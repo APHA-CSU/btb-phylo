@@ -66,9 +66,12 @@ parse_args "$@"
 
 btb_phylo_path="$(dirname $(realpath $0))/btb_phylo.py"
 
+# if no config provided then create temporary empty config
 if [ $CONFIG == 0 ]; then
-    CONFIG="$(dirname $(realpath $0))/filter.json" 
-    echo "{}" > $CONFIG
+    CONFIG_PATH="$(dirname $(realpath $0))/filter.json" 
+    echo "{}" > $CONFIG_PATH
+else
+    CONFIG_PATH=$CONFIG
 fi
 
 ALL_SAMPLES="$(dirname $(realpath $0))/all_wgs_samples.csv"
@@ -93,10 +96,9 @@ if [ $DOCKER == 1 ]; then
         docker run --rm -it \
             --mount type=bind,source=$RESULTS,target=/results \
             --mount type=bind,source=$CONSENSUS,target=/consensus \
-            --mount type=bind,source=$CONFIG,target=/config.json \
             --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_wgs_samples.csv \
             --mount type=bind,source=$CATTLE_AND_MOVEMENT,target=/btb-phylo/cattle_and_movement \
-            aphacsubot/btb-phylo:prod /results /consensus -c /config.json -j $THREADS -m cattle_and_movement 
+            aphacsubot/btb-phylo:prod /results /consensus -j $THREADS -m cattle_and_movement 
     else
 	# pull the current branch docker image from DockerHub 
 	branch=$(git rev-parse --abbrev-ref HEAD)
@@ -104,7 +106,7 @@ if [ $DOCKER == 1 ]; then
         docker run --rm -it \
             --mount type=bind,source=$RESULTS,target=/results \
             --mount type=bind,source=$CONSENSUS,target=/consensus \
-            --mount type=bind,source=$CONFIG,target=/config.json \
+            --mount type=bind,source=$CONFIG_PATH,target=/config.json \
             --mount type=bind,source=$ALL_SAMPLES,target=/btb-phylo/all_wgs_samples.csv \
             aphacsubot/btb-phylo:$branch /results /consensus -c /config.json -j $THREADS
     fi
@@ -114,6 +116,12 @@ else
     if [ $VIEWBOVINE == 1 ]; then
         python $btb_phylo_path ViewBovine $RESULTS $CONSENSUS $CATTLE_AND_MOVEMENT
     else
-        python $btb_phylo_path full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG
+        python $btb_phylo_path full_pipeline $RESULTS $CONSENSUS -j $THREADS --config $CONFIG_PATH
     fi
 fi
+
+# if no config provided then clean up temporary config
+if [ $CONFIG == 0 ]; then
+    rm $CONFIG_PATH
+fi
+

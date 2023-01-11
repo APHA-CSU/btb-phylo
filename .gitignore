@@ -1,2 +1,5 @@
 __pycache__
 all_wgs_samples.csv
+.vscode
+.ViewBovine_consensus/
+.ViewBovine_results/
