@@ -70,7 +70,7 @@ def update_samples(results_path,
                                                                 new_keys)
     print("\tsaving all_wgs_samples.csv ... \n")
     # save summary to csv 
-    utils.df_to_csv(df_all_wgs, all_wgs_samples_filepath)
+    utils.df_to_csv(df_all_wgs_updated, all_wgs_samples_filepath)
     # copy all_wgs_samples.csv to metadata
     shutil.copy(all_wgs_samples_filepath, os.path.join(metadata_path, 
                                                        "all_wgs_samples.csv"))
