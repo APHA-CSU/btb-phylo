@@ -23,10 +23,7 @@ def exclusion_reason(df_wgs_excluded, df_clade_info):
         is excluded.
     """
     # subsample df_excluded columns
-    df_report = df_wgs_excluded[["Submission", "Outcome", "flag"]].copy()
-    # map pcMapped column to a pass/fail value
-    df_report["pcMapped"] = df_wgs_excluded["pcMapped"]\
-        .map(lambda x: "Pass" if x >= 90 else "Fail")
+    df_report = df_wgs_excluded[["Submission", "Outcome"]].copy()
     # map Ncount column to a pass/fail value
     df_report["Ncount"] = "Fail"
     for clade, row in df_clade_info.iterrows():
@@ -52,8 +49,6 @@ def missing_data(df_report, missing_wgs_samples, missing_cattle_samples,
     df_report_missing_wgs = \
         pd.DataFrame({"Submission": list(missing_wgs_samples), 
                       "Outcome": [None]*len(missing_wgs_samples),
-                      "flag": [None]*len(missing_wgs_samples),
-                      "pcMapped": [None]*len(missing_wgs_samples),
                       "Ncount": [None]*len(missing_wgs_samples),
                       "wgs_data": [False]*len(missing_wgs_samples),
                       "cattle_data": [None]*len(missing_wgs_samples),
