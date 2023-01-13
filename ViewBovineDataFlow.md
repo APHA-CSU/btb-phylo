@@ -57,7 +57,7 @@ The below screen grab shows the `report.csv`.
 
 <img src="https://user-images.githubusercontent.com/10742324/198324636-0ab48e96-53a3-4f17-8c65-51a5272849f3.PNG" width="400">
 
-The first column indicates the submission number of each excluded submission. The next four columns; `Outcome`, `flag`, `pcMapped` and `Ncount` relate to filtering of WGS samples. For a sample to pass filtering, the `flag` column must be "BritishbTB" and the `Outcome`, `pcMapped` and `Ncount` columns must all be "Pass".
+The first column indicates the submission number of each excluded submission and the next column is the eartag number. The next two columns; `Outcome` and `Ncount` relate to filtering of WGS samples. For a sample to pass filtering, the `Outcome` and `Ncount` columns must both be "Pass".
 
 If the sample passes filtering, to be included in ViewBovine, it must also exist in the `wgs`, `cattle` and `movement` datasets; that is, the value must be "TRUE" for all three of these columns. 
 

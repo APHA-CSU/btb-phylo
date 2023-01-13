@@ -70,7 +70,7 @@ def update_samples(results_path,
                                                                 new_keys)
     print("\tsaving all_wgs_samples.csv ... \n")
     # save summary to csv 
-    utils.df_to_csv(df_all_wgs, all_wgs_samples_filepath)
+    utils.df_to_csv(df_all_wgs_updated, all_wgs_samples_filepath)
     # copy all_wgs_samples.csv to metadata
     shutil.copy(all_wgs_samples_filepath, os.path.join(metadata_path, 
                                                        "all_wgs_samples.csv"))
@@ -716,10 +716,6 @@ def parse_args():
     subparser.add_argument("--all_wgs_samples_filepath", help="path to \
         'all_wgs_samples' .csv file", \
             default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)
-    subparser.add_argument("--pcmapped", "-pc", dest="pcMapped", \
-        type=float, nargs=2, help="optional filter", default=(90, 100))
-    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", \
-        help="optional filter", default=["BritishbTB"])
     subparser.set_defaults(func=view_bovine)
 
     # pasre args

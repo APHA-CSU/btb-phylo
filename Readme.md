@@ -187,11 +187,11 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 
 ### Updating the snp-matrix
 
-1. Mount FSx drive, `fsx-ranch-017`;
-2. Mount FSx drive, `fsx-042`;
-2. Run the following command; 
+1. Ensure that the dev machine has write access to `s3-ranch-042`;
+2. Update a local copy of cattle and movement metadata (details of how to do this is are in the [ViewBovine readme](https://github.com/aphascience/ViewBovine))
+3. Run the ViewBovine update script; 
 ```
-./btb-phylo.sh {fsx-017_path}/ViewBovine/app/prod {fsx-042_path}/share/ViewBovine_consensus --meta_path {fsx-017_path}/ViewBovine/app/raw --with-docker
+bash ViewBovine/scipts/update.bash {path/to/directory/containing/cattle/and/movement/csvs}
 ```
 **By default the results directory will contain:**
 ```
@@ -211,7 +211,7 @@ Updating the snp-matrix is triggered manually and should be run either weekly or
 ├── snps.csv
 └── snps.fas
 ```
-This will use predefined filtering criteria to download new samples to `fsx-017`, consistify the samples with cattle and movement data and update the snp-matrix on `fsx-017`. 
+This will use predefined filtering criteria to download new samples to a local directory in this repo, consistify the samples with cattle and movement data and update the snp-matrix. It will then push the results up to `s3-ranch-042`. 
 
 ## <a name="config-file"></a> Configuration file
 
