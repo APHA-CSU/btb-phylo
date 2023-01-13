@@ -716,8 +716,6 @@ def parse_args():
     subparser.add_argument("--all_wgs_samples_filepath", help="path to \
         'all_wgs_samples' .csv file", \
             default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)
-    subparser.add_argument("--flag", "-f", dest="flag", nargs="+", \
-        help="optional filter", default=["nonBritishbTB", "BritishbTB"])
     subparser.set_defaults(func=view_bovine)
 
     # pasre args
