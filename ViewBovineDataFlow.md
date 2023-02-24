@@ -27,6 +27,15 @@ Any WGS submission may be sampled multiple times to achieve suffecient quality. 
 
 The best sample for each submission is selected from criteria relating to metadata in the columns of `all_wgs_samples.csv`.
 
+### ViewBovine criteria
+
+For ViewBovine, the best sample in a given submission is selected based on:
+1. `Outcome`, first: if any sample in a given submission is not `Outcome` = "Pass" it is discounted
+1. `flag`, if there are no "Pass" samples or more than 1 "Pass" sample: if any sample is not `flag` = "BritishbTB" it is discounted
+1. `pcMapped`, if multiple samples remain after filtering on `Outcome` and `flag`: the sample with the largest `pcMapped` value is retained  
+1. `Ncount`: if there is more than one sample with the max `pcMapped` value then the sample with the lowest `Ncount` is retained
+1. Order, finally, if multiple samples still remain: the sample which appears first in the `all_wgs_samples.csv` file is used  
+
 ## 2. Filter low-quality WGS samples: 
 
 In this stage submissions that are not of suffecient quality to be included in phylogeny for ViewBovine are removed. The filtering stage reads in the `deduped_wgs.csv` and outputs a csv of the same format, `passed_wgs.csv`, containing only submissions that have passed the filter.
@@ -36,6 +45,11 @@ Filtering is based on metadata in the columns of `deduped_wgs.csv`.
 The below Venn diagram illustrates how the resulting datasets relate to eachother. Notice that "filtered samples" (`passed_wgs.csv`) is a subset of "deduplicated samples" (`deduped_wgs.csv`) which is itself a subset of "all samples" (`all_wgs_samples.csv`).
 
 <img src="https://user-images.githubusercontent.com/10742324/198075303-21798bf5-381d-4614-9f7d-addccdf4a109.PNG" width="500">
+
+### ViewBovine criteria
+For ViewBovine, the submission filtering is based on `Outcome` and `Ncount`:
+1. All non "Pass" submissions, i.e. where `Outcome` != "Pass" are filtered
+1. An `Ncount` threshold is applied where submissions that have higher than the threshold `Ncount` are filtered out. These thresholds are clade specific and are defined in the [CladeInfo.csv](https://github.com/APHA-CSU/btb-phylo/blob/main/CladeInfo.csv)
 
 ## 3. Consistify
 
