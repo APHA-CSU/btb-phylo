@@ -48,7 +48,7 @@ The below Venn diagram illustrates how the resulting datasets relate to eachothe
 
 ### ViewBovine criteria
 For ViewBovine, the submission filtering is based on `Outcome` and `Ncount`:
-1. All non "Pass" submissions, i.e. where `Outcome` != "Pass" are filtered
+1. All non "Pass" submissions, i.e. where `Outcome` != "Pass" are filtered. This is a default filter in the [filter_samples.py](https://github.com/APHA-CSU/btb-phylo/blob/main/btbphylo/filter_samples.py) module! 
 1. An `Ncount` threshold is applied where submissions that have higher than the threshold `Ncount` are filtered out. These thresholds are clade specific and are defined in the [CladeInfo.csv](https://github.com/APHA-CSU/btb-phylo/blob/main/CladeInfo.csv)
 
 ## 3. Consistify
