@@ -55,7 +55,7 @@ The reasons why a submission might be excluded are either *i)* due to filtering;
 
 The below screen grab shows the `report.csv`. 
 
-<img src="https://user-images.githubusercontent.com/10742324/198324636-0ab48e96-53a3-4f17-8c65-51a5272849f3.PNG" width="400">
+<img src="https://user-images.githubusercontent.com/10742324/221232051-2369b1a7-dcc7-442b-b57f-f0145e3cdc67.PNG" width="600">
 
 The first column indicates the submission number of each excluded submission and the next column is the eartag number. The next two columns; `Outcome` and `Ncount` relate to filtering of WGS samples. For a sample to pass filtering, the `Outcome` and `Ncount` columns must both be "Pass".
 
