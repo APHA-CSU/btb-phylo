@@ -1,4 +1,5 @@
 import warnings
+import re
 
 import pandas as pd
 
@@ -107,8 +108,8 @@ def filter_columns_categorical(df, **kwargs):
     """ 
     for column_name, value in kwargs.items():
         # ensures that column_names are of type object or categorical
-        if not (pd.api.types.is_categorical_dtype(df[column_name]) or \
-            pd.api.types.is_object_dtype(df[column_name])):
+        if not (pd.api.types.is_categorical_dtype(df[column_name.strip("~")]) \
+                or pd.api.types.is_object_dtype(df[column_name.strip("~")])):
             raise utils.InvalidDtype(dtype="category or object", 
                                      column_name=column_name)
         # ensures that values are list of strings
@@ -117,14 +118,17 @@ def filter_columns_categorical(df, **kwargs):
             raise ValueError(f"Invalid kwarg '{column_name}': must be a list \
                 of strings")
         # issues a warning if any value is missing from specified column
-        missing_values = \
-            [item for item in value if item not in list(df[column_name])]
-        if missing_values:
-            warnings.warn(f"Column '{column_name}' does not contain the values "
-                          f"'{', '.join(missing_values)}'")
+        if not re.match(r'~', column_name):
+            missing_values = \
+                [item for item in value if item not in list(df[column_name])]
+            if missing_values:
+                warnings.warn(f"Column '{column_name}' does not contain the values "
+                            f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] 
     # and sample_name in ["AFT-61-03769-21", "20-0620719"]. 
-    query = ' and '.join(f'{col} in {vals}' for col, vals in kwargs.items())
+    query = ' and '.join([(f'{col} not in {vals}' if re.match(r'~', col) \
+                           else (f'{col} in {vals}')) for \
+                            col, vals in kwargs.items()])
     return df.query(query)
 
 def get_wgs_samples_df(df_samples=None, allow_wipe_out=False, 
