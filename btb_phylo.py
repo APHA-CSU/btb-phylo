@@ -21,7 +21,7 @@ import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
 
 DEFAULT_CLADE_INFO_PATH = os.path.join(os.path.dirname\
-    (os.path.abspath(__file__)), "CladeInfo.csv")
+    (os.path.abspath(__file__)), "accessory/CladeInfo.csv")
 
 
 def update_samples(results_path, 
