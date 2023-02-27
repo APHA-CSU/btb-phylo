@@ -24,7 +24,7 @@ aws s3 rm --recursive s3://s3-ranch-042/prod/
 # run btb-phylo 
 consensus_path=.ViewBovine_consensus
 mkdir -p ${consensus_path}
-./btb-phylo.sh .ViewBovine_results ${consensus_path} --meta_path ${META_PATH}  --with-docker
+./btb-phylo.sh .ViewBovine_results ${consensus_path} --meta_path ${META_PATH} --with-docker
 
 # upload new production files to s3-ranch-042
 aws s3 cp --recursive .ViewBovine_results/ s3://s3-ranch-042/prod/ --acl bucket-owner-full-control

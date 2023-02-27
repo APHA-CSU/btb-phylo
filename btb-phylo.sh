@@ -112,6 +112,7 @@ if [ $DOCKER == 1 ]; then
     fi
 # if not running with docker (or running inside the docker container)
 else
+    printf "\nRunning btb-phylo natively\n\n"
     # run the pipeline
     if [ $VIEWBOVINE == 1 ]; then
         python $btb_phylo_path ViewBovine $RESULTS $CONSENSUS $CATTLE_AND_MOVEMENT
