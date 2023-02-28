@@ -50,7 +50,7 @@ def filter_df(df, allow_wipe_out=False, **kwargs):
         categorical_kwargs = {}
     numerical_kwargs = {}
     for key in kwargs.keys():
-        if key.strip("not_") not in df.columns:
+        if key.lstrip("not_") not in df.columns:
             raise ValueError(f"Invalid kwarg '{key}': must be one of: " 
                              f"{', '.join(df.columns.to_list())}")
         if pd.api.types.is_categorical_dtype(df[key]) or \
@@ -108,8 +108,8 @@ def filter_columns_categorical(df, **kwargs):
     """ 
     for column_name, value in kwargs.items():
         # ensures that column_names are of type object or categorical
-        if not (pd.api.types.is_categorical_dtype(df[column_name.strip("not_")]) \
-                or pd.api.types.is_object_dtype(df[column_name.strip("not_")])):
+        if not (pd.api.types.is_categorical_dtype(df[column_name.lstrip("not_")]) \
+                or pd.api.types.is_object_dtype(df[column_name.lstrip("not_")])):
             raise utils.InvalidDtype(dtype="category or object", 
                                      column_name=column_name)
         # ensures that values are list of strings
