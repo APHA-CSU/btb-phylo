@@ -108,8 +108,8 @@ def filter_columns_categorical(df, **kwargs):
     """ 
     for column_name, value in kwargs.items():
         # ensures that column_names are of type object or categorical
-        if not (pd.api.types.is_categorical_dtype(df[column_name.strip("~")]) \
-                or pd.api.types.is_object_dtype(df[column_name.strip("~")])):
+        if not (pd.api.types.is_categorical_dtype(df[column_name.strip("not_")]) \
+                or pd.api.types.is_object_dtype(df[column_name.strip("not_")])):
             raise utils.InvalidDtype(dtype="category or object", 
                                      column_name=column_name)
         # ensures that values are list of strings
@@ -126,7 +126,7 @@ def filter_columns_categorical(df, **kwargs):
                             f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] 
     # and sample_name in ["AFT-61-03769-21", "20-0620719"]. 
-    query = ' and '.join([(f'{col} not in {vals}' if re.match(r'~', col) \
+    query = ' and '.join([(f'{col} not in {vals}' if re.match(r'not_', col) \
                            else (f'{col} in {vals}')) for \
                             col, vals in kwargs.items()])
     return df.query(query)
