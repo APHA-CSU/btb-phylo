@@ -575,7 +575,8 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
     df_report = missing_samples_report.report(df_wgs_deduped, 
                                               df_wgs_consistified, 
                                               cattle_movements_path, 
-                                              df_clade_info)
+                                              df_clade_info,
+                                              outliers_path)
     # terminate printing thread
     t.running = False
     t.join()
