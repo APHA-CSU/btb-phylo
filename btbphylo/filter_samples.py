@@ -118,7 +118,7 @@ def filter_columns_categorical(df, **kwargs):
             raise ValueError(f"Invalid kwarg '{column_name}': must be a list \
                 of strings")
         # issues a warning if any value is missing from specified column
-        if not re.match(r'~', column_name):
+        if not re.match(r'not_', column_name):
             missing_values = \
                 [item for item in value if item not in list(df[column_name])]
             if missing_values:
@@ -126,9 +126,9 @@ def filter_columns_categorical(df, **kwargs):
                             f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] 
     # and sample_name in ["AFT-61-03769-21", "20-0620719"]. 
-    query = ' and '.join([(f'{col} not in {vals}' if re.match(r'not_', col) \
-                           else (f'{col} in {vals}')) for \
-                            col, vals in kwargs.items()])
+    query = ' and '.join((f'{col.strip("not_")} not in {vals}' if 
+                          re.match(r'not_', col) else 
+                          (f'{col} in {vals}')) for col, vals in kwargs.items())
     return df.query(query)
 
 def get_wgs_samples_df(df_samples=None, allow_wipe_out=False, 
