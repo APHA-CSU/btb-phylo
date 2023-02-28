@@ -53,8 +53,8 @@ def filter_df(df, allow_wipe_out=False, **kwargs):
         if key.lstrip("not_") not in df.columns:
             raise ValueError(f"Invalid kwarg '{key}': must be one of: " 
                              f"{', '.join(df.columns.to_list())}")
-        if pd.api.types.is_categorical_dtype(df[key]) or \
-                pd.api.types.is_object_dtype(df[key]):
+        if pd.api.types.is_categorical_dtype(df[key.lstrip("not_")]) or \
+                pd.api.types.is_object_dtype(df[key.lstrip("not_")]):
             # add categorical columns in **kwargs to categorical_kwargs
             categorical_kwargs[key] = kwargs[key]
         else:
