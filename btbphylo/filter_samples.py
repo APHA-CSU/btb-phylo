@@ -26,13 +26,17 @@ def filter_df(df, allow_wipe_out=False, **kwargs):
             samples pass.
 
             **kwargs: 0 or more optional arguments. Names must match a 
-            column name in btb_wgs_samples.csv. If column is of type 
-            'categorical' or 'object', vales must be of type 'list' 
-            specifying a set of values to match against the argument 
-            name's column in btb_wgs_samples.csv. For example, 
+            column name in btb_wgs_samples.csv or match with a leading 
+            'not_' prefix. If column is of type 'categorical' or 
+            'object', vales must be of type 'list' specifying a set of 
+            values to match against the argument name's column in 
+            btb_wgs_samples.csv. For example, 
             'sample_name=["AFT-61-03769-21", "20-0620719"]' will include 
-            just these two samples. If column is of type 'int' or 
-            'float', values must be of type 'tuple' and of length 2, 
+            just these two samples. If the name includes a leading 
+            'not_' prefix then samples with values matching those in the
+            argument name column will be exlcuded. If column is of type 
+            'int' or 'float', values must be of type 'tuple' and of 
+            length 2, 
             specifying a min and max value for that column. 
 
         Returns:
@@ -60,9 +64,9 @@ def filter_df(df, allow_wipe_out=False, **kwargs):
         else:
             # add numerical columns in **kwargs to numerical_kwargs
             numerical_kwargs[key] = kwargs[key]
-    # calls filter_columns_catergorical() with **categorical_kwargs on df, pipes
-    # the output into filter_columns_numeric() with **numerical_kwargs and 
-    # assigns the output to a new df_passed
+    # calls filter_columns_catergorical() with **categorical_kwargs on 
+    # df, pipes the output into filter_columns_numeric() with 
+    # **numerical_kwargs and assigns the output to a new df_passed
     df_passed = df.pipe(filter_columns_categorical, 
                             **categorical_kwargs).pipe(filter_columns_numeric, 
                                                         **numerical_kwargs)
@@ -126,7 +130,7 @@ def filter_columns_categorical(df, **kwargs):
                             f"'{', '.join(missing_values)}'")
     # constructs a query string on which to query df; e.g. 'Outcome in [Pass] 
     # and sample_name in ["AFT-61-03769-21", "20-0620719"]. 
-    query = ' and '.join((f'{col.strip("not_")} not in {vals}' if 
+    query = ' and '.join((f'{col.lstrip("not_")} not in {vals}' if 
                           re.match(r'not_', col) else 
                           (f'{col} in {vals}')) for col, vals in kwargs.items())
     return df.query(query)
