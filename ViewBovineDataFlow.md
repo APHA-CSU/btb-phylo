@@ -40,7 +40,7 @@ For ViewBovine, the best sample in a given submission is selected based on:
 
 In this stage submissions that are not of suffecient quality to be included in phylogeny for ViewBovine are removed. The filtering stage reads in the `deduped_wgs.csv` and outputs a csv of the same format, `passed_wgs.csv`, containing only submissions that have passed the filter.
 
-Filtering is based on metadata in the columns of `deduped_wgs.csv`.
+Filtering is based on metadata in the columns of `deduped_wgs.csv`. It also involves simply removing some predefined outlier samples. 
 
 The below Venn diagram illustrates how the resulting datasets relate to eachother. Notice that "filtered samples" (`passed_wgs.csv`) is a subset of "deduplicated samples" (`deduped_wgs.csv`) which is itself a subset of "all samples" (`all_wgs_samples.csv`).
 
@@ -49,7 +49,8 @@ The below Venn diagram illustrates how the resulting datasets relate to eachothe
 ### ViewBovine criteria
 For ViewBovine, the submission filtering is based on `Outcome` and `Ncount`:
 1. All non "Pass" submissions, i.e. where `Outcome` != "Pass" are filtered. This is a default filter in the [filter_samples.py](https://github.com/APHA-CSU/btb-phylo/blob/main/btbphylo/filter_samples.py) module! 
-1. An `Ncount` threshold is applied where submissions that have higher than the threshold `Ncount` are filtered out. These thresholds are clade specific and are defined in the [CladeInfo.csv](https://github.com/APHA-CSU/btb-phylo/blob/main/CladeInfo.csv)
+1. An `Ncount` threshold is applied where submissions that have higher than the threshold `Ncount` are filtered out. These thresholds are clade specific and are defined in the [CladeInfo.csv](https://github.com/APHA-CSU/btb-phylo/blob/main/accessory/CladeInfo.csv) file
+1. Predefined outliers are excluded. These outliers are defined in the [outliers.txt](https://github.com/APHA-CSU/btb-phylo/blob/main/accessory/outliers.txt) file
 
 ## 3. Consistify
 
