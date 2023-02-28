@@ -23,13 +23,16 @@ class TestMissingSamplesReport(unittest.TestCase):
                                          "group": ["clade_a", "clade_b", "clade_c"]})
         test_df_clade_info = pd.DataFrame({"maxN": [2, 2, 2]}, 
                                            index=["clade_a", "clade_b", "clade_c"])
+        test_outliers = ["A", "C"]
         # test output
         test_df_report = pd.DataFrame({"Submission": ["A", "B", "C"],
                                        "Outcome": ["foo", "bar", "baz"],
-                                       "Ncount": ["Fail", "Pass", "Pass"]})
+                                       "Ncount": ["Fail", "Pass", "Pass"],
+                                       "outlier": [True, False, True]})
         # assert output
         nptesting.assert_array_equal(missing_samples_report.exclusion_reason(test_df_excluded,
-                                                                             test_df_clade_info),
+                                                                             test_df_clade_info,
+                                                                             test_outliers),
                                      test_df_report)
 
     def test_missing_data(self):
