@@ -16,11 +16,10 @@ def get_excluded(df_wgs_deduped, df_wgs_included):
     return df_wgs_deduped[~df_wgs_deduped["Submission"].\
         isin(df_wgs_included["Submission"])]
 
-def exclusion_reason(df_wgs_excluded, df_clade_info):
+def exclusion_reason(df_wgs_excluded, df_clade_info, outliers):
     """
         Returns a "report" DataFrame, detailing the reasons why each WGS
-        sample
-        is excluded.
+        sample is excluded.
     """
     # subsample df_excluded columns
     df_report = df_wgs_excluded[["Submission", "Outcome"]].copy()
@@ -31,6 +30,9 @@ def exclusion_reason(df_wgs_excluded, df_clade_info):
         df_report.loc[mask, "Ncount"] = df_wgs_excluded.\
             loc[df_wgs_excluded["group"]==clade].apply(lambda sample: "Pass" \
                 if sample["Ncount"]<=row["maxN"] else "Fail", axis=1)
+    # add outlier column
+    df_report["outlier"] = \
+        df_report["Submission"].map(lambda x: True if x in outliers else False)
     return df_report
 
 def missing_data(df_report, missing_wgs_samples, missing_cattle_samples, 
@@ -87,7 +89,7 @@ def add_eartag_column(df_report, df_cattle, df_movement):
     return df_report_eartag
 
 def report(df_wgs_deduped, df_wgs_included, cattle_movements_path, 
-           df_clade_info):
+           df_clade_info, outliers_path):
     """
         Generates a Pandas DataFrame which reports on all samples that 
         are excluded from ViewBovine. The DataFrame has an entry for 
@@ -108,6 +110,8 @@ def report(df_wgs_deduped, df_wgs_included, cattle_movements_path,
 
             df_clade_info (pandas DataFrame object): Ncount filters for 
             each WGS clade
+            
+            outliers_path (str): path to outliers txt file
 
         Returns:
             report (pandas DataFrame object): report of samples excluded
@@ -118,6 +122,9 @@ def report(df_wgs_deduped, df_wgs_included, cattle_movements_path,
     movement_filepath = f"{cattle_movements_path}/movement.csv" 
     df_cattle = pd.read_csv(cattle_filepath, dtype=object)
     df_movement = pd.read_csv(movement_filepath, dtype=object)
+    # parse outliers into a list
+    with open(outliers_path) as f:
+        outliers = [outlier.rstrip() for outlier in f]
     # get missing wgs, cattle and movement samples
     _, _, _, missing_wgs_samples, missing_cattle_samples,\
         missing_movement_samples = consistify(df_wgs_deduped, 
@@ -125,7 +132,7 @@ def report(df_wgs_deduped, df_wgs_included, cattle_movements_path,
                                               df_movement)
     # process data to return the full report
     return df_wgs_deduped.pipe(get_excluded, df_wgs_included).\
-        pipe(exclusion_reason, df_clade_info).\
+        pipe(exclusion_reason, df_clade_info, outliers).\
             pipe(missing_data, missing_wgs_samples, missing_cattle_samples, 
                  missing_movement_samples).pipe(add_eartag_column, df_cattle, 
                                                 df_movement)

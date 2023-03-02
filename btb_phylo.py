@@ -21,8 +21,10 @@ import btbphylo.filter_samples as filter_samples
 import btbphylo.phylogeny as phylogeny
 
 DEFAULT_CLADE_INFO_PATH = os.path.join(os.path.dirname\
-    (os.path.abspath(__file__)), "CladeInfo.csv")
+    (os.path.abspath(__file__)), "accessory/CladeInfo.csv")
 
+DEFAULT_OUTLIERS_PATH = os.path.join(os.path.dirname\
+    (os.path.abspath(__file__)), "accessory/outliers.txt")
 
 def update_samples(results_path, 
                    all_wgs_samples_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH):
@@ -458,6 +460,7 @@ def full_pipeline(results_path, consensus_path,
 
 def view_bovine(results_path, consensus_path, cattle_movements_path,  
                 clade_info_path=DEFAULT_CLADE_INFO_PATH, 
+                outliers_path=DEFAULT_OUTLIERS_PATH, 
                 all_wgs_samples_filepath=utils.DEFAULT_WGS_SAMPLES_FILEPATH,
                 **kwargs):
     """
@@ -466,10 +469,11 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
             2. removes duplicated WGS samples;
             3. filters WGS samples with different Ncount thresholds for 
                 each clade; 
-            4. consistifies WGS samples with cattle and movement data;
-            5. generates a report of missing sampes;
-            6. runs phylogeny;
-            7. post-processes snp-matrix to have consistent names with 
+            4. removes outlier samples
+            5. consistifies WGS samples with cattle and movement data;
+            6. generates a report of missing sampes;
+            7. runs phylogeny;
+            8. post-processes snp-matrix to have consistent names with 
                 cattle and movement data.
         Saves all results and metadata to results_path
 
@@ -484,6 +488,8 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
             
             clade_info_path (str): path to CladeInfo csv file 
 
+            outliers_path (str): path to outliers txt file 
+
             all_wgs_samples_filepath (str): input path to location of 
             summary csv  
 
@@ -496,6 +502,9 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
     metadata_path = os.path.join(results_path, "metadata")
     # load CladeInfo.csv
     df_clade_info = pd.read_csv(clade_info_path, index_col="clade")
+    # parse outliers into a list
+    with open(outliers_path) as f:
+        outliers = [outlier.rstrip() for outlier in f]
     # update full sample summary
     metadata_update, df_all_wgs = update_samples(results_path, 
                                                  all_wgs_samples_filepath)
@@ -509,25 +518,28 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
                                                           Ncount="min")
     metadata.update(metadata_dedup)
     df_wgs_passed = pd.DataFrame(columns=["Sample", "GenomeCov", "MeanDepth", 
-                                         "NumRawReads", "pcMapped", "Outcome", 
-                                         "flag", "group", "CSSTested", 
-                                         "matches", "mismatches", "noCoverage", 
-                                         "anomalous", "Ncount", "ResultLoc", 
-                                         "ID", "TotalReads", "Abundance", 
-                                         "Submission"])
+                                          "NumRawReads", "pcMapped", "Outcome", 
+                                          "flag", "group", "CSSTested", 
+                                          "matches", "mismatches", "noCoverage", 
+                                          "anomalous", "Ncount", "ResultLoc", 
+                                          "ID", "TotalReads", "Abundance", 
+                                          "Submission"])
+    print("\n## Filter Samples ##\n")
+    # remove outliers
+    _, filter_args, df_wgs_no_outliers, _ = \
+        sample_filter(results_path, df_wgs_deduped, not_Submission=outliers) 
     i = 1
     num_passed_samples = 0
-    filter_args = {}
     f = io.StringIO()
-    print("\n## Filter Samples ##\n")
     # loop through clades in CladeInfo.csv
     for clade, row in df_clade_info.iterrows():
         print(f"\t\tclade: {i} / {len(df_clade_info)}", end="\r")
         # filters samples within each clade according to Ncount in CladeInfo.csv
         with redirect_stdout(f):
             metadata_filt, filter_clade, df_clade, _ = \
-                sample_filter(results_path, df_wgs_deduped, allow_wipe_out=True, 
-                              group=[clade], Ncount=(0, row["maxN"]), **kwargs)
+                sample_filter(results_path, df_wgs_no_outliers, 
+                              allow_wipe_out=True, group=[clade], 
+                              Ncount=(0, row["maxN"]), **kwargs)
         del filter_clade["group"]
         filter_args[clade] = filter_clade
         # sum the number of filtered samples
@@ -563,7 +575,8 @@ def view_bovine(results_path, consensus_path, cattle_movements_path,
     df_report = missing_samples_report.report(df_wgs_deduped, 
                                               df_wgs_consistified, 
                                               cattle_movements_path, 
-                                              df_clade_info)
+                                              df_clade_info,
+                                              outliers_path)
     # terminate printing thread
     t.running = False
     t.join()
@@ -713,6 +726,8 @@ def parse_args():
             and movement .csv files")
     subparser.add_argument("--clade_info_path", help="path to CladeInfo csv \
         file", default=DEFAULT_CLADE_INFO_PATH)
+    subparser.add_argument("--outliers_path", help="path to outliers txt \
+        file", default=DEFAULT_OUTLIERS_PATH)
     subparser.add_argument("--all_wgs_samples_filepath", help="path to \
         'all_wgs_samples' .csv file", \
             default=utils.DEFAULT_WGS_SAMPLES_FILEPATH)

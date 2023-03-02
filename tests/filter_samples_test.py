@@ -125,6 +125,26 @@ class TestFilterSamples(unittest.TestCase):
         nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, column_B=["B", "D"]).values,
                                      pd.DataFrame({"column_A":["b", "d"], "column_B":["B", "D"], 
                                                    "column_C":[0.2, 0.4], "column_D":[2, 4]}).values)
+        # test filter by excluding 
+        nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, not_column_B=["B", "D"]).values,
+                                     pd.DataFrame({"column_A":["a", "c"], "column_B":["A", "C"], 
+                                                   "column_C":[0.1, 0.3], "column_D":[1, 3]}).values)
+        # test filter by excluding and including - include followed by exclude
+        nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, column_A=["a", "b"], 
+                                                                               not_column_B=["B", "D"]).values,
+                                     pd.DataFrame({"column_A":["a"], "column_B":["A"], 
+                                                   "column_C":[0.1], "column_D":[1]}).values)
+        nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, column_B=["A", "B", "C", "D"], 
+                                                                               not_column_A=["a", "b", "c", "d"]).values,
+                                     pd.DataFrame({"coulmn_A":[], "column_B": [], "column_c": [], "column_d": []}).values)
+        # test filter by excluding and including - exlcude followed by include
+        nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, not_column_B=["B", "D"], 
+                                                                               column_A=["a", "b"]).values,
+                                     pd.DataFrame({"column_A":["a"], "column_B":["A"], 
+                                                   "column_C":[0.1], "column_D":[1]}).values)
+        nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, not_column_B=["A", "B", "C", "D"], 
+                                                                               column_A=["a", "b", "c", "d"]).values,
+                                     pd.DataFrame({"coulmn_A":[], "column_B": [], "column_c": [], "column_d": []}).values)
         # test filter on multiple series
         nptesting.assert_array_equal(filter_samples.filter_columns_categorical(test_df, column_B=["B", "D"],
                                                                                column_A=["a", "b"]).values,

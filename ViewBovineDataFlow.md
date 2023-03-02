@@ -40,7 +40,7 @@ For ViewBovine, the best sample in a given submission is selected based on:
 
 In this stage submissions that are not of suffecient quality to be included in phylogeny for ViewBovine are removed. The filtering stage reads in the `deduped_wgs.csv` and outputs a csv of the same format, `passed_wgs.csv`, containing only submissions that have passed the filter.
 
-Filtering is based on metadata in the columns of `deduped_wgs.csv`.
+Filtering is based on metadata in the columns of `deduped_wgs.csv`. It also involves simply removing a set of predefined outlier submissions. 
 
 The below Venn diagram illustrates how the resulting datasets relate to eachother. Notice that "filtered samples" (`passed_wgs.csv`) is a subset of "deduplicated samples" (`deduped_wgs.csv`) which is itself a subset of "all samples" (`all_wgs_samples.csv`).
 
@@ -49,7 +49,8 @@ The below Venn diagram illustrates how the resulting datasets relate to eachothe
 ### ViewBovine criteria
 For ViewBovine, the submission filtering is based on `Outcome` and `Ncount`:
 1. All non "Pass" submissions, i.e. where `Outcome` != "Pass" are filtered. This is a default filter in the [filter_samples.py](https://github.com/APHA-CSU/btb-phylo/blob/main/btbphylo/filter_samples.py) module! 
-1. An `Ncount` threshold is applied where submissions that have higher than the threshold `Ncount` are filtered out. These thresholds are clade specific and are defined in the [CladeInfo.csv](https://github.com/APHA-CSU/btb-phylo/blob/main/CladeInfo.csv)
+1. An `Ncount` threshold is applied where submissions that have higher than the threshold `Ncount` are filtered out. These thresholds are clade specific and are defined in the [CladeInfo.csv](https://github.com/APHA-CSU/btb-phylo/blob/main/accessory/CladeInfo.csv) file
+1. Predefined outliers are excluded. These outliers are defined in the [outliers.txt](https://github.com/APHA-CSU/btb-phylo/blob/main/accessory/outliers.txt) file
 
 ## 3. Consistify
 
@@ -69,9 +70,11 @@ The reasons why a submission might be excluded are either *i)* due to filtering;
 
 The below screen grab shows the `report.csv`. 
 
-<img src="https://user-images.githubusercontent.com/10742324/221232051-2369b1a7-dcc7-442b-b57f-f0145e3cdc67.PNG" width="600">
+<img src="https://user-images.githubusercontent.com/10742324/221902834-e96b76d6-6228-46ee-99d6-a89e22ba54bc.PNG" width="600">
 
 The first column indicates the submission number of each excluded submission and the next column is the eartag number. The next two columns; `Outcome` and `Ncount` relate to filtering of WGS samples. For a sample to pass filtering, the `Outcome` and `Ncount` columns must both be "Pass".
+
+The following column, `outlier`, indicates if the submission was an outlier. Outliers are excluded and indicated by `TRUE` in this column.
 
 If the sample passes filtering, to be included in ViewBovine, it must also exist in the `wgs`, `cattle` and `movement` datasets; that is, the value must be "TRUE" for all three of these columns. 
 
