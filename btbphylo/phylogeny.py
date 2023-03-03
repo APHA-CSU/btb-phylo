@@ -153,8 +153,8 @@ def build_tree(tree_path, snp_sites_outpath):
             if n_lines == 7:
                 # if more than 3 samples run mega
                 cmd = \
-                    f'megacc -a infer_MP.mao -d {snp_sites_outpath} -o \
-                        {tree_path}'
+                    f'megacc -a accessory/infer_MP.mao -d {snp_sites_outpath} \
+                        -o {tree_path}'
                 utils.run(cmd, shell=True)
                 break
     if n_lines < 7:
