@@ -5,6 +5,7 @@ import numpy.testing as nptesting
 
 import btbphylo.consistify as consistify
 
+
 class TestConsistify(unittest.TestCase):
     def test_consistify(self):
         # test input
@@ -16,7 +17,7 @@ class TestConsistify(unittest.TestCase):
         test_cattle_consist = pd.DataFrame({"CVLRef": ["C", "D"]})
         test_movement_consist = pd.DataFrame({"SampleName": ["C", "C", "D", "D", "D"]})
         test_missing_wgs = {"E"}
-        test_missing_cattle ={"A", "E"}
+        test_missing_cattle = {"A", "E"}
         test_missing_movement = {"A", "B"}
         # run consistify
         (wgs_consist, cattle_consist, movement_consist, missing_wgs, missing_cattle, missing_movement) = \

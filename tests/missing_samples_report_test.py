@@ -5,6 +5,7 @@ import numpy.testing as nptesting
 
 import btbphylo.missing_samples_report as missing_samples_report
 
+
 class TestMissingSamplesReport(unittest.TestCase):
     def test_get_excluded(self):
         # test input
@@ -21,8 +22,8 @@ class TestMissingSamplesReport(unittest.TestCase):
                                          "Outcome": ["foo", "bar", "baz"],
                                          "Ncount": [3, 2, 1],
                                          "group": ["clade_a", "clade_b", "clade_c"]})
-        test_df_clade_info = pd.DataFrame({"maxN": [2, 2, 2]}, 
-                                           index=["clade_a", "clade_b", "clade_c"])
+        test_df_clade_info = pd.DataFrame({"maxN": [2, 2, 2]},
+                                          index=["clade_a", "clade_b", "clade_c"])
         test_outliers = ["A", "C"]
         # test output
         test_df_report = pd.DataFrame({"Submission": ["A", "B", "C"],
@@ -37,8 +38,8 @@ class TestMissingSamplesReport(unittest.TestCase):
 
     def test_missing_data(self):
         # test input
-        test_df_report = pd.DataFrame({"Submission": ["complete", 
-                                                      "missing_cattle", 
+        test_df_report = pd.DataFrame({"Submission": ["complete",
+                                                      "missing_cattle",
                                                       "missing_movement",
                                                       "missing_cattle_&_movement"],
                                        "Outcome": ["foo", "bar", "baz", "foobar"],
@@ -47,9 +48,9 @@ class TestMissingSamplesReport(unittest.TestCase):
         test_missing_cattle_samples = {"missing_cattle", "missing_cattle_&_movement"}
         test_missing_movement_samples = {"missing_movement", "missing_cattle_&_movement"}
         # test output
-        test_df_report_missing_data = pd.DataFrame({"Submission": ["complete", 
-                                                                   "missing_cattle", 
-                                                                   "missing_movement", 
+        test_df_report_missing_data = pd.DataFrame({"Submission": ["complete",
+                                                                   "missing_cattle",
+                                                                   "missing_movement",
                                                                    "missing_cattle_&_movement",
                                                                    "missing_wgs"],
                                                     "Outcome": ["foo", "bar", "baz", "foobar", None],
@@ -66,20 +67,20 @@ class TestMissingSamplesReport(unittest.TestCase):
 
     def test_add_eartag_column(slef):
         # test input
-        test_df_report = pd.DataFrame({"Submission": ["A", "B", "C", "D"], 
-                                       "cattle_data": [True, True, False, False], 
+        test_df_report = pd.DataFrame({"Submission": ["A", "B", "C", "D"],
+                                       "cattle_data": [True, True, False, False],
                                        "movement_data": [True, False, True, False]})
-        test_df_cattle = pd.DataFrame({"CVLRef": ["A", "B"], 
+        test_df_cattle = pd.DataFrame({"CVLRef": ["A", "B"],
                                        "RawEartag2": ["foo", "bar"]})
-        test_df_movement = pd.DataFrame({"SampleName": ["A", "C"], 
+        test_df_movement = pd.DataFrame({"SampleName": ["A", "C"],
                                          "StandardEartag": ["foo", "foobar"]})
         # test output
-        test_df_report_eartag = pd.DataFrame({"Submission": ["A", "B", "C", "D"], 
+        test_df_report_eartag = pd.DataFrame({"Submission": ["A", "B", "C", "D"],
                                               "eartag": ["foo", "bar", "foobar", None],
-                                              "cattle_data": [True, True, False, False], 
+                                              "cattle_data": [True, True, False, False],
                                               "movement_data": [True, False, True, False]})
         # assert output
-        nptesting.assert_array_equal(missing_samples_report.add_eartag_column(test_df_report, 
-                                                                              test_df_cattle, 
-                                                                              test_df_movement), 
+        nptesting.assert_array_equal(missing_samples_report.add_eartag_column(test_df_report,
+                                                                              test_df_cattle,
+                                                                              test_df_movement),
                                      test_df_report_eartag)
