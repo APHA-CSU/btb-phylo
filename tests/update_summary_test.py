@@ -14,23 +14,23 @@ class TestUpdateSummary(unittest.TestCase):
         # simulate 7 new keys
         test_new_keys = [0, 1, 2, 3, 4, 5, 6]
         # start with empty df_summary
-        test_df_wgs = pd.DataFrame({"foo":[], "bar":[], "baz":[]})
+        test_df_wgs = pd.DataFrame({"foo": [], "bar": [], "baz": []})
         with mock.patch("btbphylo.update_summary.add_submission_col") as mock_add_submission_col:
-            # mock sequential return values of calls to update_summary.add_submission_col, 
+            # mock sequential return values of calls to update_summary.add_submission_col,
             # this effectively mocks the return value of finalout_csv_to_df(new_keys[itteration]).pipe(add_submission_col)
-            mock_add_submission_col.side_effect = [pd.DataFrame({"foo":["a"], "bar":["a"], "baz":["a"]}),
-                                                   pd.DataFrame({"foo":["b"], "bar":["b"], "baz":["b"]}),
-                                                   pd.DataFrame({"foo":["c"], "bar":["c"], "baz":["c"]}),
-                                                   pd.DataFrame({"foo":["d"], "bar":["d"], "baz":["d"]}),
-                                                   pd.DataFrame({"foo":["e"], "bar":["e"], "baz":["e"]}),
-                                                   pd.DataFrame({"foo":["f"], "bar":["f"], "baz":["f"]}),
-                                                   pd.DataFrame({"foo":["g"], "bar":["g"], "baz":["g"]})]
+            mock_add_submission_col.side_effect = [pd.DataFrame({"foo": ["a"], "bar": ["a"], "baz": ["a"]}),
+                                                   pd.DataFrame({"foo": ["b"], "bar": ["b"], "baz": ["b"]}),
+                                                   pd.DataFrame({"foo": ["c"], "bar": ["c"], "baz": ["c"]}),
+                                                   pd.DataFrame({"foo": ["d"], "bar": ["d"], "baz": ["d"]}),
+                                                   pd.DataFrame({"foo": ["e"], "bar": ["e"], "baz": ["e"]}),
+                                                   pd.DataFrame({"foo": ["f"], "bar": ["f"], "baz": ["f"]}),
+                                                   pd.DataFrame({"foo": ["g"], "bar": ["g"], "baz": ["g"]})]
             test_output, _ = update_summary.append_df_wgs(test_df_wgs, test_new_keys)
             # assert correct output
             nptesting.assert_array_equal(test_output,
-                                         pd.DataFrame({"foo":["a", "b", "c", "d", "e", "f", "g"], 
-                                                       "bar":["a", "b", "c", "d", "e", "f", "g"], 
-                                                       "baz":["a", "b", "c", "d", "e", "f", "g"]}).values)
+                                         pd.DataFrame({"foo": ["a", "b", "c", "d", "e", "f", "g"],
+                                                       "bar": ["a", "b", "c", "d", "e", "f", "g"],
+                                                       "baz": ["a", "b", "c", "d", "e", "f", "g"]}).values)
             finalout_csv_to_df_calls = [mock.call(0), mock.call(1), mock.call(2), mock.call(3),
                                         mock.call(4), mock.call(5), mock.call(6)]
             # assert recursion was called with correct order of arguments
@@ -41,7 +41,7 @@ class TestUpdateSummary(unittest.TestCase):
         with mock.patch("btbphylo.update_summary.utils.run") as mock_run:
             mock_run.return_value = "2022-06-28 06:38:51      45876 v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv\n \
                                      2022-06-28 06:38:51 45876 v3-2/Results_10032_27Jun22/bar\n \
-                                     a b c foo" 
+                                     a b c foo"
             test_output = ["v3-2/Results_10032_27Jun22/10032_FinalOut_28Jun22.csv",
                            "v3-2/Results_10032_27Jun22/bar",
                            "foo"]
@@ -67,9 +67,9 @@ class TestUpdateSummary(unittest.TestCase):
 
     def test_new_final_out_keys(self):
         # test case
-        test_df = pd.DataFrame({"ResultLoc": ["s3://s3-csu-003/v3-2/A/", 
-                                              "s3://s3-csu-003/v3-2/A/", 
-                                              "s3://s3-csu-003/v3-2/A/", 
+        test_df = pd.DataFrame({"ResultLoc": ["s3://s3-csu-003/v3-2/A/",
+                                              "s3://s3-csu-003/v3-2/A/",
+                                              "s3://s3-csu-003/v3-2/A/",
                                               "s3://s3-csu-003/v3-2/B/",
                                               "s3://s3-csu-003/v3-2/B/",
                                               "s3://s3-csu-003/v3-2/C/",

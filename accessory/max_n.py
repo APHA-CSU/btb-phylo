@@ -7,11 +7,12 @@ import pandas as pd
 import btb_phylo
 
 """
-    Script for generating clade-wise Ncount thresholds for filtering 
-    samples for ViewBovine. Saves a 'CladeInfo.csv', containing the 
+    Script for generating clade-wise Ncount thresholds for filtering
+    samples for ViewBovine. Saves a 'CladeInfo.csv', containing the
     thresholds for each clade and a 'metadta/metadata.json' to the
     results directory.
 """
+
 
 def run(results_path, perc):
     # update samples
@@ -24,17 +25,17 @@ def run(results_path, perc):
     metadata_dedup, df_wgs_deduped = \
         btb_phylo.de_duplicate_samples(results_path,
                                        df_wgs_passed,
-                                       Outcome="Pass", 
-                                       flag="BritishbTB", 
-                                       pcMapped="max", 
+                                       Outcome="Pass",
+                                       flag="BritishbTB",
+                                       pcMapped="max",
                                        Ncount="min")
     metadata.update(metadata_dedup)
     # get Ncount thresholds
-    df_cladeinfo = pd.DataFrame(df_wgs_deduped.groupby("group")["Ncount"].\
-        quantile(perc))
+    df_cladeinfo = pd.DataFrame(df_wgs_deduped.groupby("group")["Ncount"].
+                                quantile(perc))
     df_cladeinfo.index.names = ["clade"]
-    df_cladeinfo.rename(columns = {"Ncount":"maxN"}, inplace=True)
-    df_cladeinfo.drop(["MicPin", "Microti", "Pinnipedii", "bTB", "nonbTB"], 
+    df_cladeinfo.rename(columns={"Ncount": "maxN"}, inplace=True)
+    df_cladeinfo.drop(["MicPin", "Microti", "Pinnipedii", "bTB", "nonbTB"],
                       inplace=True)
     df_cladeinfo["maxN"] = df_cladeinfo["maxN"].round()
     # save csv
@@ -43,6 +44,7 @@ def run(results_path, perc):
     meta_filepath = os.path.join(results_path, "metadata/metadata.json")
     with open(meta_filepath, "w") as f:
         json.dump(metadata, f, indent=2)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="max_n")
