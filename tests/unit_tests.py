@@ -10,11 +10,12 @@ from de_duplicate_test import TestDeDuplicate
 from utils_test import TestUtils
 
 
-def test_suit(test_objs):                           
-    suit = unittest.TestSuite(test_objs)            
-    return suit                                     
-                                                    
-if __name__ == "__main__":                          
+def test_suit(test_objs):
+    suit = unittest.TestSuite(test_objs)
+    return suit
+
+
+if __name__ == "__main__":
     phylogeny_test = [TestPhylogeny('test_build_multi_fasta'),
                       TestPhylogeny('test_extract_s3_bucket'),
                       TestPhylogeny('test_match_s3_uri'),
@@ -37,27 +38,27 @@ if __name__ == "__main__":
     utils_test = [TestUtils('test_extract_submission_no')]
     runner = unittest.TextTestRunner()
     parser = argparse.ArgumentParser(description='Test code')
-    module_arg = parser.add_argument('--module', '-m', nargs=1, 
+    module_arg = parser.add_argument('--module', '-m', nargs=1,
                                      help="module to test: phylogeny, update_summary, filter_samples, de_duplicate, consistify or uitls'",
                                      default=None)
     args = parser.parse_args()
     if args.module:
         if args.module[0] == 'phylogeny':
-            runner.run(test_suit(phylogeny_test)) 
+            runner.run(test_suit(phylogeny_test))
         elif args.module[0] == 'filter_samples':
-            runner.run(test_suit(filter_samples_test)) 
+            runner.run(test_suit(filter_samples_test))
         elif args.module[0] == 'de_duplicate':
-            runner.run(test_suit(de_duplicate_test)) 
+            runner.run(test_suit(de_duplicate_test))
         elif args.module[0] == 'update_summary':
-            runner.run(test_suit(update_summary_test)) 
+            runner.run(test_suit(update_summary_test))
         elif args.module[0] == 'missing_samples_report':
-            runner.run(test_suit(missing_samples_report_test)) 
+            runner.run(test_suit(missing_samples_report_test))
         elif args.module[0] == 'consistify':
-            runner.run(test_suit(consistify_test)) 
+            runner.run(test_suit(consistify_test))
         elif args.module[0] == 'utils':
-            runner.run(test_suit(utils_test)) 
+            runner.run(test_suit(utils_test))
         else:
-            raise argparse.ArgumentError(module_arg, 
+            raise argparse.ArgumentError(module_arg,
                                          "Invalid argument. Please use phylogeny, update_summary, filter_samples, consistify or utils")
     else:
         unittest.main(buffer=True)

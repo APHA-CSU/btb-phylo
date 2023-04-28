@@ -51,24 +51,24 @@ class TestUtils(unittest.TestCase):
                        "AF-12-34567-89",
                        "AF-12-34567-89",
                        "AF-12-3456-89",
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "AF-12-3456-89", 
-                       "12345678", 
-                       "ABCDEFGH", 
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "AF-12-3456-89",
+                       "12345678",
+                       "ABCDEFGH",
                        "ABCDEFGH",
                        "1BCD2FGH",
-                       ""] 
-        fail = False 
+                       ""]
+        fail = False
         i = 0
         for input, output in zip(test_input, test_output):
             try:
@@ -77,6 +77,6 @@ class TestUtils(unittest.TestCase):
                 i += 1
                 fail = True
                 print(f"Test failure {i}: ", e)
-        if fail: 
+        if fail:
             print(f"{i} test failures")
             raise AssertionError
