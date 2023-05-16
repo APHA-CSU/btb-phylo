@@ -92,7 +92,7 @@ def add_eartag_column(df_report, df_cattle, df_movement):
                             "RawEartag2"].item() if x["cattle_data"] else
                         df_movement.loc[df_movement["SampleName"] ==
                                         x["Submission"],
-                                        "StandardEartag"].item()
+                                        "StandardEartag"].iloc[0]
                         if x["movement_data"] else None, axis=1)
     return df_report_eartag
 
