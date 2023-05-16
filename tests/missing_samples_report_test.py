@@ -72,8 +72,8 @@ class TestMissingSamplesReport(unittest.TestCase):
                                        "movement_data": [True, False, True, False]})
         test_df_cattle = pd.DataFrame({"CVLRef": ["A", "B"],
                                        "RawEartag2": ["foo", "bar"]})
-        test_df_movement = pd.DataFrame({"SampleName": ["A", "C"],
-                                         "StandardEartag": ["foo", "foobar"]})
+        test_df_movement = pd.DataFrame({"SampleName": ["A", "A", "C"],
+                                         "StandardEartag": ["foo", "foo", "foobar"]})
         # test output
         test_df_report_eartag = pd.DataFrame({"Submission": ["A", "B", "C", "D"],
                                               "eartag": ["foo", "bar", "foobar", None],
